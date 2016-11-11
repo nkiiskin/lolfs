@@ -1,0 +1,26 @@
+- Version 0.12 notes:
+
+- Endianess questions & portability of containers from
+  BIG- to LITTLE endian. Must be fixed.
+  (LE containers are currently not readable in BE systems
+   and vice versa).
+
+- lol cp: Should check if container has enough space
+  BEFORE trying to copy into it.
+
+- Missing interface functions: opendir() etc.
+
+-  When using removable storage directly to create
+   lolfs "filesystem" on it, currently only Linux
+   is supported.
+   (Usually lolfs storage is created as a normal
+    file in the filesystem, so this should not be
+    a huge problem)
+
+- Thread safety: NOT thread safe as of v0.12.
+  Should add file lock
+
+- sub-directories?
+  Maybe later
+
+

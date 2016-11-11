@@ -1,0 +1,55 @@
+Basic Installation
+==================
+
+   These are installation instructions for Linux/UN*X.
+
+   IF YOU ALREADY HAVE LOLFS INSTALLED, PLEASE UNINSTALL
+   IT FIRST BEFORE INSTALLING A NEW VERSION.
+   (To do this, type "make uninstall" as root from your install
+    base directory or rm the files).
+   This prevents your new copy of lolfs being accidentally
+   linked against the previous version.
+
+
+
+
+The standard way to install this package is:
+
+  1.  Download the lolfs source code and extract it:
+      tar -zxvf lolfs-VERSION.tar.gz
+
+  2. `cd' to the directory containing the package's source code and type
+     `./configure'
+      The "configure" script inspects your system and creates
+      a "Makefile" which you may then run by typing:
+     `make' to compile the package for your system.
+
+  3. Type `sudo make install' or `make install' as root to install
+     the programs, headers and the library "liblolfs".
+
+  4. You can remove the program binaries and object files from the
+     source code directories by typing `make clean'.
+
+  5. To remove lolfs completely from the system after 'make install',
+     type `sudo make uninstall' or `make uninstall' as root.
+     (That would be sad though :(
+
+
+
+Compilers and Options
+=====================
+
+	Type: ./configure --help
+
+
+Compiling For Multiple Architectures
+====================================
+
+        I don't know. I have only compiled this on Linux
+        I guess it will compile on FreeBSD, OpenBSD, Solaris
+        and perhaps Mac OS X
+
+
+   Have fun with lolfs!
+   - Niko
+

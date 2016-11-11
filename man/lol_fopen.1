@@ -1,0 +1,138 @@
+.\" Copyright (c) 2016, Niko Kiiskinen
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.\"     @(#)lol_fopen.1	0.12 11/07/16
+.\"
+.\" Modified, niko, , 2016-11-07
+.\"
+.TH LOL_FOPEN 1  2016-11-07 "LOLFS" "Lolfs API Manual"
+.SH NAME
+lol_fopen \- open a file inside lolfs container
+.SH SYNOPSIS
+.nf
+.B #include <lolfs.h>
+.sp
+.BI "lol_FILE *lol_fopen(const char *" path ", const char *" mode );
+.fi
+.sp
+.in -4n
+.in
+.sp
+.SH DESCRIPTION
+The
+.BR lol_fopen ()
+function opens the file inside a lolfs container whose name
+is the string pointed to by
+.I path
+and associates a stream with it. The
+.I path
+must include both the name of the container and
+the name of the file inside it. See example below.
+.PP
+The argument
+.I mode
+points to a string beginning with one of the following sequences
+(possibly followed by additional characters, as described below):
+.TP
+.B r
+Open file for reading.
+The stream is positioned at the beginning of the file.
+.TP
+.B r+
+Open for reading and writing.
+The stream is positioned at the beginning of the file.
+.TP
+.B w
+Truncate file to zero length or create text file for writing.
+The stream is positioned at the beginning of the file.
+.TP
+.B w+
+Open for reading and writing.
+The file is created if it does not exist, otherwise it is truncated.
+The stream is positioned at the beginning of
+the file.
+.TP
+.B a
+Open for appending (writing at end of file).
+The file is created if it does not exist.
+The stream is positioned at the end of the file.
+.TP
+.B a+
+Open for reading and appending (writing at end of file).
+The file is created if it does not exist.
+The initial file position for reading is at the beginning of the file,
+but output is always appended to the end of the file.
+.PP
+The
+.I mode
+string can also include the letter \(aqb\(aq either as a last character or as
+a character between the characters in any of the two-character strings
+described above.
+This is strictly for compatibility with C89
+and has no effect; the \(aqb\(aq is ignored on all POSIX
+conforming systems, including Linux.
+.PP
+See EXAMPLE below for details for
+.IR path .
+.PP
+.nf
+.fi
+.PP
+The
+.I mode
+of the lol stream is one of the values "r", "r+", "w", "w+", "a", "a+"
+with a possible combination with "b", like "rb" or "wb" etc.
+
+.I mode
+argument is used just as in the
+.BR fopen ()
+function with exception that path must include
+the container file and the filename inside the
+container like:
+.I "containername:/filename"
+.SH EXAMPLE
+lol_FILE *fp;
+.sp
+fp = lol_fopen("mycont:/README.txt");
+.SH RETURN VALUE
+Upon successful completion
+.BR lol_fopen()
+returns a
+.I lol_FILE
+pointer.
+Otherwise, NULL is returned
+
+
+	Thread safety	Not thread safe as of v0.12
+
+
+.BR lol_fopen ()
+limits the number of characters examined in
+.I mode
+to 4 
+.SH SEE ALSO
+.BR lol_ferror (1),
+.BR lol_fclose (1),
+.SH COLOPHON
+This page is part of release 0.12 of the lolfs project
+.I man-pages

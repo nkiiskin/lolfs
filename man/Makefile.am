@@ -1,0 +1,13 @@
+# Copyright (C) 2016 Niko Kiiskinen.
+# All Rights Reserved.
+# This file is distributed under the GPLv2 License.
+#
+## $Id: Makefile.am lol_fopen.1 manual 0.12 2016-11-07 01:28:49Z niko $
+#
+# Author: Niko Kiiskinen 2016-11-07
+#
+# This file defines the common automake macros for LOLFS manual
+#
+#
+AUTOMAKE_OPTIONS = foreign
+dist_man1_MANS = lol_fopen.1
