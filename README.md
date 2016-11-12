@@ -178,5 +178,6 @@ Questions, Bug reports, etc..
 
      Niko Kiiskinen
      nkiiskin {at} yahoo com
-     https://github.com/nkiiskin/lolfs.git
-Distribution date: Sat Nov 12 00:18:36 EET 2016
+     https://github.com/nkiiskin/lolfs
+
+

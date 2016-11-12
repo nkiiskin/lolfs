@@ -21,6 +21,7 @@ dist-hook:
 	echo "Distribution date: `date`" >> README.md
 	rm -f *~ src/*.o lib/*.o lib/*.so
 	mkdir -p $(distdir)/m4
+	mkdir -p $(distdir)/docs
 
 install-exec-local:
 	@echo '******************************'
