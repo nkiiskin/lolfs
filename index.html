@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=640">
+
+    <link rel="stylesheet" href="stylesheets/core.css" media="screen">
+    <link rel="stylesheet" href="stylesheets/mobile.css" media="handheld, only screen and (max-device-width:640px)">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+
+    <script type="text/javascript" src="javascripts/modernizr.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="javascripts/headsmart.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function () {
+        $('#main_content').headsmart()
+      })
+    </script>
+    <title>Lolfs by nkiiskin</title>
+  </head>
+
+  <body>
+    <a id="forkme_banner" href="https://github.com/nkiiskin/lolfs">View on GitHub</a>
+    <div class="shell">
+
+      <header>
+        <span class="ribbon-outer">
+          <span class="ribbon-inner">
+            <h1>Lolfs</h1>
+            <h2>Container file / minimalistic filesystem</h2>
+          </span>
+          <span class="left-tail"></span>
+          <span class="right-tail"></span>
+        </span>
+      </header>
+
+      <section id="downloads">
+        <span class="inner">
+          <a href="https://github.com/nkiiskin/lolfs/zipball/master" class="zip"><em>download</em> .ZIP</a><a href="https://github.com/nkiiskin/lolfs/tarball/master" class="tgz"><em>download</em> .TGZ</a>
+        </span>
+      </section>
+
+
+      <span class="banner-fix"></span>
+
+
+      <section id="main_content">
+        <pre><code>Liblolfs - Little Object List (LOL) filesystem - by Niko Kiiskinen
+
+
+    Please see file 'INSTALL' for detailed installation instructions
+</code></pre>
+
+<p>Manifesto</p>
+
+<pre><code> I enjoy (re-)inventing wheels, here is another excr.. example.
+
+ Lolfs is a container file. It means that it is a file (stored
+ in your computer somewhere) which has other files inside it.
+
+ Once you create a lol container file (using the included
+ 'mkfs.lolfs' utility or lol_mkfs API function), you can
+ then use the lolfs API explained in &lt;lolfs.h&gt; to create,
+ modify and delete files in this container.
+
+ The installation package also contains a program "lol",
+ which may be used to do the common file operations:
+
+
+
+mkfs.lolfs program:
+===================
+
+
+            "mkfs.lolfs" creates a container file.
+
+
+            It takes 3 parameters:
+            - block size: the number of bytes a "block" has
+                          (this is a number which you can choose
+                           freely. Try to choose it as average file size
+                           to gain best performance).
+
+            - number of blocks: the number of data blocks. This depends
+                                on how big container you want.
+                                Try like 50000 first and try it
+
+            - filename: this is just the name which you like to use
+                        as the name of the container file. Ex:
+                        'mycontainer'
+
+             Use like: "mkfs.lolfs  100  5000  mycontainer"
+
+                       ( This creates a container file 'mycontainer' which
+                         has 1000 * 5000 bytes of storage capacity ).
+
+
+             ( In Linux, lolfs may be used directly with removable storage,
+               without warranty of course!
+
+               So, you may actually insert an SDHC card to your Linux
+               and create a lol storage directly there. In that case the
+               "filename" parameter is just the name of the device,
+               for example "mkfs.lolfs 512 4000000 /dev/sdb"
+               You MUST know what you are doing then, and of course
+               you must be root to do that - or anything similar.
+               You have been warned! :)
+
+
+lol program:
+============
+
+            The "lol" app has a couple of built-in functions which
+            can be used to do some common file tasks.
+            These functions are currently (in v 0.12) :
+
+            - ls
+            - cp
+            - rm
+            - df
+            - cat
+
+            For example, if you want to list all the files
+            inside a container file "mycontainer", type:
+
+            lol ls mycontainer
+
+            So, use it like "lol ls mycontainer", where
+            "mycontainer" is the name of the container file
+
+            lol cp function:
+            ---------------
+
+            lol cp copies files to (and from) your container file.
+
+             If you want to copy a file /home/you/readme.txt to your
+             container file 'mycontainer', use:
+             lol cp /home/you/readme.txt mycontainer
+
+             If you want to copy a file which is inside the container
+             back to your normal filesystem, use:
+
+             lol cp mycontainer:/readme.txt /some/directory
+
+             NOTE: When accessing files inside your container, you must
+                   separate the path with ':' like in above example.
+
+
+             lol rm function:
+             ---------------
+
+            lol rm   deletes a file from your container file.
+                     Use like: "lol rm mycontainer:/readme.txt"
+
+             NOTE:   Note also here (this is common feature when accessing
+                     files inside a container), that you must separate
+                     the file with a ':' from it's container.
+
+
+             lol df function:
+             ---------------
+
+             lol df  Shows how much space is used in container file.
+                     Use like: "lol df mycontainer"
+
+
+             lol cat function:
+             ----------------
+
+             lol cat  Prints the contents of a file (inside a container)
+                      to standard output.
+                      Use like: "lol cat mycontainer:/readme.txt"
+                      Or like: "lol cat mycontainer:/somefile &gt; somefile.bak"
+</code></pre>
+
+<h1>
+<a id="lolfs-api" class="anchor" href="#lolfs-api" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>lolfs API:</h1>
+
+<pre><code> The API functions are explained in &lt;lolfs.h&gt;
+ They are identical to their standard C counterparts,
+ except the "lol_" prefix in the name:
+
+ - For example use "lol_fopen" to open a file inside
+   your container, it returns a lol_FILE* handle which
+   may then be used to lol_fread, lol_fwrite, lol_fseek etc..
+
+ - when you lol_fopen a file (or otherwise manipulate files inside
+   a container file, you must separate the filesystem path from the
+   file inside a container with a ':'
+
+ Example: Create a file "test.txt" inside container called 'mycontainer'.
+</code></pre>
+
+<p>#include 
+  #include </p>
+
+<p>int main() {</p>
+
+<pre><code>         lol_FILE *fp;
+         char text[] = "Hello World!\n";
+
+         fp = lol_fopen("mycontainer:/test.txt", "w");
+
+         lol_fwrite((char *)text, strlen(text), 1, fp);
+         lol_fclose(fp);
+         return 0;
+</code></pre>
+
+<p>}</p>
+
+<p>How to compile and link a lolfs enabled program:</p>
+
+<p>gcc program.c -o program -llolfs</p>
+
+<p>(You may need to include compiler option -L/path/to/librarydir
+   if the linker does not find lolfs library)</p>
+
+<p>Questions, Bug reports, etc..</p>
+
+<pre><code> Niko Kiiskinen
+ nkiiskin {at} yahoo com
+ https://github.com/nkiiskin/lolfs.git
+</code></pre>
+
+<p>Distribution date: Sat Nov 12 00:18:36 EET 2016</p>
+      </section>
+
+      <footer>
+        <span class="ribbon-outer">
+          <span class="ribbon-inner">
+            <p>this project by <a href="https://github.com/nkiiskin">nkiiskin</a> can be found on <a href="https://github.com/nkiiskin/lolfs">GitHub</a></p>
+          </span>
+          <span class="left-tail"></span>
+          <span class="right-tail"></span>
+        </span>
+        <p>Generated with <a href="https://pages.github.com">GitHub Pages</a> using Merlot</p>
+        <span class="octocat"></span>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
