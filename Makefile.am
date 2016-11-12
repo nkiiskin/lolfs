@@ -20,6 +20,7 @@ dist-hook:
 	chmod u+w $(distdir)/README.md
 	echo "Distribution date: `date`" >> README.md
 	rm -f *~ src/*.o lib/*.o lib/*.so
+	mkdir -p $(distdir)/m4
 
 install-exec-local:
 	@echo '******************************'
