@@ -68,8 +68,9 @@
 //  usefull to anybody who can make use of this s*it :)
 //
 
+extern int lol_errno;
 
-lol_FILE *lol_fopen    (const char *path, const char *mode);
+lol_FILE* lol_fopen    (const char *path, const char *mode);
 int       lol_fclose   (lol_FILE *);
 size_t    lol_fread    (void *ptr, size_t size, size_t nmemb, lol_FILE *);
 size_t    lol_fwrite   (const void *ptr, size_t size, size_t nmemb, lol_FILE *);

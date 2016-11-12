@@ -22,6 +22,9 @@ dist-hook:
 	rm -f *~ src/*.o lib/*.o lib/*.so
 	mkdir -p $(distdir)/m4
 
+install-data-local:
+	@mkdir -p ${datarootdir}/man/man3
+
 install-exec-local:
 	@echo '******************************'
 	@echo '*                            *'
