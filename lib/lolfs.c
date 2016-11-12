@@ -910,17 +910,20 @@ int lol_read_nentry(lol_FILE *op) {
      return -1;
 
   if (fseek (vdisk, (long)DISK_HEADER_SIZE, SEEK_SET)) {
+      lol_errno = errno;
       goto error;
   }
 
   nlen = strlen(name);
   if (nlen >= LOL_FILENAME_MAX) {
+      lol_errno = ENAMETOOLONG;
       goto error;
   }
 
   for (i = 0; i < num_blocks; i++) {
 
       if (fread ((char *)entry, (size_t)(NAME_ENTRY_SIZE), 1, vdisk) != 1) {
+          lol_errno = errno;
 	  goto error;
       }
 
@@ -1006,15 +1009,20 @@ int lol_get_basename(const char* name, char *new_name, const int mode) {
     }
 
   ln = strlen(&name[i]);
-  if (!ln)
+  if (!ln) {
+    lol_errno = ENAMETOOLONG;
     return -1;
+  }
 
-  if (ln >= LOL_FILENAME_MAX)
+  if (ln >= LOL_FILENAME_MAX) {
+    lol_errno = ENAMETOOLONG;
     ln = LOL_FILENAME_MAX-1;
+  }
 
   memset(new_name, 0, LOL_FILENAME_MAX);
   memcpy(new_name, &name[i], (size_t)(ln));
   if (!new_name[0]) { // Should never happen here..
+    lol_errno = EBADFD;
     return -1;
   }
 
@@ -1117,19 +1125,33 @@ void delete_lol_FILE(lol_FILE *fp) {
  * **********************************************************/
 int lol_fclose(lol_FILE *op)
 {
+  int ret = 0;
 
-   if (!op)
+   if (!op) {
+       lol_errno = EBADF;
        return EOF;
+   }
 
    if (op->vdisk) {
-         fclose(op->vdisk);
+
+        ret = fclose(op->vdisk);
+
+	if (ret) {
+	  lol_errno = errno;
+	  ret = EOF;
+	}
+
          op->vdisk = NULL;
+   }
+   else {
+     lol_errno = EBADF;
+     ret = EOF;
    }
 
     delete_lol_FILE(op);
     op = NULL;
 
-    return 0;
+    return ret;
 }
 /* **********************************************************
  * lol_get_filename: // PRIVATE function.
@@ -1172,9 +1194,14 @@ int lol_get_filename(const char *path, lol_FILE *op)
     }
   } // end for i
 
-  if (!valid || s > (LOL_DEVICE_MAX - 2))
+  if (!valid) {
+     lol_errno = EINVAL;
+     return -1;
+  }
+  if (s > (LOL_DEVICE_MAX - 2)) {
+    lol_errno = ENAMETOOLONG;
     return -1;
-
+  }
   // Copy first part to op->vdisk_name
   memset((char *)op->vdisk_name, 0, LOL_DEVICE_MAX);
 
@@ -1183,6 +1210,7 @@ int lol_get_filename(const char *path, lol_FILE *op)
   } // end for s
 
   if (!op->vdisk_name[0]) { // Should never happen here..
+    lol_errno = EINVAL;
     return -1;
   }
 
@@ -1303,42 +1331,53 @@ int lol_touch_file(lol_FILE *op) {
   name        = op->vdisk_file;
   mode        = op->open_mode.mode_num;
 
-  if (!num_blocks || !block_size || !name)
+  if (!num_blocks || !block_size || !name) {
+    lol_errno = EIO;
     return -2;
+  }
 
-  if (mode < 2) // Opened "r" or "r+"?
+  if (mode < 2) { /* Opened "r" or "r+"? */
+    lol_errno = EPERM;
     return -3;
+  }
 
-  if(!name[0])
+  if(!name[0]) {
+      lol_errno = EIO;
       return -4;
+  }
 
   len = strlen(name);
   if (len >= LOL_FILENAME_MAX) {
     len = LOL_FILENAME_MAX - 1;
     name[len] = '\0';
+    lol_errno = ENAMETOOLONG;
   }
 
   shouldbe = LOL_DEVSIZE(num_blocks, block_size);
 
-  if (op->vdisk_size != shouldbe)
+  if (op->vdisk_size != shouldbe) {
+     lol_errno = EIO;
      return -5;
+  }
 
   if (files >= num_blocks) {
       op->err = lol_errno = ENOSPC;
       return -6;
   }
 
-  if (fgetpos(op->vdisk, &pos))
-    return -7;
+  if (fgetpos(op->vdisk, &pos)) {
+     lol_errno = errno;
+     return -7;
+  }
 
   if (fseek(op->vdisk, (long)DISK_HEADER_SIZE, SEEK_SET))
-    { ret = -8; goto error; }
+    { ret = -8; lol_errno = errno; goto error; }
 
   for (i = 0; i < num_blocks; i++) {
 
       bytes = fread((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk);
       if (bytes != 1)
-	    { ret = -9; goto error; }
+	    { ret = -9; lol_errno = errno; goto error; }
 
       if (!entry.filename[0]) {
 
@@ -1353,7 +1392,7 @@ int lol_touch_file(lol_FILE *op) {
           }
 
 	  if (fseek(op->vdisk, -(NAME_ENTRY_SIZE), SEEK_CUR))
-              { ret = -11; goto error; }
+              { ret = -11; lol_errno = errno; goto error; }
 
 	  memset(op->nentry.filename, 0, LOL_FILENAME_MAX);
 	  memcpy((char *)op->nentry.filename, name, len);
@@ -1363,10 +1402,10 @@ int lol_touch_file(lol_FILE *op) {
           bytes = fwrite((const char *)&op->nentry, (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk);
 
            if (bytes != 1)
-                  { ret = -12; goto error; }
+                  { ret = -12; lol_errno = errno; goto error; }
 
 	           if (lol_add_file_to_super(op)) {
-		        ret = -13; goto error;
+		        ret = -13; lol_errno = EIO; goto error;
 	           }
 
            op->curr_pos = 0;
@@ -1381,7 +1420,7 @@ int lol_touch_file(lol_FILE *op) {
 error:
   fsetpos(op->vdisk, &pos);
   return ret;
-}
+} // end lol_touch_file
 /* ********************************************************** */
 int lol_truncate_to_zero(lol_FILE *op) {
 
@@ -1692,24 +1731,34 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
   int trunc    = 0;
   long size    = 0;
 
-  if (!path || !mode)
-      return NULL;
+  if ((!path) || (!mode)) {
+    lol_errno = EINVAL;
+    return NULL;
+  }
 
   path_len = strlen(path);
   mode_len = strlen(mode);
 
-  if (path_len < 4 || path_len > LOL_PATH_MAX ||
-      mode_len < 1 || mode_len > 4) {
+  if ((path_len < 4) || (path_len > LOL_PATH_MAX)) {
+    lol_errno = ENOENT;
     return NULL;
-
   }
 
-  if (!(op = new_lol_FILE()))
+
+  if ((mode_len < 1) || (mode_len > 4)) {
+    lol_errno = EINVAL;
+    return NULL;
+  }
+
+  if (!(op = new_lol_FILE())) {
+          lol_errno = ENOMEM;
           return NULL;
+  }
 
    mod = op->open_mode.mode_num = lol_check_open_mode(mode);
 
    if (mod < 0 || mod > 5) {
+              lol_errno = EINVAL;
               delete_return_NULL(op);
    }
 
@@ -1717,16 +1766,19 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
         strcpy(op->open_mode.vd_mode,  lol_open_modes[mod].vd_mode);
 
 	if (lol_get_filename(path, op)) {
-            delete_return_NULL(op);
+	     // lol_errno already set
+             delete_return_NULL(op);
 	}
 
   size = lol_get_vdisksize(op->vdisk_name, &op->sb, &m, RECUIRE_SB_INFO);
 
   if (size < LOL_THEOR_MIN_DISKSIZE) {
+      lol_errno = EIO;
       delete_return_NULL(op);
   }
 
   if (LOL_CHECK_MAGIC(op)) {
+       lol_errno = EIO;
        delete_return_NULL(op);
   }
 
@@ -1734,6 +1786,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
    op->open_mode.device = m;
 
    if(!(op->vdisk = fopen(op->vdisk_name, op->open_mode.vd_mode))) {
+        lol_errno = EINVAL;
         delete_return_NULL(op);
    }
 
@@ -1746,15 +1799,16 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
                      // Does not exist, so we return NULL
                      // if trying to read (cases "r" & "r+")
 
-	              if (mod < 2) // if "r" or "r+", cannot read..
-
-                          close_return_NULL(op);
+		          if (mod < 2)  { /* if "r" or "r+", cannot read.. */
+			     lol_errno = ENOENT;
+                             close_return_NULL(op);
+			  }
 
 	              op->curr_pos = 0;
                       // if not reading, create new file...
-	              if ((r = lol_touch_file(op)))
+	              if ((r = lol_touch_file(op))) {
                             close_return_NULL(op);
-
+		      }
                    break;
 
                 case LOL_FILE_EXISTS:
@@ -1787,6 +1841,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
                                                              break;
 
 		                                      default:
+                                                          lol_errno = EINVAL;
 
                                                              close_return_NULL(op);
 
@@ -1795,6 +1850,8 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
                                break;
 
                  default:
+
+                       lol_errno = EIO;
                        close_return_NULL(op);
 
 
@@ -1803,7 +1860,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
          if (trunc) { // Truncate if file was opened "w" or "w+"
 
 	               if ((r = lol_truncate_to_zero(op))) {
-
+			 lol_errno = EIO; // FIX! Check return value
                             close_return_NULL(op);
                        }
 
@@ -1812,6 +1869,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
          }
 
        op->opened = 1;
+       lol_errno = 0;
        return op;
 
 } // end lol_fopen

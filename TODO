@@ -5,8 +5,9 @@
   (LE containers are currently not readable in BE systems
    and vice versa).
 
-- lol cp: Should check if container has enough space
-  BEFORE trying to copy into it.
+- global lol_errno must be set correctly in lol_functions
+
+- lol cp: check lol_cp.c for details
 
 - Missing interface functions: opendir() etc.
 
