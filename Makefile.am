@@ -13,7 +13,7 @@ ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign
 DIST_SUBDIRS = lib src include man
 SUBDIRS = lib src include man
-EXTRA_DIST = README.md docs/README.md
+EXTRA_DIST = README.md
 DEFS = @DEFS@
 
 dist-hook:
@@ -21,8 +21,6 @@ dist-hook:
 	echo "Distribution date: `date`" >> README.md
 	rm -f *~ src/*.o lib/*.o lib/*.so
 	mkdir -p $(distdir)/m4
-	mkdir -p $(distdir)/docs
-	echo "Under construction" > docs/README.md
 
 install-exec-local:
 	@echo '******************************'
