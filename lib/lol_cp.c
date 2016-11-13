@@ -28,9 +28,15 @@
 #include <lol_internal.h>
 #endif
 
-// TODO: FIX: expects destination to be a directory, not a filename, when copying from a lolfile
-// TODO: FIX this too! This program does not check if BOTH source and destination are lol files...
-// TODO: FIX this also! Does not warn or prompt if it overwrites a file when copying from a lol file
+/* TODO: FIX: expects destination to be a directory,
+ *        not a filename, when copying from a lolfile.
+ *
+ *  TODO: FIX this too! This program does not check if
+ *        BOTH source and destination are lol files...
+ *
+ *  TODO: FIX this also! Does not warn or prompt if it
+ *        overwrites a file when copying from a lol file
+ */
 
 int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 
@@ -38,7 +44,8 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
   char name[1024];
   char base[1024];
 
-  size_t len, ln, bytes;
+  size_t len, ln;
+  // size_t bytes;
   size_t src_size;
   size_t last_bytes;
   long dst_size = 0;
@@ -56,10 +63,6 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
   if (argc < 3)
       return -1;
 
-  if (!(strcmp(argv[1], argv[2]))) {
-    return -1;
-  }
-
   num_files = argc - 1;
   vdisk = argv[num_files];
   len = strlen (vdisk);
@@ -74,6 +77,11 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
     if (stat (argv[i], &st))
       continue;
 
+    if (!(strcmp(argv[i], vdisk))) {
+       printf("Warning: Skipping file %s\n", argv[i]);
+       continue;
+    }
+
     if (!(S_ISREG(st.st_mode))) { // We copy only regular files
                                   // into container
 
@@ -85,13 +93,13 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
     // (Should create an interface function to do this common task !! )
 
     src_size = st.st_size;
-    dst_size = lol_free_space (vdisk);
+    dst_size = lol_free_space(vdisk);
     if (dst_size < 0) {
-      printf("Error in lol container file %s\n", vdisk);
+      printf("Error in container file %s\n", vdisk);
       return -1;
     }
     if (!dst_size) {
-        printf("lol container file %s is full\n", vdisk);
+        printf("Container file %s is full\n", vdisk);
         return -1;
     }
 
@@ -141,7 +149,7 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 
       if (ln >= LOL_FILENAME_MAX)
 	ln = LOL_FILENAME_MAX - 1;
-      memcpy (base, argv[i], ln);
+        memcpy (base, argv[i], ln);
 
     }
 
@@ -149,6 +157,7 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
     if (!(lol_stat(name, &sta))) {
        printf("The file %s exists. Overwrite [y/n]? ", name);
        answer = (char)getchar();
+       (void)getchar();
        if (answer != 'y')
 	 continue;
     }
@@ -160,33 +169,51 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 
     if (!(src = fopen(argv[i], "r"))) {
          printf("Cannot read from file %s\n", argv[i]);
-         lol_fclose(dest);
+	 if (lol_fclose(dest)) {
+	     puts("I/O error, aborting..");
+	     return -1;
+	 }
+
          continue;
     }
 
     memset(temp, 0, 4096);
-
     loops = src_size / 4096;
     last_bytes = src_size % 4096;
 
     for (j = 0; j < loops; j++) {
-
-      bytes = lol_fio((char *)temp, 4096, src, LOL_READ);
-      if (lol_fwrite((char *)temp, bytes, 1, dest) != 1) {
-	printf("WARNING: could not copy from file %s\n", argv[i]);
+      if ((lol_fio((char *)temp, 4096, src, LOL_READ)) != 4096) {
+          printf("Cannot read from file %s\n", argv[i]);
+	  last_bytes = 0; break;
+      }
+      if ((lol_fwrite((char *)temp, 4096, 1, dest)) != 1) {
+	  printf("Cannot copy to file %s\n", name);
+	  last_bytes = 0; break;
       }
 
-    }
+    } // end for j
 
-  if (last_bytes) {
-    bytes = lol_fio((char *)temp, last_bytes, src, LOL_READ);
-      if (lol_fwrite((char *)temp, bytes, 1, dest) != 1) {
-	printf("WARNING: could not copy from file %s\n", argv[i]);
-      }
+    do {
+        if (last_bytes) {
+            if ((lol_fio((char *)temp, last_bytes, src, LOL_READ)) != last_bytes) {
+	        printf("Cannot read from file %s\n", argv[i]);
+	        break;
+            }
+            if ((lol_fwrite((char *)temp, last_bytes, 1, dest)) != 1) {
+	         printf("Cannot copy to file %s\n", name);
+            }
+        } // end if last_bytes
+    } while (0);
+
+  if (lol_fclose(dest)) {
+      fclose(src);
+      puts("I/O error, aborting..");
+      return -1;
   }
-
-  lol_fclose(dest);
-  fclose(src);
+  if (fclose(src)) {
+      puts("I/O error, aborting..");
+      return -1;
+  }
 
  } // end for i
 
@@ -209,88 +236,150 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
 
   int j, i, loops;
   int num_files;
-  char *dir;
+  int dest_is_dir = 0;
+  char *dir = 0;
+
 
   if (argc < 3)
     return -1;
 
   num_files = argc - 1;
   dir = argv[num_files];
+  memset((char *)&st, 0, sizeof(st));
+  i = stat(dir, &st);
 
-  if (stat(dir, &st)) {
-      printf("Cannot copy to directory %s\n", dir);
-      return -1;
-  }
-  if (!(S_ISDIR(st.st_mode))) {
-      printf("Error: target must be a directory\n");
-      return -1;
-  }
+  if (num_files > 2) {
+
+                       if (i) {
+                           printf("The directory %s does no exist\n", dir);
+                           return -1;
+                       }
+
+                       if (!(S_ISDIR(st.st_mode))) {
+                           puts("Syntax error");
+                           return -1;
+                       }
+                       else {
+			     dest_is_dir = 1;
+		       }
+
+  } // end if num_files > 1
+  else {
+    // So, just one file. Is the destination
+    // a directory or a file?
+
+    if ((S_ISDIR(st.st_mode))) {
+        dest_is_dir = 1;
+    }
+    else {
+
+      // Not a directory.
+      // Does it exist already?
+      if (!i) {
+
+	// It does, but is it a regular file?
+            if (!(S_ISREG(st.st_mode))) {
+
+      	      // Not a file or directory. Can't use it!
+               printf("Error: %s is not a file or directory\n", dir);
+	       return -1;
+	    }
+
+      } // end if !i
+
+    } // end else is_dir
+
+  } // end else num_files > 1
+
 
   len = strlen (dir);
 
   for(i = 1; i < num_files; i++) {
 
     if (!(src = lol_fopen(argv[i], "r"))) {
-      printf("Cannot open file %s\n", argv[i]);
+      printf("Cannot copy lol-file %s\n", argv[i]);
       continue;
     }
 
     // Create destination from lolfile:/filename --> filename
 
     memset((char *)name, 0, 1024);
-    strcat(name, dir);
-    if (name[len-1] != '/') // append slash if it's not there
-        name[len] = '/';
 
-    strcat(name, src->vdisk_file);
-
-#if 0
-
-    if (!(stat(name, &sta))) {
-       printf("The file %s exists. Overwrite [y/n]? ", name);
-       answer = (char)getchar();
-       if (answer != 'y') {
-	 lol_fclose(src);
-	 continue;
-       }
+    if (dest_is_dir) {
+        strcat(name, dir);
+        if (name[len-1] != '/') // append slash if it's not there
+            name[len] = '/';
+        strcat(name, src->vdisk_file);
     }
-#endif
+    else {
+
+          strcat(name, dir);
+      }
+
+      if (!(stat(name, &st))) {
+	// Prompt
+                printf("The file %s exists. Overwrite [y/n]? ", name);
+                temp[0] = (char)getchar();
+		(void)getchar();
+                if (temp[0] != 'y') {
+		    if (lol_fclose(src)) {
+		      puts("I/O error, aborting..");
+		      return -1;
+		    }
+		    continue;
+                }
+      }
 
     if (!(dest = fopen(name, "w"))) {
            printf("Cannot copy to file %s\n", name);
-          lol_fclose(src);
+		    if (lol_fclose(src)) {
+		      puts("I/O error, aborting..");
+		      return -1;
+		    }
+
           continue;
     }
 
     src_size = (size_t)src->nentry.file_size;
-
     memset(temp, 0, 4096);
-
     loops = src_size / 4096;
     last_bytes = src_size % 4096;
 
-    for (j = 0; j < loops; j++) {
-	      if (lol_fread((char *)temp, 4096, 1, src) != 1) {
-	          printf("WARNING: could not read from file %s\n", argv[i]);
+
+       for (j = 0; j < loops; j++) {
+
+	      if ((lol_fread((char *)temp, 4096, 1, src)) != 1) {
+	          printf("Cannot read from file %s\n", argv[i]);
+		  last_bytes = 0; break;
 	      }
-              if (lol_fio((char *)temp, 4096, dest, LOL_WRITE) != 4096) {
-	          printf("WARNING: could not copy to file %s\n", name);
+              if ((lol_fio((char *)temp, 4096, dest, LOL_WRITE)) != 4096) {
+	          printf("Cannot copy to file %s\n", name);
+		  last_bytes = 0; break;
               }
 
-    } // end for j
+       } // end for j
 
-  if (last_bytes) {
-	      if (lol_fread((char *)temp, last_bytes, 1, src) != 1) {
-	          printf("WARNING: could not read from file %s\n", argv[i]);
-	      }
-              if (lol_fio((char *)temp, last_bytes, dest, LOL_WRITE) != last_bytes) {
-	          printf("WARNING: could not copy to file %s\n", name);
-              }
+       do {
+           if (last_bytes) {
+	       if ((lol_fread((char *)temp, last_bytes, 1, src)) != 1) {
+	           printf("Cannot read from file %s\n", argv[i]);
+		   break;
+	       }
+               if ((lol_fio((char *)temp, last_bytes, dest, LOL_WRITE)) != last_bytes) {
+	           printf("Cannot copy to file %s\n", name);
+               }
+           }
+       } while (0);
 
+  if (lol_fclose(src)) {
+      fclose(dest);
+      puts("I/O error, aborting..");
+      return -1;
   }
-
-  lol_fclose(src);
-  fclose(dest);
+  if (fclose(dest)) {
+      puts("I/O error, aborting..");
+      return -1;
+  }
 
  } // end for i
 
@@ -300,12 +389,13 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
 /* ********************************************************************* */
 int lol_cp (int argc, char* argv[]) {
 
-  struct stat st;
+  // struct stat st;
+  // int i, n;
   char *dir;
 
   if (argc < 3) {
 
-      printf("lol_cp: missing file operand\n");
+      printf("lol cp: missing file operand\n");
       return 0;
 
   }
@@ -326,15 +416,23 @@ int lol_cp (int argc, char* argv[]) {
   // So, we copy files from a container to disk..
   // Check that the target is a directory.
 
+#if 0
+  n = argc - 1;
+
+  for (i = 1; i < n; i++) {
   if (stat (dir, &st)) {
       printf("Cannot copy to directory %s\n", dir);
       return -1;
+  }
   }
 
   if (!(S_ISDIR(st.st_mode))) {
       printf("Error: target must be a directory\n");
       return -1;
   }
+
+#endif
+
 
   // If ok, copy
     return copy_from_lolfile_to_disk(argc, argv);
