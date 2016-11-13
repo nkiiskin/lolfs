@@ -9,10 +9,9 @@
 	+ Added, changed and removed some comments from files
 	+ chmod 644 include/lolfs.h src/*.c
 0.12	+ Added function lol_mkfs to the user interface
-	+ Added installer.sh script (may work if standard
-	  installation fails).
 	+ Modified README BUGS INSTALL and perhaps other infos
 	+ Made multipurpose app "lol" which calls other functions
 	- Removed some unnecessary comments
+	+ Added file overwrite checking/warning to lol cp
 	+ Some minor modifications - no bugs found
 	

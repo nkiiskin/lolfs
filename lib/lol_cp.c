@@ -28,15 +28,15 @@
 #include <lol_internal.h>
 #endif
 
-/* TODO: FIX: expects destination to be a directory,
- *        not a filename, when copying from a lolfile.
+/*
  *
- *  TODO: FIX this too! This program does not check if
- *        BOTH source and destination are lol files...
+ *  TODO: This program does not check if BOTH source
+ *        and destination are lol files.
  *
- *  TODO: FIX this also! Does not warn or prompt if it
- *        overwrites a file when copying from a lol file
  */
+
+
+
 
 int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 
