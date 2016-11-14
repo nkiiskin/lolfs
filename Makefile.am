@@ -18,7 +18,7 @@ DEFS = @DEFS@
 
 dist-hook:
 	chmod u+w $(distdir)/README.md
-	echo "Distribution date: `date`" >> README.md
+	sed -i "/Distribution date/c\Distribution date: `date`" README.md
 	rm -f *~ src/*.o lib/*.o lib/*.so
 	mkdir -p $(distdir)/m4
 
