@@ -208,6 +208,8 @@ int         lol_count_file_blocks (FILE *vdisk, struct lol_super *sb,
                                    long *count, const int terminate);
 long lol_free_space (char *lol_disk);
 
+// N_LOLFUNCS must match the number of functions below it
+#define N_LOLFUNCS 5
 int lol_ls  (int a, char* b[]);
 int lol_rm  (int a, char* b[]);
 int lol_cp  (int a, char* b[]);

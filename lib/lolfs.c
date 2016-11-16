@@ -1217,7 +1217,7 @@ int lol_get_filename(const char *path, lol_FILE *op)
   return 0;
 }
 /* ********************************************************** */
-int lol_verify_file_ready_for_writing(const lol_FILE *op) {
+int lol_is_writable(const lol_FILE *op) {
 
   int   mode;
   DWORD num_blocks;
@@ -1361,6 +1361,7 @@ int lol_touch_file(lol_FILE *op) {
   }
 
   if (files >= num_blocks) {
+    //  printf("DEBUG: lol_touch_file: files = %ld, num_blocks = %ld\n", (long)files, (long)num_blocks);
       op->err = lol_errno = ENOSPC;
       return -6;
   }
@@ -1387,6 +1388,7 @@ int lol_touch_file(lol_FILE *op) {
 	  }
 	  else {
                  ret     = -10;
+		 //printf("DEBUG: lol_touch_file: lol_get_free_index failed!\n");
 		 op->err = lol_errno = ENOSPC;
                  goto error;
           }
@@ -1433,7 +1435,7 @@ int lol_truncate_to_zero(lol_FILE *op) {
   if (!op)
     return -1;
 
-  if (lol_verify_file_ready_for_writing(op)) {
+  if (lol_is_writable(op)) {
     return -2;
   }
 
@@ -1549,8 +1551,8 @@ int lol_write_modified_nentry(lol_FILE *op) {
   if (!op)
     return -1;
 
-  if ((r = lol_verify_file_ready_for_writing(op))) {
-    //printf("lol_verify_file_ready_for_writing:  [%d]\n", r);
+  if ((r = lol_is_writable(op))) {
+    //printf("lol_is_writable:  [%d]\n", r);
     return -2;
   }
 
@@ -1618,7 +1620,7 @@ int lol_write_modified_chain(lol_FILE *op, const long olds, const long news, con
   if (!news)
     return 0;
 
-  if (lol_verify_file_ready_for_writing(op)) {
+  if (lol_is_writable(op)) {
       return -4;
   }
 
@@ -2198,6 +2200,7 @@ int lol_create_index_chain(lol_FILE *op, const long olds, const long news, alloc
 		      if (olds > tot_olds || olds >= (num_blocks - 2))
                             return LOL_ERR_INTRN;
 		      if ((olds + news) > num_blocks) {
+			//printf("DEBUG: lol_create_index_chain failing: (olds+news) = %ld, num_blocks = %ld\n", (long)(olds + news), (long)num_blocks);
 	                                     op->err = lol_errno = ENOSPC;
 	                                     return LOL_ERR_SPACE;
 		      }
@@ -2246,11 +2249,12 @@ int lol_create_index_chain(lol_FILE *op, const long olds, const long news, alloc
 		                       goto error;
 	      }
 
-
+	      // printf("DEBUG: storing index %ld to index buffer\n", (long)current_index);
             lol_index_buffer[i] = current_index;
             *last_old = current_index;
 
             bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
+	    // printf("DEBUG: fread got current_index = %ld\n", (long)current_index);
 
             if (bytes != 1) {
                               err = LOL_ERR_IO;
@@ -2295,7 +2299,17 @@ int lol_create_index_chain(lol_FILE *op, const long olds, const long news, alloc
 
       while (whence) { // (num_blocks)
 
+	    if (j >= num_blocks) {
+	      // printf("DEBUG: lol_create_index_chain is failing: j = %ld, num_blocks = %ld\n", (long)(j), (long)num_blocks);
+	                                     op->err = lol_errno = ENOSPC;
+	                                     err = LOL_ERR_SPACE;
+	                                     goto error;
+	    }
+
+
+
             bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
+	    //printf("DEBUG: fread got current_index = %ld\n", (long)current_index);
 
             if (bytes != 1) {
                     err = LOL_ERR_IO;
@@ -2303,7 +2317,7 @@ int lol_create_index_chain(lol_FILE *op, const long olds, const long news, alloc
             }
 
 	    if (current_index == FREE_LOL_INDEX) {
-
+	      //printf("DEBUG: current_index IS FREE, storing %ld to i-buff[%ld]\n", (long)(j), (long)(i));
                  // Save the index and continue
                  lol_index_buffer[i++] = j;
 
@@ -2311,13 +2325,16 @@ int lol_create_index_chain(lol_FILE *op, const long olds, const long news, alloc
 
 	    } // end if found free block
 
-
+#if 0
 	    if (++j >= num_blocks) {
+	      // printf("DEBUG: lol_create_index_chain is failing: j = %ld, num_blocks = %ld\n", (long)(j), (long)num_blocks);
 	                                     op->err = lol_errno = ENOSPC;
 	                                     err = LOL_ERR_SPACE;
 	                                     goto error;
 	    }
 
+#endif
+            j++;
 
     } // end while
 
@@ -2753,7 +2770,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 
   } // end switch
 
-  if (lol_verify_file_ready_for_writing(op)) {
+  if (lol_is_writable(op)) {
        op->err = lol_errno = EPERM; return 0;
   }
 
@@ -2792,7 +2809,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
             return 0;
 
    } // end if oom
-
+   // printf("DEBUG: lol_fwrite calling create_i_chain, olds = %ld, news = %ld\n", (long)olds, (long)news);
     ret = lol_create_index_chain(op, olds, news, &last_old);
 
     if (ret < 0) {
@@ -3426,7 +3443,7 @@ long lol_free_space (char *disk)
   free_space = (long)(num_blocks - used_blocks);
   free_space *= block_size;
 
-  if (used_space > occupation || nf != files) {
+  if (used_space > occupation || used_blocks > num_blocks || nf != files) {
      return -1;
   }
 

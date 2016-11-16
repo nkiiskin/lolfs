@@ -46,12 +46,13 @@ int lol_df (int argc, char* argv[])
   long occupation;
   long used_space = 0;
   alloc_entry entry = 0;
-
+  float available = 0;
 
   if (argc != 2) {
 
-       printf("Usage: %s <disk name>\n", argv[0]);
-       return -1;
+       printf("Usage: lol %s  <container>\n", argv[0]);
+       puts  ("       Shows container space usage.");
+       return 0;
   }
 
   free_space = lol_get_vdisksize(argv[1], &sb, NULL, RECUIRE_SB_INFO);
@@ -64,18 +65,25 @@ int lol_df (int argc, char* argv[])
 
   if (LOL_INVALID_MAGIC) {
 
-                   printf("Error: Invalid file id [0x%x, 0x%x]. Run fsck.lolfs\n",
-	                               (int)sb.reserved[0], (int)sb.reserved[1]);
+    printf("Error: Invalid file id [0x%x, 0x%x]. Run fsck.lolfs\n",
+	  (int)sb.reserved[0], (int)sb.reserved[1]);
 
       return -1;
   }
 
   num_blocks = sb.num_blocks;
   block_size = sb.block_size;
+  if ((!(num_blocks)) || (!(block_size))) {
+       printf("Error: Cannot use %s\n", argv[1]);
+       return -1;
+  }
+
   free_space = (long)(num_blocks * block_size);
 
-  printf("Total space for files is %u bytes * %u blocks = %ld Kb\n",
-	 (unsigned int)block_size, (unsigned int)num_blocks, (long)(free_space >> LOL_DIV_1024));
+  printf("Total container space is %ld Kb [%u blocks, each %u bytes]\n",
+         ((long)(free_space >> LOL_DIV_1024)),
+         ((unsigned int)(num_blocks)),
+	 ((unsigned int)(block_size)));
 
   nf = sb.num_files;
 
@@ -103,35 +111,53 @@ int lol_df (int argc, char* argv[])
     }
   } // end for i
 
-  if (files) {
-         printf("%s has %ld files with total size of %ld Kb",
-	 argv[1], files, (long)(used_space / 1024));
-  }
-  else
-    puts("No files");
-
    // Read also the reserved blocks.
-  for (i = 0; i < num_blocks; i++) {  // We could propably suck all the indexes into
-                                      // a buffer with a few reads, something todo...
+
+  for (i = 0; i < num_blocks; i++) {
+
+   // We could propably suck all the indexes into
+   // a buffer with a few reads, something todo...
 
     fread((char *)&entry, (size_t)(ENTRY_SIZE), 1, vdisk);
 
     if (entry != FREE_LOL_INDEX)
-      used_blocks++;
+        used_blocks++;
 
   } // end for i
 
   fclose(vdisk);
-
   occupation = (long)(used_blocks * block_size);
   free_space = (long)(num_blocks - used_blocks);
+  //printf("DEBUG: Free blocks = %ld\n", (long)(free_space));
+  available  = (float)(free_space);
   free_space *= block_size;
-  if (files) {
-               printf(" (%ld Kb disk space)\n", (long)(occupation / 1024));
-  }
-               printf("Available %ld Kb (%ld bytes)\n", (long)(free_space / 1024), (long)(free_space));
+  available  /= ((float)(num_blocks));
+  available  *= ((float)(100.0));
 
-  if (used_space > occupation || nf != files) {
+  printf("Unused space is %ld Kb (%ld bytes), %2.1f%% free\n",
+	 ((long)((free_space >> LOL_DIV_1024))),
+         ((long)(free_space)), available);
+
+  if (files) {
+    /*
+         available   = (float)(used_blocks);
+         available  /= ((float)(num_blocks));
+         available  *= ((float)(100.0));
+    */
+         available = 100.0 - available;
+         printf("Used space is %ld Kb (%ld bytes), %2.1f%% full\n",
+                ((long)(occupation >> LOL_DIV_1024)),
+		used_space,
+                available);
+
+  }
+  else {
+    puts("No files");
+  }
+
+
+  if (used_space > occupation || used_blocks > num_blocks || nf != files)
+  {
      puts("Filesystem has errors. Run fsck.lolfs");
   }
 

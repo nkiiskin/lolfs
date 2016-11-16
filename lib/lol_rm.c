@@ -21,23 +21,44 @@
 #endif
 
 
-
-// Deletes a file which is inside a lol container
-// Use like: lol_rm my_container:/my_file.txt
+// lol rm: Deletes a file which is inside a lol container
+//         Use like: lol rm my_container:/my_file.txt
 
 int lol_rm (int argc, char* argv[])
 {
+  int i = 1;
+  int rm = 0;
 
-  if (argc != 2) {
-                   printf("%s: missing operand\n", argv[0]);
-                   return -1;
+  if (argc < 2)
+  {
+     printf("Usage: lol %s: <container:/file> ...\n", argv[0]);
+     puts  ("        Removes file(s) from a container.");
+     return 0;
   }
 
-  if (lol_unlink(argv[1])) {
-                             printf("%s: cannot remove '%s'\n", argv[0], argv[1]);
-                             return -1;
+  while (i < argc)
+  {
+     if (lol_unlink(argv[i])) {
+       printf("lol %s: cannot remove '%s'\n", argv[0], argv[i]);
+     }
+     else {
+       rm++;
+     }
+     i++;
   }
+
+  switch (rm) {
+  case 0 :
+    puts("No files deleted");
+    break;
+  case 1 :
+    puts("One file deleted");
+    break;
+  default:
+    printf("%d files deleted\n", rm);
+    break;
+  } // end switch
 
   return 0;
 
-} // end main
+} // end lol_rm

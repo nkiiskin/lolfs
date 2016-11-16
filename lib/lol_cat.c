@@ -35,7 +35,8 @@ int lol_cat (int argc, char *argv[]) {
 
   if (argc != 2) {
 
-      printf("Usage: %s <container:/file>\n", argv[0]);
+      printf("Usage: lol %s <container:/file>\n", argv[0]);
+      puts  ("       Prints contents of a file to standard output.");
       return 0;
   }
 

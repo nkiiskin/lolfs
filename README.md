@@ -180,4 +180,5 @@ Questions, Bug reports, etc..
      nkiiskin {at} yahoo com
      https://github.com/nkiiskin/lolfs
 
-Distribution date: Mon Nov 14 13:38:26 EET 2016
+Distribution date: Wed Nov 16 19:59:21 EET 2016
+Distribution date: Wed Nov 16 19:59:21 EET 2016

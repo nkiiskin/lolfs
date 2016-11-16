@@ -42,7 +42,7 @@ void strip_time(char* t) {
   for(i = 0; i < ln; i++) {
 
     if (t[i] == '\n' || t[i] == '\r') {
-      t[i] = '\0';
+        t[i] = '\0';
       break;
     }
 
@@ -66,8 +66,9 @@ int lol_ls(int argc, char* argv[])
 
 
        if (argc != 2)     {
-           printf("Usage: lol %s  <lol_file>\n", argv[0]);
-           return -1;
+           printf("Usage: lol %s  <container>\n", argv[0]);
+	   puts  ("       Lists files inside a container.");
+           return 0;
        }
 
        if (!(lol_is_validfile(argv[1]))) {
@@ -76,20 +77,21 @@ int lol_ls(int argc, char* argv[])
 
        }
 
-       raw_size = lol_get_vdisksize(argv[1], &sb, &st_mode, RECUIRE_SB_INFO);
-
-       if (raw_size <  LOL_THEOR_MIN_DISKSIZE || sb.num_files > sb.num_blocks) {
+    raw_size = lol_get_vdisksize(argv[1], &sb, &st_mode, RECUIRE_SB_INFO);
+    if (raw_size <  LOL_THEOR_MIN_DISKSIZE || sb.num_files > sb.num_blocks)
+    {
 
 	   puts("Corruption detected. Run fsck.lolfs");
            return -1;
-       }
+    }
 
-       if (LOL_INVALID_MAGIC) {
+    if (LOL_INVALID_MAGIC)
+    {
 
-                   printf("Corrupted file id [0x%x, 0x%x]. Is this really a lol file?\n",
-	                               (unsigned int)sb.reserved[0], (unsigned int)sb.reserved[1]);
-		   return -1;
-      }
+       printf("Corrupted file id [0x%x, 0x%x]. Is this really a lol file?\n",
+	       (unsigned int)sb.reserved[0], (unsigned int)sb.reserved[1]);
+       return -1;
+    }
 
       nf = sb.num_files;
       num_blocks = sb.num_blocks;
@@ -106,17 +108,18 @@ int lol_ls(int argc, char* argv[])
 
       // Read the name entries
 
-      for (i = 0; i < num_blocks; i++) {
+    for (i = 0; i < num_blocks; i++) {
 
-             if (fread ((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, vdisk) != 1) {
-                  printf("Warning: cannot read directory entry number %u\n", i);
+      if (fread ((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, vdisk) != 1)
+      {
+          printf("Warning: cannot read directory entry number %u\n", i);
 
-		  if (++fails > 3) {
-		      break;
-                  }
+	  if (++fails > 3) {
+	      break;
+          }
 
-		  continue;
-             }
+	  continue;
+      }
 
 	     if (!entry.filename[0])
 	         continue;
@@ -160,7 +163,8 @@ int lol_ls(int argc, char* argv[])
                      printf("%s\n", entry.filename);
                  } // end if time_string
                  else
-                    printf("01-Jan 00:00:00 1970          %d     %s\n", entry.file_size, entry.filename);
+                    printf("01-Jan 00:00:00 1970          %d     %s\n",
+                            entry.file_size, entry.filename);
 
   } // end for i
 
@@ -170,7 +174,6 @@ int lol_ls(int argc, char* argv[])
     printf("total %ld\n", files);
 
   fclose(vdisk);
-
   return 0;
 
-} // end main
+} // end lol_ls

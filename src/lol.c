@@ -14,59 +14,95 @@
 
 */
 /* $Id: lol.c, v0.12 2016/11/11 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
-
+/* ****************************************************************** */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <lolfs.h>
 #include <lol_internal.h>
+/* ****************************************************************** */
+typedef int (*lol_func)(int, char**);
+struct lfuncs
+{
+  char*    name;
+  lol_func func;
+};
+/* ****************************************************************** */
+static const struct lfuncs funcs[] =
+{
+  {"ls",  lol_ls},
+  {"rm",  lol_rm},
+  {"cp",  lol_cp},
+  {"df",  lol_df},
+  {"cat", lol_cat},
+  {NULL},
+};
+/* ****************************************************************** */
+static const char  vers[] = "0.12";
+static const char   usg[] = "<function> <parameter(s)>";
+static const char  usg2[] = "           Type '%s -h' for help.\n";
+static const char  copy[] = "Copyright (C) 2016, Niko Kiiskinen";
+static const char*  lst[] =
 
-static const char version[] = "0.12";
-static const char usage[] = "<function> <parameter(s)>";
-static const char copy[] = "Copyright (C) 2016, Niko Kiiskinen";
+{
+  "Possible functions are:\n",
+  "           ls  (Lists contents of a given container)",
+  "           cp  (Copies files to and from a container)",
+  "           rm  (Removes a file(s) from a container)",
+  "           df  (Prints space usage of a container)",
+  "           cat (prints contents of a file inside a container)\n",
+  "           Type 'man lol' to read the manual.\n",
+  NULL
+};
+/* ****************************************************************** */
+void help() {
+  int i = 0;
+  while (lst[i]) {
+    puts(lst[i++]);
+  };
 
+} // end help
+/* ****************************************************************** */
 int main (int argc, char* argv[])
 {
+  char **av = NULL;
+  char   *p = NULL;
+  int     a = argc - 1;
+  int     i = 0;
 
   // Process standard --help & --version options.
   if (argc == 2) {
-      if ((!strcmp(argv[1], "-h")) || (!strcmp(argv[1], "--help"))) {
-	printf ("%s v%s:\nUsage: %s %s\n", argv[0], version, argv[0], usage);
+    if ((!strcmp(argv[1], "-h")) || (!strcmp(argv[1], "--help"))) {
+      printf ("%s v%s. %s\nUsage: %s %s\n", argv[0], vers, copy, argv[0], usg);
+      help ();
+      return 0;
+    }
+    if ((!strcmp(argv[1], "-v")) || (!strcmp(argv[1], "--version"))) {
+	printf ("%s v%s %s\n", argv[0], vers, copy);
 	return 0;
-      }
-      if ((!strcmp(argv[1], "-v")) || (!strcmp(argv[1], "--version"))) {
-	printf ("%s v%s %s\n", argv[0], version, copy);
-	return 0;
-      }
+    }
   } // end if argc == 2
 
   if (argc == 1) {
-      printf("Usage: %s %s\n", argv[0], usage);
+      printf("Usage: %s %s\n", argv[0], usg);
+      printf (usg2, argv[0]);
       return 0;
   }
 
+  av = (char **)(&argv[1]);
+  p  = argv[1];
+
   // Which function shall we use?
-  if ((!strcmp(argv[1], "ls"))) {
-     return lol_ls(argc - 1, &argv[1]);
+  while (i < N_LOLFUNCS) {
+     if (!(strcmp(p, funcs[i].name))) {
+         return funcs[i].func(a, av);
   }
+     i++;
+  } // end while funcs
 
-  if ((!strcmp(argv[1], "rm"))) {
-     return lol_rm(argc - 1, &argv[1]);
-  }
+  printf("%s: error: unrecognized command line option \'%s\'\n",
+          argv[0], p);
 
-  if ((!strcmp(argv[1], "cp"))) {
-     return lol_cp(argc - 1, &argv[1]);
-  }
-
-  if ((!strcmp(argv[1], "df"))) {
-     return lol_df(argc - 1, &argv[1]);
-  }
-
-  if ((!strcmp(argv[1], "cat"))) {
-     return lol_cat(argc - 1, &argv[1]);
-  }
-
-  printf("%s: error: unrecognized command line option \'%s\'\n", argv[0], argv[1]);
   return 0;
 
 } // end main
