@@ -11,15 +11,15 @@
 #
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign
-DIST_SUBDIRS = lib src include man
-SUBDIRS = lib src include man
-EXTRA_DIST = README.md
+DIST_SUBDIRS = lib bin src include man
+SUBDIRS = lib bin src include man
+EXTRA_DIST = README.md gpl3.txt
 DEFS = @DEFS@
 
 dist-hook:
 	chmod u+w $(distdir)/README.md
 	sed -i "/Distribution date/c\Distribution date: `date`" README.md
-	rm -f *~ src/*.o lib/*.o lib/*.so
+	rm -f *~ bin/*~ src/*.o src/*~ lib/*.o lib/*.so lib/*~
 	mkdir -p $(distdir)/m4
 
 install-data-local:

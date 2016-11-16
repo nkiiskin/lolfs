@@ -5,6 +5,13 @@
                                       
 
         Please see file 'INSTALL' for detailed installation instructions
+        The file COPYING is a copy of the General Public License v2,
+        under which this software is distributed.
+
+        This software package comes with some install scripts which
+        are distributed under The General Public License v3.
+        See the file gpl3.txt for information about this license.
+
 
 
 
@@ -173,6 +180,7 @@ lolfs API:
 
   (You may need to include compiler option -L/path/to/librarydir
    if the linker does not find lolfs library)
+
   
 Questions, Bug reports, etc..
 
@@ -180,5 +188,4 @@ Questions, Bug reports, etc..
      nkiiskin {at} yahoo com
      https://github.com/nkiiskin/lolfs
 
-Distribution date: Wed Nov 16 19:59:21 EET 2016
-Distribution date: Wed Nov 16 19:59:21 EET 2016
+

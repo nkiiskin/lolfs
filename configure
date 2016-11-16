@@ -12241,7 +12241,7 @@ fi
 #LT_OBJDIR
 
 
-ac_config_files="$ac_config_files Makefile lib/Makefile src/Makefile include/Makefile man/Makefile"
+ac_config_files="$ac_config_files Makefile lib/Makefile bin/Makefile src/Makefile include/Makefile man/Makefile"
 
 # Checks for header files.
 ac_fn_c_check_header_mongrel "$LINENO" "linux/fs.h" "ac_cv_header_linux_fs_h" "$ac_includes_default"
@@ -13391,6 +13391,7 @@ do
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
+    "bin/Makefile") CONFIG_FILES="$CONFIG_FILES bin/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "include/Makefile") CONFIG_FILES="$CONFIG_FILES include/Makefile" ;;
     "man/Makefile") CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;

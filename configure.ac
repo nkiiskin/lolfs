@@ -27,7 +27,7 @@ LT_INIT
 #LT_OBJDIR
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_LDFLAGS])
-AC_CONFIG_FILES([Makefile lib/Makefile src/Makefile include/Makefile man/Makefile])
+AC_CONFIG_FILES([Makefile lib/Makefile bin/Makefile src/Makefile include/Makefile man/Makefile])
 # Checks for header files.
 AC_CHECK_HEADER([linux/fs.h], [AC_DEFINE([HAVE_LINUX_FS_H], [1], [Building with raw device support])], [AC_MSG_WARN([Can not find <linux/fs.h> Unsupported build])])
 
