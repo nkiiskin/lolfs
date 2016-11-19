@@ -60,7 +60,6 @@ void help() {
   while (lst[i]) {
     puts(lst[i++]);
   };
-
 } // end help
 /* ****************************************************************** */
 int main (int argc, char* argv[])
@@ -100,9 +99,9 @@ int main (int argc, char* argv[])
      i++;
   } // end while funcs
 
-  printf("%s: error: unrecognized command line option \'%s\'\n",
+  printf("%s: error: unrecognized function \'%s\'\n",
           argv[0], p);
+  help();
 
-  return 0;
-
+  return -1;
 } // end main

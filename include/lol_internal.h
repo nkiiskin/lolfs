@@ -106,17 +106,18 @@ enum {
 #define FREE_LOL_INDEX  -2
 
 // Private error constants, not to be used also
-#define LOL_ERR_EOF      0
-#define LOL_ERR_GENERR  -1
-#define LOL_ERR_SEGMENT -2
-#define LOL_ERR_IO      -3
-#define LOL_ERR_USER    -4
-#define LOL_ERR_MEM     -5
-#define LOL_ERR_CORR    -6
-#define LOL_ERR_MODE    -7
-#define LOL_ERR_INTRN   -8
-#define LOL_ERR_SPACE   -9
-
+#define LOL_OK           (0)
+#define LOL_ERR_EOF      (0)
+#define LOL_ERR_GENERR  (-1)
+#define LOL_ERR_SEGMENT (-2)
+#define LOL_ERR_IO      (-3)
+#define LOL_ERR_USER    (-4)
+#define LOL_ERR_MEM     (-5)
+#define LOL_ERR_CORR    (-6)
+#define LOL_ERR_MODE    (-7)
+#define LOL_ERR_INTRN   (-8)
+#define LOL_ERR_SPACE   (-9)
+#define LOL_ERR_PTR     (-10)
 // Signal handlers (internal use only. Do NOT change these!)
 #define LOL_SIGHUP  0
 #define LOL_SIGUSR1 1

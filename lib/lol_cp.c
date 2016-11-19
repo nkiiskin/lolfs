@@ -40,12 +40,12 @@
 
 
 /*
- *  TODO: If disk space is low but overwriting
- *        an EXISTING file, still gives error about
- *        disk space. (Should calculate...)
+ *  TODO: If free space in a container is low but
+ *        overwriting an EXISTING file, still gives
+ *        error about disk space. (Should calculate...)
  *
  *  TODO: This program does not check if BOTH source
- *        and destination are lol files.
+ *        and destination file(s) are inside a container.
  *
  */
 
@@ -89,14 +89,18 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
       continue;
 
     if (!(strcmp(argv[i], vdisk))) {
-       printf("Warning: Skipping file %s\n", argv[i]);
+      //printf("Warning: Skipping file %s\n", argv[i]);
        continue;
     }
 
     if (!(S_ISREG(st.st_mode))) { // We copy only regular files
                                   // into container
-
-      printf("%s is not a regular file, cannot copy it\n", argv[i]);
+      if ((S_ISDIR(st.st_mode))) {
+	   printf("lol %s: Cannot copy directory %s\n", argv[0], argv[i]);
+      }
+      else {
+	   printf("lol %s: %s is not a regular file\n", argv[0], argv[i]);
+      }
       continue;
     }
 
@@ -175,7 +179,7 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
     answer = 'n';
 
     if (!(lol_stat(name, &sta))) {
-       printf("The file %s exists. Overwrite [y/n]? ", name);
+       printf("The file %s exists. Replace [y/n]? ", name);
        answer = (char)getchar();
        (void)getchar();
        if (answer != 'y')
@@ -346,7 +350,7 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
 
       if (!(stat(name, &st))) {
 	// Prompt
-                printf("The file %s exists. Overwrite [y/n]? ", name);
+                printf("The file %s exists. Replace [y/n]? ", name);
                 temp[0] = (char)getchar();
 		(void)getchar();
                 if (temp[0] != 'y') {
