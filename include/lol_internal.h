@@ -87,8 +87,10 @@ enum {
 #define LOL_DATA_START(x)     (DISK_HEADER_SIZE + (x) * (NAME_ENTRY_SIZE + ENTRY_SIZE))
 #define LOL_CHECK_MAGIC(x)    ((x)->sb.reserved[0] != LOL_MAGIC || (x)->sb.reserved[1] != LOL_MAGIC)
 #define LOL_INVALID_MAGIC     (sb.reserved[0] != LOL_MAGIC || sb.reserved[1] != LOL_MAGIC)
+#define LOL_ERR_RETURN(x,y)     { op->err = lol_errno = (x); return (y); }
+#define LOL_ERRSET(x)         { op->err = lol_errno = (x); }
 
-#define LOL_TESTING 0
+#define LOL_TESTING    0
 #define LOL_THEOR_MIN_DISKSIZE 69
 #define LOL_READ  0
 #define LOL_WRITE 1
@@ -118,6 +120,12 @@ enum {
 #define LOL_ERR_INTRN   (-8)
 #define LOL_ERR_SPACE   (-9)
 #define LOL_ERR_PTR     (-10)
+#define LOL_ERR_PARAM   (-11)
+#define LOL_ERR_BUSY    (-12)
+#define LOL_ERR_SIG     (-13)
+
+
+
 // Signal handlers (internal use only. Do NOT change these!)
 #define LOL_SIGHUP  0
 #define LOL_SIGUSR1 1
@@ -151,6 +159,10 @@ enum lol_divs {
 // Constants for lol_supermod func
 #define LOL_INCREASE 0
 #define LOL_DECREASE 1
+
+// Constants for lol_free_space func
+#define LOL_SPACE_BYTES   1
+#define LOL_SPACE_BLOCKS  2
 
 // Storage size here is the limit, after which we will
 // allocate memory dynamically.
@@ -207,7 +219,7 @@ int         lol_supermod (FILE *vdisk, struct lol_super *sb, const int func);
 int         lol_count_file_blocks (FILE *vdisk, struct lol_super *sb,
                                    const alloc_entry first_index, const long dsize,
                                    long *count, const int terminate);
-long lol_free_space (char *lol_disk);
+long lol_free_space (char *container, const int mode);
 
 // N_LOLFUNCS must match the number of functions below it
 #define N_LOLFUNCS 5

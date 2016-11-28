@@ -14,7 +14,7 @@
 
 */
 /* $Id: lol_cp.c, v0.12 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
-
+/* ************************************************************************** */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -40,16 +40,59 @@
 
 
 /*
- *  TODO: If free space in a container is low but
- *        overwriting an EXISTING file, still gives
- *        error about disk space. (Should calculate...)
  *
  *  TODO: This program does not check if BOTH source
  *        and destination file(s) are inside a container.
  *
  */
 
+/* ************************************************************** */
+static int can_replace (const size_t src_s, const size_t dst_s,
+                 const long free_bytes, const long bs)  {
 
+  // Here we KNOW we are replacing an existing file, which size is
+  // dst_s. free_bytes may be 0, however there may be free space in the
+  // last block of the file.
+
+  long dst_size = (long)dst_s;
+  long src_size = (long)src_s;
+  long available_bytes = 0;
+  long margin;
+
+  if ((free_bytes < 0) || (bs <= 0) ||
+      (dst_size < 0)   || (src_size < 0)) {
+#if LOL_TESTING
+  printf("src = %ld, dst = %ld, freeb = %ld, bs = %ld\n", src_size, dst_size,
+	 free_bytes, bs);
+#endif
+
+    return -1;
+  }
+
+  if (src_size <= dst_size)
+      return 0;
+
+#if TESTING
+    printf("src = %ld, dst = %ld, freeb = %ld, bs = %ld\n", src_size, dst_size,
+      free_bytes, bs);
+#endif
+
+  // How much room in last block?
+  margin = dst_size % bs;
+  if (margin) {
+      available_bytes = bs - margin;
+  }
+  // Add free blocks to it
+  available_bytes += free_bytes;
+  // Add the existing file size
+  available_bytes += dst_size;
+
+  if (src_size > available_bytes)
+    return -1;
+
+  return 0;
+} // end can_replace
+/* ************************************************************** */
 int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 
   char temp[4096];
@@ -78,10 +121,13 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
   vdisk = argv[num_files];
   len = strlen (vdisk);
 
-    dst_size = lol_free_space (vdisk);
+#if 0
 
+    dst_size = lol_free_space (vdisk);
     if (dst_size < 0)
       return -1;
+#endif
+
 
   for (i = 1; i < num_files; i++) {
 
@@ -107,27 +153,7 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
     // Create destination name of form lolfile:/filename
     // (Should create an interface function to do this common task !! )
 
-    src_size = st.st_size;
-    dst_size = lol_free_space(vdisk);
-
-    if (dst_size < 0) {
-      printf("Error in container file %s\n", vdisk);
-      return -1;
-    }
-
-    if (!dst_size) {
-        printf("Container file %s is full\n", vdisk);
-        return -1;
-    }
-
-    if (src_size > dst_size) {
-
-        printf("Warning: Not enough room for %s\n", argv[i]);
-        continue;
-
-    } // end if src > dst
-
-
+    src_size = (size_t)st.st_size;
     memset((char *)name, 0, 1024);
     strcat(name, vdisk);
     name[len] = ':';
@@ -176,15 +202,54 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 
     strcat (name, base);
 
+    dst_size = lol_free_space(vdisk, LOL_SPACE_BYTES);
+    if (dst_size < 0) {
+      printf("Error in container file %s\n", vdisk);
+      return -1;
+    }
+#if LOL_TESTING
+    printf("DEBUG: Bytes in unused blocks = %ld\n", (long)dst_size);
+#endif
+
     answer = 'n';
 
+    //lol_errno = 0;
+
     if (!(lol_stat(name, &sta))) {
+      // Exixting file !
        printf("The file %s exists. Replace [y/n]? ", name);
        answer = (char)getchar();
        (void)getchar();
        if (answer != 'y')
 	 continue;
+       // Ok, user wants to replace, do we have room?
+
+       if (can_replace (((size_t)(src_size)), ((size_t)(sta.st_size)),
+		       ((long)(dst_size)), (long)(sta.st_blksize))) {
+
+             printf("Warning: Not enough room for %s\n", argv[i]);
+             continue;
+
+        } // end if can_replace
+
     }
+    else {
+      // Error or file does not exist.
+#if LOL_TESTING
+      if (lol_errno) {
+	printf("DEBUG: lol_errno = %d\n", lol_errno);
+      }
+#endif
+
+      if (src_size > dst_size) {
+
+             printf("Warning: Not enough room for %s\n", argv[i]);
+             continue;
+
+      } // end if src_size >
+
+    } // end else
+
 
     if (!(dest = lol_fopen(name, "w"))) {
           printf("Cannot copy to file %s\n", base);
@@ -219,7 +284,6 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 	  printf("Cannot copy to file %s\n", name);
 	  last_bytes = 0; break;
       }
-
     } // end for j
 
   do {
@@ -229,10 +293,18 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 	        printf("Cannot read from file %s\n", argv[i]);
 	        break;
         }
-	//printf("DEBUG: Trying to write %ld bytes to container\n", (long)last_bytes);
+#if LOL_TESTING
+	printf("DEBUG: Trying to write %ld bytes to container\n", (long)last_bytes);
+#endif
+
         if ((lol_fwrite((char *)temp, last_bytes, 1, dest)) != 1)
         {
 	  printf("Cannot copy to file %s\n", name);
+#if LOL_TESTING
+	  printf("DEBUG: lol_errno = %d\n", lol_errno);
+	  printf("DEBUG: = lol_ferror = %d\n", (lol_ferror(dest)));
+#endif
+
         }
       } // end if last_bytes
     } while (0);
@@ -329,7 +401,7 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
   for(i = 1; i < num_files; i++) {
 
     if (!(src = lol_fopen(argv[i], "r"))) {
-      printf("Cannot copy lol-file %s\n", argv[i]);
+      printf("Cannot read file %s\n", argv[i]);
       continue;
     }
 
