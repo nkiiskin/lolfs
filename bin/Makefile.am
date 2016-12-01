@@ -12,7 +12,7 @@
 AUTOMAKE_OPTIONS = foreign
 DEFAULT_INCLUDES = -I$(top_builddir)/include
 AM_CFLAGS = -Wall -I$(top_builddir)/include @AM_CFLAGS@
-##AM_LDFLAGS = -L$(top_builddir)/lib
+AM_LDFLAGS = -L$(top_builddir)/lib
 
 proj_heads = \
 	$(top_builddir)/include/lolfs.h \

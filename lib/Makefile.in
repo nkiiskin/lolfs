@@ -322,8 +322,6 @@ top_srcdir = @top_srcdir@
 #
 AUTOMAKE_OPTIONS = foreign
 DEFAULT_INCLUDES = -I$(top_builddir)/include
-
-#AM_LDFLAGS = 
 mandh = \
 	$(top_builddir)/include/lolfs.h \
 	$(top_builddir)/include/lol_file.h

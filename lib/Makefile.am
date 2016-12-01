@@ -12,8 +12,9 @@
 AUTOMAKE_OPTIONS = foreign
 DEFAULT_INCLUDES = -I$(top_builddir)/include
 AM_CFLAGS = -fPIC -Wall -I$(top_builddir)/include @AM_CFLAGS@
+##AM_LDFLAGS = -lm
 
-#AM_LDFLAGS = 
+
 mandh = \
 	$(top_builddir)/include/lolfs.h \
 	$(top_builddir)/include/lol_file.h

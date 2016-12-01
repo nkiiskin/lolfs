@@ -204,7 +204,7 @@ int         lol_read_nentry(lol_FILE *);
 BOOL        lol_is_validfile(char *name);
 int         lol_get_basename(const char* name, char *new_name, const int mode);
 size_t      lol_fill_with_value(const alloc_entry value, size_t bytes, FILE *stream);
-long        lol_rw_data_block(lol_FILE *op, const size_t block_number,
+long        lol_io_dblock(lol_FILE *op, const size_t block_number,
 			      char *ptr, const size_t bytes, int func);
 size_t      lol_num_blocks(lol_FILE *op, const size_t amount, struct lol_loop *loop);
 void        lol_restore_sighandlers(void);

@@ -22,14 +22,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #ifndef _LOLFS_H
 #include <lolfs.h>
 #endif
 #ifndef _LOL_INTERNAL_H
 #include <lol_internal.h>
 #endif
-
-
+/* ************************************************* */
+/* ************************************************* */
 int lol_df (int argc, char* argv[])
 {
 
@@ -103,7 +104,11 @@ int lol_df (int argc, char* argv[])
   // Read the name entries
   for (i = 0; i < num_blocks; i++) {
 
-    fread((char *)&name_e, (size_t)(NAME_ENTRY_SIZE), 1, vdisk);
+    if ((fread((char *)&name_e, (size_t)(NAME_ENTRY_SIZE), 1, vdisk)) != 1) {
+       fclose(vdisk);
+       printf("Error: Cannot read %s\n", argv[1]);
+       return -1;
+    }
 
     if (name_e.filename[0]) { // Should check more but this will do now
       files++;
@@ -118,7 +123,11 @@ int lol_df (int argc, char* argv[])
    // We could propably suck all the indexes into
    // a buffer with a few reads, something todo...
 
-    fread((char *)&entry, (size_t)(ENTRY_SIZE), 1, vdisk);
+    if ((fread((char *)&entry, (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
+       fclose(vdisk);
+       printf("Error: Cannot read %s\n", argv[1]);
+       return -1;
+    }
 
     if (entry != FREE_LOL_INDEX)
         used_blocks++;
