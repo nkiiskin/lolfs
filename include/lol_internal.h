@@ -128,11 +128,10 @@ enum {
 
 // Signal handlers (internal use only. Do NOT change these!)
 #define LOL_SIGHUP  0
-#define LOL_SIGUSR1 1
-#define LOL_SIGINT  2
-#define LOL_SIGTERM 3
-#define LOL_SIGSEGV 4
-#define LOL_NUM_SIGHANDLERS 5
+#define LOL_SIGINT  1
+#define LOL_SIGTERM 2
+#define LOL_SIGSEGV 3
+#define LOL_NUM_SIGHANDLERS 4
 
 enum lol_divs {
               LOL_DIV_1,

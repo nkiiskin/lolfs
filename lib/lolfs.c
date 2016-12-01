@@ -67,7 +67,7 @@ alloc_entry  lol_storage_buffer[LOL_STORAGE_SIZE+1];
 struct sigaction lol_sighand_store[LOL_NUM_SIGHANDLERS+1];
 
 static const int lol_signals[LOL_NUM_SIGHANDLERS + 1] = {
-                 SIGHUP, SIGUSR1, SIGINT, SIGTERM, SIGSEGV, 0
+                 SIGHUP, SIGINT, SIGTERM, SIGSEGV, 0
 };
 
 /* ********************************************************** */
@@ -463,8 +463,6 @@ int lol_index_malloc(const size_t num_entries, lol_FILE *op) {
 
   if (!(num_entries))
     LOL_ERR_RETURN(EINVAL, LOL_ERR_PARAM);
-  //  return LOL_ERR_PARAM;
-  //return LOL_ERR_INTRN
 
   last  = num_entries + 1;
   bytes = last * ENTRY_SIZE;
@@ -473,9 +471,8 @@ int lol_index_malloc(const size_t num_entries, lol_FILE *op) {
 
     if (lol_index_buffer)
         LOL_ERR_RETURN(EBUSY, LOL_ERR_BUSY);
-    //return LOL_ERR_BUSY
+
     // TODO: maybe we should reallocate
-    //return LOL_ERR_BUSY;
   }
 
   // If the bytes needed is more than LOL_STORAGE_SIZE,
@@ -509,10 +506,8 @@ int lol_index_malloc(const size_t num_entries, lol_FILE *op) {
                     lol_index_buffer = 0;
                 }
 
-
-	   //lol_index_free(num_entries);
           LOL_ERR_RETURN(EBUSY, LOL_ERR_SIG);
-          //return LOL_ERR_SIG;
+
       }
 #if LOL_TESTING
       printf("Set up handlers ok\n");
@@ -639,7 +634,7 @@ BOOL lol_is_validfile(char *name) {
 
   struct lol_super sb;
 
-   if (!name)
+  if (!(name))
        return 0;
    if ((lol_get_vdisksize(name, &sb, NULL, RECUIRE_SB_INFO) < LOL_THEOR_MIN_DISKSIZE))
 	return 0;
@@ -1686,7 +1681,7 @@ int lol_check_open_mode(const char *mode) {
   return -1;
 } // end lol_check_open_mode
 /* ********************************************************** */
-int lol_write_modified_nentry(lol_FILE *op) {
+int lol_update_nentry(lol_FILE *op) {
 
   int  r, mode;
   fpos_t pos;
@@ -1697,7 +1692,6 @@ int lol_write_modified_nentry(lol_FILE *op) {
     return -1;
 
   if ((r = lol_is_writable(op))) {
-    //printf("lol_is_writable:  [%d]\n", r);
     return -2;
   }
 
@@ -1716,11 +1710,13 @@ int lol_write_modified_nentry(lol_FILE *op) {
   if (LOL_GOTO_DENTRY(op))
     goto error;
 
-    if (fread((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk) != 1) { // Read the timestamp to entry.
+    if (fread((char *)&entry, (size_t)(NAME_ENTRY_SIZE),
+                                    1, op->vdisk) != 1) {
+        // Read the timestamp to entry.
 	goto error;
     }
 
-      if (!entry.filename[0])
+    if (!(entry.filename[0]))
 	goto error;
 
 	if (fseek(op->vdisk, -(NAME_ENTRY_SIZE), SEEK_CUR)) {
@@ -1729,10 +1725,13 @@ int lol_write_modified_nentry(lol_FILE *op) {
       
         entry.file_size = op->nentry.file_size;
         entry.i_idx = op->nentry.i_idx;
-        entry.created   = time(NULL); // We don't have "modified" field
+        entry.created   = time(NULL);
 
         // Write new entry
-        if (fwrite((const char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk) != 1) {
+        if (fwrite((const char *)&entry,
+                   (size_t)(NAME_ENTRY_SIZE),
+                    1, op->vdisk) != 1)       {
+
 	    goto error;
         }
 
@@ -1742,9 +1741,10 @@ int lol_write_modified_nentry(lol_FILE *op) {
  error:
   fsetpos(op->vdisk, &pos);
   return -7;
-} // end lol_write_modified_nentry
+} // end lol_update_nentry
 /* ********************************************************** */
-int lol_write_modified_chain(lol_FILE *op, const long olds, const long news, const alloc_entry last_old) {
+int lol_update_chain(lol_FILE *op, const long olds,
+                 const long news, const alloc_entry last_old) {
 
   int  mode;
   size_t bytes;
@@ -1846,7 +1846,7 @@ int lol_write_modified_chain(lol_FILE *op, const long olds, const long news, con
   } // end while
 
   return 0;
-} // end lol_write_modified_chain
+} // end lol_update_chain
 /* **********************************************************
  *
  *  lol_feof:
@@ -2308,7 +2308,8 @@ int lol_read_index_chain(lol_FILE *op, const size_t read_blocks)
  *  0   : success.
  *
  * ********************************************************** */
-int lol_create_index_chain(lol_FILE *op, const long olds, const long news, alloc_entry *last_old)
+int lol_create_index_chain(lol_FILE *op, const long olds,
+                           const long news, alloc_entry *last_old)
 {
 
   DWORD block_size;
@@ -2331,106 +2332,78 @@ int lol_create_index_chain(lol_FILE *op, const long olds, const long news, alloc
   num_blocks   = op->sb.num_blocks;
 
   if ((!(block_size)) || (!(num_blocks)) || (olds > num_blocks)) {
-    return LOL_ERR_CORR;
+      return LOL_ERR_CORR;
   }
 
   first_index  = op->nentry.i_idx;
   file_size    = op->nentry.file_size;
   vdisk        = op->vdisk;
 
-
   *last_old = current_index = first_index;
    skip = LOL_TABLE_START(num_blocks);
    tot_olds = file_size / block_size;
 
-                      if (file_size % block_size)
-                                          tot_olds++;
-		      if (!(file_size))
-			    tot_olds = 1;
-
-		      if (olds > tot_olds) {
-			//	printf("DEBUG: create_index_chain: olds = %ld tot_olds = %ld num_blocks = %u\n", olds, tot_olds, num_blocks);
-                            return LOL_ERR_INTRN;
-		      }
-		      if ((olds + news) > num_blocks) {
-	                                     op->err = lol_errno = ENOSPC;
-	                                     return LOL_ERR_SPACE;
-		      }
+           if (file_size % block_size)
+               tot_olds++;
+	   if (!(file_size))
+	       tot_olds = 1;
+	   if (olds > tot_olds)
+               LOL_ERR_RETURN(EIO, LOL_ERR_INTRN);
+	   if ((olds + news) > num_blocks)
+               LOL_ERR_RETURN(ENOSPC, LOL_ERR_SPACE);
 
             skip_indexes = tot_olds - olds;
             offset = skip + first_index * ENTRY_SIZE;
 
-            if (fseek(vdisk, offset, SEEK_SET)) {
-                  err = LOL_ERR_IO;
-                  goto error;
-            }
+            if (fseek(vdisk, offset, SEEK_SET))
+                  return LOL_ERR_IO;
 
 	    // vdisk points now to the first fat index.
 	    // We must skip some indexes (skip_indexes) to reach the file position.
 
 	    while (i < skip_indexes) {
-                                       *last_old = current_index;
-                                        bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
+                   *last_old = current_index;
+                    bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
 
-                                        if (bytes != 1) {
-                                                          err = LOL_ERR_IO;
-	                                                  goto error;
-                                                        }
+                    if (bytes != 1)
+                        return LOL_ERR_IO;
 
+                    offset = skip + current_index * ENTRY_SIZE;
 
-                                        offset = skip + current_index * ENTRY_SIZE;
-
-                                        if (fseek(vdisk, offset, SEEK_SET)) {
-
-                                                                              err = LOL_ERR_IO;
-                                                                              goto error;
-
-                                                                             }
+                    if (fseek(vdisk, offset, SEEK_SET))
+                        return LOL_ERR_IO;
 
                 i++;
 
-
 	    } // end while i
-
 
      // Do we have olds?
      for (i = 0; i < olds; i++) {
 
-	      if (current_index < 0) {
-		                       err = LOL_ERR_CORR;
-		                       goto error;
-	      }
+	  if (current_index < 0)
+	      return LOL_ERR_CORR;
 
-	      // printf("DEBUG: storing index %ld to index buffer\n", (long)current_index);
-            lol_index_buffer[i] = current_index;
-            *last_old = current_index;
+          lol_index_buffer[i] = current_index;
+         *last_old = current_index;
 
-            bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
-	    // printf("DEBUG: fread got current_index = %ld\n", (long)current_index);
+          bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
 
-            if (bytes != 1) {
-                              err = LOL_ERR_IO;
-	                      goto error;
-            }
+          if (bytes != 1)
+              return LOL_ERR_IO;
 
+	  if (current_index >= 0) {
 
-	    if (current_index >= 0) {
+             offset = skip + current_index * ENTRY_SIZE;
+	     whence = SEEK_SET;
 
-                offset = skip + current_index * ENTRY_SIZE;
-		whence = SEEK_SET;
+	  }
+	  else {
+            offset = ENTRY_SIZE;
+            whence = SEEK_CUR;
+	  }
 
-	    } // end if index >= 0
-	    else {
-                    offset = ENTRY_SIZE;
-                    whence = SEEK_CUR;
-	    }
-
-                   if (fseek (vdisk, offset, whence)) {
-                       err = LOL_ERR_IO;
-                       goto error;
-                   }
-
-
+          if (fseek (vdisk, offset, whence))
+              return LOL_ERR_IO;
 
      } // end for olds
 
@@ -2439,58 +2412,39 @@ int lol_create_index_chain(lol_FILE *op, const long olds, const long news, alloc
     // put them into the buffer.
 
 
-                   // Go back to start
+    // Go back to start
 
-                   j = 0; whence = news;
+    j = 0; whence = news;
 
-                   if (fseek (vdisk, skip, SEEK_SET)) {
-                       err = LOL_ERR_IO;
-                       goto error;
-                   }
+    if (fseek (vdisk, skip, SEEK_SET))
+        return LOL_ERR_IO;
 
+    while (whence) {
 
-      while (whence) { // (num_blocks)
+	 if (j >= num_blocks) {
 
-	    if (j >= num_blocks) {
-	      // printf("DEBUG: lol_create_index_chain is failing: j = %ld, num_blocks = %ld\n", (long)(j), (long)num_blocks);
-	                                     op->err = lol_errno = ENOSPC;
-	                                     err = LOL_ERR_SPACE;
-	                                     goto error;
-	    }
+	    op->err = lol_errno = ENOSPC;
+	    return LOL_ERR_SPACE;
+	 }
 
+         bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
 
+         if (bytes != 1)
+             return LOL_ERR_IO;
 
-            bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
-	    //printf("DEBUG: fread got current_index = %ld\n", (long)current_index);
+	 if (current_index == FREE_LOL_INDEX) {
 
-            if (bytes != 1) {
-                    err = LOL_ERR_IO;
-	            goto error;
-            }
+             // Save the index and continue
+             lol_index_buffer[i++] = j;
+             whence--;
 
-	    if (current_index == FREE_LOL_INDEX) {
-	      //printf("DEBUG: current_index IS FREE, storing %ld to i-buff[%ld]\n", (long)(j), (long)(i));
-                 // Save the index and continue
-                 lol_index_buffer[i++] = j;
+	 } // end if found free block
 
-                 whence--;
-
-	    } // end if found free block
-
-#if 0
-	    if (++j >= num_blocks) {
-	      // printf("DEBUG: lol_create_index_chain is failing: j = %ld, num_blocks = %ld\n", (long)(j), (long)num_blocks);
-	                                     op->err = lol_errno = ENOSPC;
-	                                     err = LOL_ERR_SPACE;
-	                                     goto error;
-	    }
-
-#endif
-            j++;
+         j++;
 
     } // end while
 
- error:
+    //error:
     return err;
 
 } // end lol_create_index_chain
@@ -2935,7 +2889,9 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 
   // Compute new indexes
 
-  write_blocks = lol_compute_new_indexes(op, (long)amount, &olds, &mids, &news, &new_filesize);
+  write_blocks = lol_compute_new_indexes(op,
+                 (long)amount, &olds, &mids,
+                 &news, &new_filesize);
 
   // Translate our errors..
   if (write_blocks <= 0) {
@@ -2974,8 +2930,9 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 #if LOL_TESTING
 	  printf("DEBUG: lol_fwrite: lol_create_index_chain failed, ret = %d\n", (int)(ret));
 #endif
-	      op->err = lol_errno = EIO;
+	  op->err = lol_errno = EIO;
 	}
+
         return 0;
     }
 
@@ -3030,7 +2987,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
         }
 
 	amount = lol_io_dblock(op, current_index,
-                               (char *)(ptr+off), block_size, LOL_WRITE);
+                 (char *)(ptr+off), block_size, LOL_WRITE);
 
         if (amount < 0) {
 	  //    off = 0;
@@ -3058,7 +3015,8 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
         }
 
 	amount = lol_io_dblock(op, current_index,
-                               (char *)ptr + off, start_bytes, LOL_WRITE);
+                 (char *)ptr + off, start_bytes, LOL_WRITE);
+
         if (amount < 0) {
 	  //    off = 0;
 	    goto error;
@@ -3080,17 +3038,17 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   ret = 0;
 
      op->nentry.file_size = (DWORD)new_filesize;
-     ret = lol_write_modified_nentry(op);
+     ret = lol_update_nentry(op);
 
      if (ret) {
 #if LOL_TESTING
-       printf("DEBUG: lol_fwrite: lol_write_modified_nentry failed. ret = %d\n", (int)(ret));
+       printf("DEBUG: lol_fwrite: lol_update_nentry failed. ret = %d\n", (int)(ret));
 #endif
          op->err = lol_errno = EIO;
      }
 
      if (new_filesize != filesize) {
-         ret = lol_write_modified_chain(op, olds, news, last_old);
+         ret = lol_update_chain(op, olds, news, last_old);
      } // end if file size changed.
 
      if (ret)
