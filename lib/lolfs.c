@@ -1654,32 +1654,36 @@ int lol_valid_container(const lol_FILE *op) {
   return 0;
 } // end lol_valid_container
 /** *********************************************************
- *  lol_check_open_mode:
+ *  lol_getmode:
  *  Return the associated integer of the given open mode.
  *  
  *  < 0 : if illegal mode.
  *
  * ********************************************************** */
-int lol_check_open_mode(const char *mode) {
+int lol_getmode(const char *mode) {
 
   int i, j;
 
-  if (!mode)
+  if (!(mode))
     return -1;
-  if (!mode[0])
+  if (!(mode[0]))
     return -1;
 
   for (i = 0; i < MAX_LOL_OPEN_MODES; i++) {
+
        for (j = 0; lol_mode_combinations[i][j][0]; j++) {
 
-	    if (!strcmp(mode, lol_mode_combinations[i][j])) {
-		return i;
-	    }
+	 if (!(strcmp(mode, lol_mode_combinations[i][j]))) {
+	     return i;
+	 }
+
        } // end for j
+
   } // end for i
 
   return -1;
-} // end lol_check_open_mode
+
+} // end lol_getmode
 /* ********************************************************** */
 int lol_update_nentry(lol_FILE *op) {
 
@@ -1860,23 +1864,34 @@ int lol_feof(lol_FILE *op) {
   return (int)(op->eof);
 }
 /* **********************************************************
- *
+ *  INTERFACE FUNCTION
  *  lol_fopen:
- *  Opens a new lol-file from the contents of the fuffer.
- *  The path must be given in form "/path/lolfile:/filename".
- *  NOTE: There MUST be ':' separating the container file
- *        from the file which is inside the container!
- * ***********************************************************/
+ *
+ *  Opens a file inside a container for
+ *  reading and/or writing.
+ *
+ *  The path must be given in form "/path/container:/filename".
+ *  NOTE: There MUST be ':' separating the container
+ *        from the actual file inside the container.
+ *
+ *  Return value:
+ *
+ *  NULL      : if error
+ *  lol_FILE* : if success, returns the file handle.
+ *
+ * ********************************************************** */
 lol_FILE *lol_fopen(const char *path, const char *mode)
 {
-
-  lol_FILE     *op;
-  mode_t         m;
-  int r,  is,  mod;
-  int path_len = 0;
-  int mode_len = 0;
-  int trunc    = 0;
-  long size    = 0;
+  lol_FILE *op       = 0;
+  mode_t    m        = 0;
+  int       r        = 0;
+  int       is       = 0;
+  int       mod      = 0;
+  int       path_len = 0;
+  int       mode_len = 0;
+  int       trunc    = 0;
+  long      size     = 0;
+  DWORD     fs       = 0;
 
   if ((!path) || (!mode)) {
     lol_errno = EINVAL;
@@ -1887,35 +1902,34 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
   mode_len = strlen(mode);
 
   if ((path_len < 4) || (path_len > LOL_PATH_MAX)) {
-    lol_errno = ENOENT;
-    return NULL;
+       lol_errno = ENOENT;
+       return NULL;
   }
 
-
-  if ((mode_len < 1) || (mode_len > 4)) {
-    lol_errno = EINVAL;
-    return NULL;
+  if ((mode_len <= 0) || (mode_len > 4)) {
+      lol_errno = EINVAL;
+      return NULL;
   }
 
   if (!(op = new_lol_FILE())) {
-          lol_errno = ENOMEM;
-          return NULL;
+       lol_errno = ENOMEM;
+       return NULL;
   }
 
-   mod = op->open_mode.mode_num = lol_check_open_mode(mode);
+  mod = op->open_mode.mode_num = lol_getmode(mode);
 
-   if (mod < 0 || mod > 5) {
-              lol_errno = EINVAL;
-              delete_return_NULL(op);
-   }
+  if ((mod < 0) || (mod >= MAX_LOL_OPEN_MODES)) {
+       lol_errno = EINVAL;
+       delete_return_NULL(op);
+  }
 
-        strcpy(op->open_mode.mode_str, lol_open_modes[mod].mode_str);
-        strcpy(op->open_mode.vd_mode,  lol_open_modes[mod].vd_mode);
+  strcpy(op->open_mode.mode_str, lol_open_modes[mod].mode_str);
+  strcpy(op->open_mode.vd_mode,  lol_open_modes[mod].vd_mode);
 
-	if (lol_get_filename(path, op)) {
-	     // lol_errno already set
-             delete_return_NULL(op);
-	}
+  if (lol_get_filename(path, op)) {
+      // lol_errno already set
+      delete_return_NULL(op);
+  }
 
   size = lol_get_vdisksize(op->vdisk_name, &op->sb, &m, RECUIRE_SB_INFO);
 
@@ -1925,105 +1939,117 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
   }
 
   if (LOL_CHECK_MAGIC(op)) {
-       lol_errno = EIO;
-       delete_return_NULL(op);
+      lol_errno = EIO;
+      delete_return_NULL(op);
   }
 
-   op->vdisk_size = (DWORD)size;
-   op->open_mode.device = m;
+  op->vdisk_size = (DWORD)size;
+  op->open_mode.device = m;
 
-   if(!(op->vdisk = fopen(op->vdisk_name, op->open_mode.vd_mode))) {
-        lol_errno = EINVAL;
-        delete_return_NULL(op);
-   }
+  if(!(op->vdisk = fopen(op->vdisk_name, op->open_mode.vd_mode))) {
+      lol_errno = EINVAL;
+      delete_return_NULL(op);
+  }
 
   is = lol_read_nentry(op);  // Can we find the dir entry?
+  fs = op->nentry.file_size;
 
-   switch (is) {  // What we do here depends on open_mode !!
+  switch (is) {  // What we do here depends on open_mode
 
-                case  LOL_NO_SUCH_FILE:
+          case  LOL_NO_SUCH_FILE:
 
-                     // Does not exist, so we return NULL
-                     // if trying to read (cases "r" & "r+")
+           // Does not exist, so we return NULL
+           // if trying to read (cases "r" & "r+")
 
-		          if (mod < 2)  { /* if "r" or "r+", cannot read.. */
-			     lol_errno = ENOENT;
-                             close_return_NULL(op);
-			  }
+		if (mod < 2)  { /* if "r" or "r+", cannot read.. */
+		    lol_errno = ENOENT;
+                    close_return_NULL(op);
+		}
 
-	              op->curr_pos = 0;
-                      // if not reading, create new file...
-	              if ((r = lol_touch_file(op))) {
-			// lol_errno already set
-                            close_return_NULL(op);
-		      }
-                   break;
+	        op->curr_pos = 0;
+                // if not reading,
+		// then it must be w/a, create new file...
+	        if ((r = lol_touch_file(op))) {
+		// lol_errno already set
+                    close_return_NULL(op);
+		}
 
-                case LOL_FILE_EXISTS:
+                break;
 
-                 // The file exists. In this case the op->nentry has the file info
+            case LOL_FILE_EXISTS:
 
-                               switch (mod) {
+            // The file exists. In this case the
+	    // op->nentry has the file info
+	    // and we may both read and write
 
-	                                             case LOL_RDONLY:
-		                                     case LOL_RDWR:
+                  switch (mod) {
 
-		                                             op->curr_pos = 0;
-                                                             break;
+	                  case LOL_RDONLY:
+		          case LOL_RDWR:
 
-	                                             case LOL_WR_CREAT_TRUNC:   // "w" The file will be truncated to zero!
-	                                             case LOL_RDWR_CREAT_TRUNC: // "w+" The file will be truncated to zero!
-
-		                                             op->curr_pos = 0;
-		                                             trunc = 1;
-                                                             break;
-
-                                                     case LOL_APPEND_CREAT:    // "a" -> append
-
-                                                             op->curr_pos = op->nentry.file_size;
-                                                             break;
-
-	                                             case LOL_RD_APPEND_CREAT: // "a+" -> FIXME: Same as "a" here!?
-
-		                                             op->curr_pos = op->nentry.file_size;
-                                                             break;
-
-		                                      default:
-                                                          lol_errno = EINVAL;
-
-                                                             close_return_NULL(op);
-
-	                       } // end switch mode
+		               op->curr_pos = 0;
 
                                break;
 
-                 default:
+             // "w(+)" The file will be truncated to zero
+	                   case LOL_WR_CREAT_TRUNC:
+ 	                   case LOL_RDWR_CREAT_TRUNC:
 
-                       lol_errno = EIO;
-                       close_return_NULL(op);
+		                 op->curr_pos = 0;
+		                 trunc = 1;
+
+                                 break;
+
+                            case LOL_APPEND_CREAT:
+              // "a" -> append
+
+                                 op->curr_pos = fs;
+                                 break;
+
+	                    case LOL_RD_APPEND_CREAT:
+              // "a+" -> FIXME: Same as "a" here!
+
+		                 op->curr_pos = fs;
+                                 break;
+
+		            default:
+
+                                 lol_errno = EINVAL;
+                                 close_return_NULL(op);
+
+	              } // end switch mod
+
+                      break;
+
+               default:
+
+                    lol_errno = EIO;
+                    close_return_NULL(op);
 
 
-         } // end switch file exists
+  } // end switch file exists
 
-         if (trunc) { // Truncate if file was opened "w" or "w+"
+  if (trunc) { // Truncate if file was opened "w" or "w+"
 
-	               if ((r = lol_truncate_to_zero(op))) {
-			 lol_errno = EIO; // FIX! Check return value
-                            close_return_NULL(op);
-                       }
+      if ((r = lol_truncate_to_zero(op))) {
+	  lol_errno = EIO; // FIX! Check return value
+          close_return_NULL(op);
+      }
 
-            op->curr_pos = 0;
+      op->curr_pos = 0;
 
-         }
+  } // end if truncate
 
-       op->opened = 1;
-       lol_errno = 0;
-       return op;
+
+  lol_errno  = 0;
+  op->opened = 1;
+
+  return op;
 
 } // end lol_fopen
 /* **********************************************************
  *
- *  lol_compute_new_indexes:
+ *  lol_new_indexes:
  *  Calculate memory needed for a buffer for new indexes.
  *
  *  Return value:
@@ -2034,7 +2060,8 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
  *         Note: return value = *olds + *news if success.
  *
  * ********************************************************** */
-long lol_compute_new_indexes(lol_FILE *op, const long bytes, long *olds, long *mids, long *news, long *new_file_size) {
+long lol_new_indexes(lol_FILE *op, const long bytes,
+      long *olds, long *mids, long *news, long *new_file_size) {
 
   long pos, block_size, num_blocks;
   long file_size, blocks_needed;
@@ -2081,28 +2108,28 @@ long lol_compute_new_indexes(lol_FILE *op, const long bytes, long *olds, long *m
 
   write_blocks = (long)lol_num_blocks(op, (size_t)bytes, NULL);
 
-	    if (!file_size) {  // EASY Case
+  if (!(file_size)) {  // Size = 0, EASY Case
 
-                  // In this case we need new blocks for
-                  // the whole write request, except the first one.
+      // In this case we need new blocks for
+      // the whole write request, except the first one.
 
-	          if (write_blocks) { // we may not need to check this??
+      if (write_blocks) { // we may not need to check this??
 
-		                      *olds = 1;
-	                              *news = write_blocks - 1;
-		                      *new_file_size = pos + bytes;
+	  *olds = 1;
+	  *news = write_blocks - 1;
+	  *new_file_size = pos + bytes;
 
-	          }
+       }
 
-                  return write_blocks;
+       return write_blocks;
 
-            } // end if zero size file
+   } // end if zero size file
 
    // Ok, we know it is a regular file, size > 0
    // and we write > 0 bytes.
 
-      if (!(write_blocks)) // We must have at least one block!
-         return LOL_ERR_USER;
+   if (!(write_blocks)) // We must have at least one block!
+       return LOL_ERR_USER;
 
   // Check first if we need new blocks at all.
 
@@ -2111,66 +2138,72 @@ long lol_compute_new_indexes(lol_FILE *op, const long bytes, long *olds, long *m
   if (file_offset)
       last_block_extra_data = block_size - file_offset;
 
-   data_left_in_file = file_size - pos;  // This may be <= 0 also!
+   data_left_in_file = file_size - pos; // may be <= 0 also
 
   // Do we have ALSO room in the last data block of the file?
 
-  data_left_in_file += last_block_extra_data;  // This addition IS >= 0 !
+  data_left_in_file += last_block_extra_data;  // add is >= 0
 
-  if (data_left_in_file >= bytes) {  // We don't need new area, the old blocks are enough
+  if (data_left_in_file >= bytes) {
+     // We don't need new area, the old blocks are enough
 
-	     *news = 0; *olds = write_blocks;
+      *news = 0; *olds = write_blocks;
 
-	      if (file_size < (pos + bytes))
-	         *new_file_size = pos + bytes;
-              else
-                 *new_file_size = file_size;
+      if (file_size < (pos + bytes))
+	  *new_file_size = pos + bytes;
+      else
+          *new_file_size = file_size;
 
-             return write_blocks;
+      return write_blocks;
 
-  }
+  } // end if
 
   // So, we need new blocks. How many?
 
-  new_area = bytes - data_left_in_file; // >0. This is the amount of bytes we need in NEW blocks!
-                                        // This area begins on a block boundary but does not necessarily end there.
+  new_area = bytes - data_left_in_file; // >0. This is the
+  //  amount of bytes we need in NEW blocks!
+  // This area begins on a block boundary but
+  // does not necessarily end there.
 
-    blocks_needed = new_area / block_size;
+  blocks_needed = new_area / block_size;
 
-    if (new_area % block_size)
-        blocks_needed++; // This is the amount of NEW blocks >0 (Does NOT overlap with old data area).
+  if (new_area % block_size)
+      blocks_needed++; // This is the amount of NEW blocks >0
+                       // (Does NOT overlap with old data area)
 
-    if (!(blocks_needed)) { // Really should not be here!
-         return LOL_ERR_INTRN;
-    }
+  if (!(blocks_needed)) { // Really should not be here
+      return LOL_ERR_INTRN;
+  }
 
-    // We know the number of NEW blocks (blocks_needed).
-    // How many old blocks are there?
+  // We know the number of NEW blocks (blocks_needed).
+  // How many old blocks are there?
 
-    if (pos >= file_size) { // In this case we don't need olds at all unless pos is inside the last block
+  if (pos >= file_size) { // In this case we don't need olds
+                          // at all unless pos is inside the
+                          // last block
 
-         if (pos < (file_size + last_block_extra_data)) {
+      if (pos < (file_size + last_block_extra_data)) {
 
-	    *olds = 1;
-            *news = blocks_needed;
+	  *olds = 1;
+          *news = blocks_needed;
 
-         }
-         else {
+      }
+      else {
 
-           *olds = 0;
-            delta = pos - file_size - last_block_extra_data;
+          *olds = 0;
+           delta = pos - file_size - last_block_extra_data;
 
-	    if (delta >= block_size) {
-	         *mids = delta / block_size;
+	   if (delta >= block_size) {
+	       *mids = delta / block_size;
 
-	    }
+           }
 
            *news = blocks_needed;
 
-         } // end else
+      } // end else
 
-    } // end if pos
-    else {
+  } // end if pos
+  else {
 
        *olds = data_left_in_file / block_size;
 
@@ -2179,13 +2212,13 @@ long lol_compute_new_indexes(lol_FILE *op, const long bytes, long *olds, long *m
 
        *news = blocks_needed;
 
-    } // end else
+  } // end else
 
-    *new_file_size = file_size + last_block_extra_data + new_area;
+  *new_file_size = file_size + last_block_extra_data + new_area;
 
-    return (*olds + *news);
+  return ((*olds) + (*news));
 
-} // lol_compute_new_indexes
+} // lol_new_indexes
 /* **********************************************************
  *
  *  lol_read_index_chain:
@@ -2410,8 +2443,6 @@ int lol_create_index_chain(lol_FILE *op, const long olds,
 
     // If we also have new indexes, then find them also and
     // put them into the buffer.
-
-
     // Go back to start
 
     j = 0; whence = news;
@@ -2884,12 +2915,11 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   if (lol_is_writable(op))
       LOL_ERR_RETURN(EPERM, 0);
 
-
   amount = size * nmemb;
 
   // Compute new indexes
 
-  write_blocks = lol_compute_new_indexes(op,
+  write_blocks = lol_new_indexes(op,
                  (long)amount, &olds, &mids,
                  &news, &new_filesize);
 
@@ -3004,7 +3034,6 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 
     } // end for i
 
-
     if (start_bytes) {
 
         current_index = lol_index_buffer[i];
@@ -3081,18 +3110,22 @@ long lol_io_dblock(lol_FILE *op, const size_t block_number,
 			   char *ptr, const size_t bytes, int func)
 {
 
-  size_t num_blocks, block_size;
-  size_t items, off, left;
-  long header, block;
   fpos_t pos;
-  int    ret;
+  FILE   *fp        = 0;
+  size_t num_blocks = 0;
+  size_t block_size = 0;
+  size_t items      = 0;
+  size_t off        = 0;
+  size_t left       = 0;
+  long   header     = 0;
+  long   block      = 0;
+  int    ret        = 0;
 
   if (!(op))
      return -1;
 
   if ((!(bytes)) || (op->eof))
        return 0;
-
 
   if ((!(ptr)) || (block_number < 0) || (bytes < 0))
       LOL_ERR_RETURN(EFAULT, -2);
@@ -3108,87 +3141,86 @@ long lol_io_dblock(lol_FILE *op, const size_t block_number,
     if (block_number >= num_blocks)
         LOL_ERR_RETURN(ENFILE, -4);
 
-
     if (bytes > block_size)
         LOL_ERR_RETURN(EFAULT, -5);
 
     if (op->nentry.i_idx < 0)
         LOL_ERR_RETURN(ENFILE, -6);
 
-      left = (size_t)op->nentry.file_size;
+    left = (size_t)op->nentry.file_size;
 
-      if ((func == LOL_READ) && (op->curr_pos > left)) {
-           op->eof = 1;
-	   return 0;
-      }
+    if ((func == LOL_READ) && (op->curr_pos > left)) {
+         op->eof = 1;
+         return 0;
+    }
 
-        left -= op->curr_pos;
+    left -= op->curr_pos;
 
-        if ((bytes <= left) || (func == LOL_WRITE)) {
-	     left = bytes;
-	}
-
-
-      if (fgetpos (op->vdisk, &pos))
-	  LOL_ERR_RETURN(EBUSY, -7);
+    if ((bytes <= left) || (func == LOL_WRITE)) {
+	 left = bytes;
+    }
 
 
-      header = (long)LOL_DATA_START(num_blocks);
-      block  = (long)(block_number * block_size);
-      block += header;
+    if (fgetpos (op->vdisk, &pos))
+	LOL_ERR_RETURN(EBUSY, -7);
 
-      // Byte offset inside a block?
-      off = op->curr_pos % block_size;
-      // We MUST stay inside block boundary!
-      items = block_size - off;
+    fp     = op->vdisk;
+    header = (long)LOL_DATA_START(num_blocks);
+    block  = (long)(block_number * block_size);
+    block  += header;
 
-      if (left > items)
-	  left = items;
+    // Byte offset inside a block?
+    off = op->curr_pos % block_size;
+    // We MUST stay inside block boundary!
+    items = block_size - off;
 
-      block += off;
+    if (left > items)
+	left = items;
 
-      if (fseek(op->vdisk, block, SEEK_SET)) {
+    block += off;
 
-	           ret = ferror(op->vdisk);
+    if (fseek(fp, block, SEEK_SET)) {
 
-		   if (ret)
-		     op->err = lol_errno = ret;
-		   else
-		     op->err = lol_errno = EIO;
+	ret = ferror(fp);
 
-                   fsetpos(op->vdisk, &pos);
-	           return -8;
+	if (ret)
+	    op->err = lol_errno = ret;
+	else
+	    op->err = lol_errno = EIO;
 
+        fsetpos (fp, &pos);
+	return -8;
 
-      } // end if seek error
+     } // end if seek error
 
-      items = lol_fio(ptr, left, op->vdisk, func);
+     items = lol_fio(ptr, left, fp, func);
 
-      if (!(items)) {
+     if (!(items)) {
 
-	 ret = ferror(op->vdisk);
+	 ret = ferror(fp);
 
 	 if (ret)
 	     op->err = lol_errno = ret;
 	 else
 	    op->err = lol_errno = EIO;
 
-         fsetpos(op->vdisk, &pos);
+         fsetpos(fp, &pos);
 	 return -9;
-      }
+     }
 
-      op->curr_pos += items;
+     op->curr_pos += items;
 
-      if ((op->curr_pos >= op->nentry.file_size) && (func == LOL_READ)) {
+     if ((op->curr_pos >= op->nentry.file_size)
+          && (func == LOL_READ))                {
 
           op->curr_pos = op->nentry.file_size;
           op->eof = 1;
-      }
+     }
 
    if (op->curr_pos < 0)
        op->curr_pos = 0;
 
-   fsetpos(op->vdisk, &pos);
+   fsetpos(fp, &pos);
    return (long)items;
 
 } // end lol_io_dblock
@@ -3211,7 +3243,7 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
   if ((!(op->vdisk)) || (op->opened != 1))
     return -1;
 
-  // It is possible to seek over the file size.
+  // It is possible to fseek over the file size.
   // But not under --> return -1
 
   file_size = (long)op->nentry.file_size;
@@ -3222,8 +3254,8 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
           case SEEK_SET:
 	    // Seeking relative to start
             if (offset < 0) {
-              ret = -1;
-              op->err = lol_errno = ESPIPE;
+               ret = -1;
+               op->err = lol_errno = ESPIPE;
 	    }
             else
 	      op->curr_pos = offset;
@@ -3233,22 +3265,22 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
           case SEEK_CUR :
 
 	    if ((pos + offset) < 0) {
-	      ret = -1;
-              op->err = lol_errno = ESPIPE;
+	        ret = -1;
+                op->err = lol_errno = ESPIPE;
 	    }
             else
-              op->curr_pos += offset;
+                op->curr_pos += offset;
 
 	    break;
 
           case SEEK_END :
 
 	    if ((file_size + offset) < 0) {
-	      ret = -1;
-              op->err = lol_errno = ESPIPE;
+	        ret = -1;
+                op->err = lol_errno = ESPIPE;
 	    }
             else
-              op->curr_pos = file_size + offset;
+                op->curr_pos = file_size + offset;
 
 	    break;
 
@@ -3267,7 +3299,7 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
 } // end lol_fseek
 /* **********************************************************
  * lol_unlink:
- * Deletes a name from the file system.
+ * Deletes a file in container.
  * ret = -1 : error
  * ret =  0 : success
  * 
@@ -3299,9 +3331,12 @@ int lol_unlink(const char *name) {
 
   last_block = fp->sb.num_blocks - 1;
 
-  if ((fp->nentry_index > last_block) || (!(fp->sb.num_files))) {
+  if ((fp->nentry_index > last_block) ||
+      (!(fp->sb.num_files)))             {
+
     lol_errno = EIO;
     goto error;
+
   }
 
   e = fp->nentry.i_idx;
@@ -3343,7 +3378,9 @@ int lol_unlink(const char *name) {
       goto error;
   }
 
-  if ((fwrite((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, fp->vdisk)) != 1) {
+  if ((fwrite((char *)&entry, (size_t)(NAME_ENTRY_SIZE),
+               1, fp->vdisk)) != 1)                     {
+
 	    if ((ferror(fp->vdisk))) {
 	        lol_errno = errno;
                 goto error;
@@ -3365,7 +3402,9 @@ int lol_unlink(const char *name) {
          goto error;
       } // end if fseek
 
-      if ((fwrite((char *)&fp->sb, (size_t)(DISK_HEADER_SIZE), 1, fp->vdisk)) != 1) {
+      if ((fwrite((char *)&fp->sb, (size_t)(DISK_HEADER_SIZE),
+                   1, fp->vdisk)) != 1)                       {
+
 	    if ((ferror(fp->vdisk))) {
 	        lol_errno = errno;
                 goto error;
@@ -3378,13 +3417,14 @@ int lol_unlink(const char *name) {
 	 goto error;
       } // end if fwrite
 
-      lol_fclose(fp);
-      return LOL_OK;
+   lol_fclose(fp);
+   return LOL_OK;
 
 error:
 
-      lol_fclose(fp);
-      return LOL_ERR_GENERR;
+   lol_fclose(fp);
+   return LOL_ERR_GENERR;
+
 } // end lol_unlink
 /* **********************************************************
  * lol_clearerr:
