@@ -56,11 +56,16 @@
 #include <linux/fs.h>
 #endif
 #endif
-
 #include <lolfs.h>
 #include <lol_internal.h>
 
+
+
+
+
+/* ********************************************************** */
 // Some globals
+/* ********************************************************** */
 int lol_errno = 0;
 alloc_entry *lol_index_buffer = 0;
 alloc_entry  lol_storage_buffer[LOL_STORAGE_SIZE+1];
@@ -71,29 +76,32 @@ static const int lol_signals[LOL_NUM_SIGHANDLERS + 1] = {
 };
 
 /* ********************************************************** */
-void lol_memset_indexbuffer(const alloc_entry value, const alloc_entry num) {
+void lol_memset_indexbuffer(const alloc_entry value,
+                            const alloc_entry num)   {
+
   alloc_entry i = 0;
   for (; i < num; i++) {
        lol_index_buffer[i] = value;
   }
 } // end lol_memset_indexbuffer
 /* ********************************************************** */
-/* ********************************************************** */
 void lol_restore_sighandlers() {
   int i, j, ret;
 
-     for (i = 0; i < LOL_NUM_SIGHANDLERS; i++) {
-          j = 0;
-          do {
-              ret = sigaction(lol_signals[i],  &lol_sighand_store[i],  NULL);
-              if (!(ret)) {
+   for (i = 0; i < LOL_NUM_SIGHANDLERS; i++) {
+        j = 0;
+        do {
+           ret = sigaction(lol_signals[i],
+                 &lol_sighand_store[i],  NULL);
+
+           if (!(ret)) {
 #if LOL_TESTING
-	         printf("Restored signal %d\n", i);
+	   printf("Restored signal %d\n", i);
 #endif
-	            break;
-	      }
-          } while (++j < 5); // if fails, try 4 more times
-       } // end for i
+	   break;
+	  }
+        } while (++j < 5); // if fails, try 4 more times
+    } // end for i
 } // end lol_restore_sighandlers
 /* ********************************************************** */
 void lol_index_free (const size_t amount) {
@@ -116,7 +124,7 @@ void lol_index_free (const size_t amount) {
     }
 }
 /* ********************************************************** */
-static void lol_freemem_hdl(int sig, siginfo_t *siginfo, void *context)
+static void lol_freemem_hdl(int sig, siginfo_t *so, void *c)
 {
         lol_index_free(LOL_STORAGE_ALL);
         exit(0);
@@ -143,11 +151,13 @@ int lol_setup_sighandlers() {
 	      for (j = 0; j < i; j++) {
 		k = 0;
 		do {
-                     ret = sigaction(lol_signals[j],  &lol_sighand_store[j],  NULL);
+                     ret = sigaction(lol_signals[j],
+                           &lol_sighand_store[j],  NULL);
+
 		     if (!(ret)) {
 		       break;
 		     }
-		} while (++k < 5);
+		} while (++k < 4);
 	      } // end for j
               return -1;
           }
@@ -242,7 +252,10 @@ error:
  * NOTE:
  * In input, only mode is not mandatory.
  * ********************************************************** */
-long lol_get_vdisksize(char *name, struct lol_super *sb, mode_t *mode, int func) {
+long lol_get_vdisksize(char *name, struct lol_super *sb,
+                       mode_t *mode, int func)
+
+ {
 
   mode_t m;
   long size;
@@ -323,7 +336,8 @@ long lol_get_vdisksize(char *name, struct lol_super *sb, mode_t *mode, int func)
  * -1 : error
  *  0 : success
  * ********************************************************** */
-int lol_remove_nentry(FILE *f, const DWORD num_blocks, const DWORD nentry, int remove_idx) {
+int lol_remove_nentry(FILE *f, const DWORD num_blocks,
+                      const DWORD nentry, int remove_idx) {
 
   struct lol_name_entry p;
   fpos_t old_pos, tmp;
@@ -381,11 +395,13 @@ error:
  * Return value:
  * LOL_FALSE if error, otherwise the index
  * ********************************************************** */
-alloc_entry lol_get_index_value(FILE *f, const DWORD num_blocks, const alloc_entry idx) {
+alloc_entry lol_get_index_value(FILE *f, const DWORD num_blocks,
+                                const alloc_entry idx)
 
+{
   fpos_t tmp;
-  long offset;
-  alloc_entry v;
+  long offset   = 0;
+  alloc_entry v = 0;
   alloc_entry ret = LOL_FALSE;
 
   if ((!(f)) || (idx < 0) || (idx >= num_blocks))
@@ -393,14 +409,11 @@ alloc_entry lol_get_index_value(FILE *f, const DWORD num_blocks, const alloc_ent
 
     if (fgetpos(f, &tmp))
         return LOL_FALSE;
-
     offset = (long)LOL_INDEX_OFFSET(num_blocks, idx);
     if (fseek(f, offset, SEEK_SET))
         goto error;
-
     if (fread((char *)&v, ENTRY_SIZE, 1, f) != 1)
         goto error;
-
     ret = v;
 error:
     fsetpos(f, &tmp);
@@ -414,8 +427,9 @@ error:
  * -1 : error
  *  0 : success
  * ********************************************************** */
-int lol_set_index_value(FILE *f, const DWORD num_blocks, const alloc_entry idx, const alloc_entry new_value) {
-
+int lol_set_index_value(FILE *f, const DWORD num_blocks,
+             const alloc_entry idx, const alloc_entry new_value)
+{
   fpos_t tmp;
   long offset;
   int ret = -1;
@@ -517,8 +531,10 @@ int lol_index_malloc(const size_t num_entries, lol_FILE *op) {
   return LOL_OK;
 } // end lol_index_malloc
 /* ********************************************************** */
-size_t lol_fill_with_value(const alloc_entry value, size_t bytes, FILE *s) {
+size_t lol_fill_with_value(const alloc_entry value,
+                           size_t bytes, FILE *s)
 
+{
   size_t i, last, times, ret = 0;
   alloc_entry buf[4096];
 
@@ -549,7 +565,7 @@ size_t lol_fill_with_value(const alloc_entry value, size_t bytes, FILE *s) {
   }
 
   return ret;
-}
+} // end lol_fill_with_value
 /* ********************************************************** */
 size_t null_fill(const size_t bytes, FILE *s)
 {
@@ -590,8 +606,10 @@ size_t null_fill(const size_t bytes, FILE *s)
  *  Return value:
  *  number of bytes read or written succesfully.
  *********************************************************** */
-size_t lol_fio(char *ptr, const size_t bytes, FILE *s, const int func) {
+size_t lol_fio(char *ptr, const size_t bytes,
+               FILE *s, const int func)
 
+{
   size_t i, last, times;
   size_t t = 0;
   lol_io_func io = NULL;
@@ -600,7 +618,6 @@ size_t lol_fio(char *ptr, const size_t bytes, FILE *s, const int func) {
     return 0;
 
   switch (func) {
-
           case LOL_READ:
 	          io = &fread;
 		  break;
@@ -608,10 +625,9 @@ size_t lol_fio(char *ptr, const size_t bytes, FILE *s, const int func) {
           case LOL_WRITE:
 	          io = (lol_io_func)&fwrite;
 		  break;
-
           default:
                   return 0;
-  } // end switch func
+  } // end switch
 
     last  = bytes % 4096;
     times = bytes >> LOL_DIV_4096;
@@ -622,11 +638,11 @@ size_t lol_fio(char *ptr, const size_t bytes, FILE *s, const int func) {
         t += 4096;
   }
 
-    if (last) {
-               if (io((char *)&ptr[t], last, 1, s) != 1)
-                   return t;
-               t += last;
-    }
+  if (last) {
+      if (io((char *)&ptr[t], last, 1, s) != 1)
+          return t;
+        t += last;
+  }
   return t;
 } // end lol_fio
 /* ********************************************************** */
@@ -636,7 +652,8 @@ BOOL lol_is_validfile(char *name) {
 
   if (!(name))
        return 0;
-   if ((lol_get_vdisksize(name, &sb, NULL, RECUIRE_SB_INFO) < LOL_THEOR_MIN_DISKSIZE))
+   if ((lol_get_vdisksize(name, &sb,
+       NULL, RECUIRE_SB_INFO) < LOL_THEOR_MIN_DISKSIZE))
 	return 0;
    if (LOL_INVALID_MAGIC)
        return 0;
@@ -677,7 +694,7 @@ int lol_count_file_blocks(FILE *vdisk, struct lol_super *sb,
   if (!num_blocks || !block_size)
       return -1;
 
-  if (current_index < 0 || current_index >= num_blocks)
+  if ((current_index < 0) || (current_index >= num_blocks))
       return -1;
 
   if (dsize < LOL_THEOR_MIN_DISKSIZE)
@@ -702,7 +719,8 @@ int lol_count_file_blocks(FILE *vdisk, struct lol_super *sb,
             goto error;
         }
 
-	if (fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk) != 1) {
+	if (fread((char *)&current_index,
+                  (size_t)(ENTRY_SIZE), 1, vdisk) != 1) {
 	   *count = i + 1;
             goto error;
         }
@@ -723,7 +741,9 @@ int lol_count_file_blocks(FILE *vdisk, struct lol_super *sb,
                       goto error;
                  }
 		 current_index = LAST_LOL_INDEX;
-	         if (fwrite((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk) != 1) {
+	         if (fwrite((char *)&current_index,
+                            (size_t)(ENTRY_SIZE), 1, vdisk) != 1) {
+
                       goto error;
                  }
 		 ret = 0;
@@ -746,7 +766,8 @@ int lol_count_file_blocks(FILE *vdisk, struct lol_super *sb,
                       goto error;
                  }
 		 current_index = LAST_LOL_INDEX;
-	         if (fwrite((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk) != 1) {
+	         if (fwrite((char *)&current_index,
+                            (size_t)(ENTRY_SIZE), 1, vdisk) != 1) {
                       goto error;
                  }
 
@@ -841,7 +862,8 @@ int lol_supermod(FILE *vdisk, struct lol_super *sb, const int func) {
 
   } // end else
 
-  if (fwrite((const char *)&s, (size_t)(DISK_HEADER_SIZE), 1, vdisk) != 1)
+  if (fwrite((const char *)&s,
+             (size_t)(DISK_HEADER_SIZE), 1, vdisk) != 1)
        goto error;
 
   if (fix)
@@ -871,7 +893,7 @@ int lol_dec_files(lol_FILE *op) {
 } // end lol_dec_files
 /* **********************************************************
  * delete_chain_from: PRIVATE FUNCTION!
- * Delete fat chain of the argument file.
+ * Delete index chain of the argument file.
  * If flags is set, then it will save the first allocated block
  * and delete all the rest.
  *
@@ -906,7 +928,8 @@ int lol_delete_chain_from(lol_FILE *op, const int flags) {
   last_index  = num_blocks;
   last_index--;
 
-  if (!vdisk || !num_blocks || !block_size || first_index > last_index)
+  if ((!(vdisk)) || (!(num_blocks)) ||
+     (!(block_size)) || (first_index > last_index))
     return LOL_ERR_CORR;
 
   if (first_index == LAST_LOL_INDEX)
@@ -924,7 +947,8 @@ int lol_delete_chain_from(lol_FILE *op, const int flags) {
 
     while(1) {
 
-      if ((fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
+      if ((fread((char *)&current_index,
+                 (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
 	if ((ferror(vdisk))) {
 	   lol_errno = errno;
            return LOL_ERR_IO;
@@ -949,7 +973,8 @@ int lol_delete_chain_from(lol_FILE *op, const int flags) {
       }
 
 	if (j) {
-	  if ((fwrite((const char *)&empty, (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
+	  if ((fwrite((const char *)&empty,
+                      (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
 	    if ((ferror(vdisk))) {
 	        lol_errno = errno;
                 return LOL_ERR_IO;
@@ -960,7 +985,8 @@ int lol_delete_chain_from(lol_FILE *op, const int flags) {
 	  } // end if fwrite
 	}
         else {
-	  if ((fwrite((const char *)&last, (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
+	  if ((fwrite((const char *)&last,
+                      (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
 
 	     if ((ferror(vdisk))) {
 	         lol_errno = errno;
@@ -1211,14 +1237,14 @@ void clean_private_lol_data(lol_FILE *fp) {
   memset((char *)fp->open_mode.mode_str, 0, 6);
   memset((char *)fp->open_mode.vd_mode, 0, 4);
 
-  fp->vdisk = NULL;
-  fp->vdisk_size = 0;
-  fp->opened = 0;
-  fp->curr_pos = 0;
+  fp->vdisk         = NULL;
+  fp->vdisk_size    = 0;
+  fp->opened        = 0;
+  fp->curr_pos      = 0;
   fp->err = fp->eof = 0;
 
   memset((char *)fp, 0, LOL_FILE_SIZE);
-}
+} // end clean_private_lol_data
 /* ********************************************************** */
 lol_FILE *new_lol_FILE() {
 
@@ -1237,9 +1263,10 @@ void delete_lol_FILE(lol_FILE *fp) {
     free(fp);
     fp = NULL;
   }
-}
-#define delete_return_NULL(x) { delete_lol_FILE(x); return NULL; }
-#define close_return_NULL(x) { lol_fclose(x); return NULL; }
+} // end delete lol_FILE
+/* ********************************************************** */
+#define delete_return_NULL(x) { delete_lol_FILE((x)); return NULL; }
+#define close_return_NULL(x) { lol_fclose((x)); return NULL; }
 /* **********************************************************
  *
  *  lol_fclose:
@@ -1250,7 +1277,7 @@ int lol_fclose(lol_FILE *op)
 {
   int ret = 0;
 
-   if (!op) {
+  if (!(op)) {
        lol_errno = EBADF;
        return EOF;
    }
@@ -1275,7 +1302,8 @@ int lol_fclose(lol_FILE *op)
     op = NULL;
 
     return ret;
-}
+
+} // end lol_fclose
 /* **********************************************************
  * lol_get_filename: // PRIVATE function.
  * Split full lolfile path (like: /path/mylolfile:/README)
