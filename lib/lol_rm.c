@@ -13,27 +13,76 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
-/* $Id: lol_rm.c, v0.10 2016/04/14 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
+/*
+ $Id: lol_rm.c, v0.13 2016/04/14 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
 
+ */
+/* ****************************************************************** */
 #include <stdio.h>
-#ifndef _LOLFS_H
+#ifndef  _LOLFS_H
 #include <lolfs.h>
 #endif
-
-
+#ifndef  _LOL_INTERNAL_H
+#include <lol_internal.h>
+#endif
+/* ****************************************************************** */
+static const char params[] = "container:/file1 container:/file2 ...";
+static const char    hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char*   lst[] =
+{
+  "  Example:\n",
+  "          lol rm lol.db:/memo.txt",
+  "          This deletes the file \'memo.txt\'",
+  "          which is inside container file \'lol.db\'\n",
+  "          Type 'man lol' to read the manual.\n",
+  NULL
+};
+/* ****************************************************************** */
+static void help() {
+  int i = 0;
+  while (lst[i]) {
+    puts(lst[i++]);
+  };
+} // end help
+/* ****************************************************************** */
 // lol rm: Deletes a file which is inside a lol container
 //         Use like: lol rm my_container:/my_file.txt
-
 int lol_rm (int argc, char* argv[])
 {
   int i = 1;
   int rm = 0;
 
-  if (argc < 2)
-  {
-     printf("Usage: lol %s: <container:/file> ...\n", argv[0]);
-     puts  ("        Removes file(s) from a container.");
-     return 0;
+  // Process standard --help & --version options.
+  if (argc == 2) {
+    if (LOL_CHECK_HELP) {
+
+        printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
+                argv[0], lol_version, lol_copyright,
+                argv[0], params);
+        help ();
+        return 0;
+    }
+    if (LOL_CHECK_VERSION) {
+
+	printf ("lol %s v%s %s\n", argv[0],
+                lol_version, lol_copyright);
+	return 0;
+    }
+    if (argv[1][0] == '-') {
+
+          printf(LOL_WRONG_OPTION, argv[0], argv[1]);
+          printf (hlp, argv[0]);
+          return -1;
+    }
+  } // end if argc == 2
+
+  if (argc < 2) {
+
+        printf ("lol %s v%s. %s\nUsage: lol %s %s\n", argv[0],
+                 lol_version, lol_copyright, argv[0], params);
+        puts  ("       Removes file(s) from a container.");
+        printf (hlp, argv[0]);
+        return 0;
   }
 
   while (i < argc)

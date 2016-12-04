@@ -516,12 +516,62 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
   return 0;
 
 } // end copy_from_lolfile_to_disk
-/* ********************************************************************* */
+/* ****************************************************************** */
+static const char params[] = "file(s)  destination";
+static const char    hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char*   lst[] =
+{
+  "  Example 1:\n",
+  "            lol cp lol.db:/memo.txt memo.bak",
+  "            This copies the file \'memo.txt\'",
+  "            which is inside a container file \'lol.db\'",
+  "            to current directory as \'memo.bak\'.\n",
+  "  Example 2:\n",
+  "            lol cp src/* ~/lol.db",
+  "            This copies all the files in the",
+  "            directory \'src\' to container file",
+  "            \'lol.db\' which is in the home",
+  "            directory of the current user.\n",
+  "          Type 'man lol' to read the manual.\n",
+  NULL
+};
+/* ****************************************************************** */
+static void help() {
+  int i = 0;
+  while (lst[i]) {
+    puts(lst[i++]);
+  };
+} // end help
+/* ****************************************************************** */
 int lol_cp (int argc, char* argv[]) {
 
+
+  // Process standard --help & --version options.
+  if (argc == 2) {
+
+    if (LOL_CHECK_HELP) {
+       printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
+               argv[0], lol_version, lol_copyright, argv[0], params);
+      help ();
+      return 0;
+    }
+    if (LOL_CHECK_VERSION) {
+	printf ("lol %s v%s %s\n", argv[0], lol_version, lol_copyright);
+	return 0;
+    }
+    if (argv[1][0] == '-') {
+        printf(LOL_WRONG_OPTION, argv[0], argv[1]);
+        printf (hlp, argv[0]);
+        return -1;
+    }
+  } // end if argc == 2
+
   if (argc < 3) {
-      printf("Usage: lol %s <file(s)> <destination>\n", argv[0]);
+
+      printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
+               argv[0], lol_version, lol_copyright, argv[0], params);
       puts  ("       Copies file(s) to and from a container.");
+      printf (hlp, argv[0]);
       return 0;
   }
 

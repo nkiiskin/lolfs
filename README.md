@@ -77,7 +77,7 @@ Manifesto
 
                 The "lol" app has a couple of built-in functions which
                 can be used to do some common file tasks.
-                These functions are currently (in v 0.12) :
+                These functions are currently (in v 0.13) :
 
                 - ls
                 - cp
@@ -189,4 +189,4 @@ Questions, Bug reports, etc..
      https://github.com/nkiiskin/lolfs
 
 
-Distribution date: Sun Dec  4 08:11:35 EET 2016
+Distribution date: Sun Dec  4 23:15:57 EET 2016

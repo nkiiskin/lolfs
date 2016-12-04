@@ -2,6 +2,10 @@
 #define _LOL_FILE_H    1
 #endif
 
+#define LOLFS_VERSION   ("0.13")
+#define LOLFS_COPYRIGHT ("Copyright (C) 2016, Niko Kiiskinen")
+static const char     lol_version[] = LOLFS_VERSION;
+static const char   lol_copyright[] = LOLFS_COPYRIGHT;
 #define LOL_FILENAME_MAX 32
 #define LOL_DEVICE_MAX   256
 #define LOL_PATH_MAX (LOL_DEVICE_MAX + LOL_FILENAME_MAX)

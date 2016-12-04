@@ -13,7 +13,10 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
-/* $Id: lol_df.c, v0.11 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
+/*
+ $Id: lol_df.c, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+
+ */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -21,16 +24,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-
 #ifndef _LOLFS_H
 #include <lolfs.h>
 #endif
 #ifndef _LOL_INTERNAL_H
 #include <lol_internal.h>
 #endif
-/* ************************************************* */
-/* ************************************************* */
+/* ****************************************************************** */
+static const char params[] = "container";
+static const char    hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char*   lst[] =
+{
+  "  Example:\n",
+  "          lol df lol.db",
+  "          This shows the space usage of container",
+  "          file \'lol.db\'\n",
+  "          Type 'man lol' to read the manual.\n",
+  NULL
+};
+/* ****************************************************************** */
+static void help() {
+  int i = 0;
+  while (lst[i]) {
+    puts(lst[i++]);
+  };
+} // end help
+/* ****************************************************************** */
 int lol_df (int argc, char* argv[])
 {
 
@@ -51,11 +70,39 @@ int lol_df (int argc, char* argv[])
   alloc_entry entry = 0;
   float available   = 0;
 
+  // Process standard --help & --version options.
+  if (argc == 2) {
+
+    if (LOL_CHECK_HELP) {
+
+        printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
+                argv[0], lol_version, lol_copyright,
+                argv[0], params);
+        help ();
+        return 0;
+    }
+    if (LOL_CHECK_VERSION) {
+
+	printf ("lol %s v%s %s\n", argv[0],
+                lol_version, lol_copyright);
+	return 0;
+    }
+    if (argv[1][0] == '-') {
+
+          printf(LOL_WRONG_OPTION, argv[0], argv[1]);
+          printf (hlp, argv[0]);
+          return -1;
+    }
+  } // end if argc == 2
+
+
   if (argc != 2) {
 
-       printf("Usage: lol %s  <container>\n", argv[0]);
-       puts  ("       Shows container space usage.");
-       return 0;
+        printf ("lol %s v%s. %s\nUsage: lol %s %s\n", argv[0],
+                 lol_version, lol_copyright, argv[0], params);
+        puts  ("       Shows container space usage.");
+        printf (hlp, argv[0]);
+        return 0;
   }
 
   free_space = lol_get_vdisksize(argv[1], &sb, NULL, RECUIRE_SB_INFO);

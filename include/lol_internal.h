@@ -48,6 +48,9 @@
 #ifndef _TIME_H
 #include <time.h>
 #endif
+#ifndef _STRING_H
+#include <string.h>
+#endif
 
 
 
@@ -74,29 +77,44 @@ enum {
 // My SPARC box has sizeof(time_t) = 4 !
 // Must have this here until I find out a better solution
 #ifndef __SPARC__
-#define NAME_ENTRY_SIZE ((sizeof(DWORD) << 1) + sizeof(time_t) + LOL_FILENAME_MAX)
+#define NAME_ENTRY_SIZE ((sizeof(DWORD) << 1) + sizeof(time_t) + \
+                         LOL_FILENAME_MAX)
 #else
-#define NAME_ENTRY_SIZE ((sizeof(DWORD) << 1) + sizeof(int) + sizeof(time_t) + LOL_FILENAME_MAX)
+#define NAME_ENTRY_SIZE ((sizeof(DWORD) << 1) + sizeof(int) + \
+        sizeof(time_t) + LOL_FILENAME_MAX)
 #endif
 
 // Some macros for common expressions/tasks
-#define LOL_DEVSIZE(x,y)           (DISK_HEADER_SIZE + (x) * ((y) + ENTRY_SIZE + NAME_ENTRY_SIZE))
-#define LOL_INDEX_OFFSET(x,y,z)    (DISK_HEADER_SIZE + (x) * (NAME_ENTRY_SIZE + (y)) + \
-                                   (z) * ENTRY_SIZE)
-#define LOL_DENTRY_OFFSET(x)       (DISK_HEADER_SIZE + ((x)->sb.num_blocks) * ((x)->sb.block_size))
-#define LOL_DENTRY_OFFSET_EXT(x,y) ((long)(DISK_HEADER_SIZE) + (long)(x) * (long)(y))
+#define LOL_DEVSIZE(x,y)           (DISK_HEADER_SIZE + (x) * ((y) + \
+                                    ENTRY_SIZE + NAME_ENTRY_SIZE))
+#define LOL_INDEX_OFFSET(x,y,z)    (DISK_HEADER_SIZE + (x) * \
+                                   (NAME_ENTRY_SIZE + (y)) + (z) * ENTRY_SIZE)
+#define LOL_DENTRY_OFFSET(x)       (DISK_HEADER_SIZE + ((x)->sb.num_blocks) * \
+                                   ((x)->sb.block_size))
+#define LOL_DENTRY_OFFSET_EXT(x,y) ((long)(DISK_HEADER_SIZE) + \
+                                   (long)(x) * (long)(y))
 #define LOL_GOTO_NENTRY(x,y,z,w)   (fseek((x), DISK_HEADER_SIZE + (y) * (z) + \
                                    (w) * NAME_ENTRY_SIZE, SEEK_SET))
-#define LOL_GOTO_DENTRY(x)         (fseek((x)->vdisk, DISK_HEADER_SIZE + (x)->nentry_index * NAME_ENTRY_SIZE + (x)->sb.block_size * (x)->sb.num_blocks, SEEK_SET))
-#define LOL_TABLE_START_EXT(x,y)   (DISK_HEADER_SIZE + (x) * (NAME_ENTRY_SIZE + (y)))
+#define LOL_GOTO_DENTRY(x)         (fseek((x)->vdisk, DISK_HEADER_SIZE + \
+                                   (x)->nentry_index * NAME_ENTRY_SIZE + \
+                                   (x)->sb.block_size * \
+                                   (x)->sb.num_blocks, SEEK_SET))
+#define LOL_TABLE_START_EXT(x,y)   (DISK_HEADER_SIZE + (x) * \
+                                   (NAME_ENTRY_SIZE + (y)))
 #define LOL_TABLE_START(x)         (DISK_HEADER_SIZE + ((x)->sb.num_blocks) * \
                                    (((x)->sb.block_size) + NAME_ENTRY_SIZE))
 #define LOL_DATA_START             (DISK_HEADER_SIZE)
 #define LOL_CHECK_MAGIC(x)         ((x)->sb.reserved[0] != LOL_MAGIC || \
                                    (x)->sb.reserved[1] != LOL_MAGIC)
-#define LOL_INVALID_MAGIC          (sb.reserved[0] != LOL_MAGIC || sb.reserved[1] != LOL_MAGIC)
+#define LOL_INVALID_MAGIC          ((sb.reserved[0] != LOL_MAGIC) ||	\
+				    (sb.reserved[1] != LOL_MAGIC))
 #define LOL_ERR_RETURN(x,y)        { op->err = lol_errno = (x); return (y); }
 #define LOL_ERRSET(x)              { op->err = lol_errno = (x); }
+#define LOL_CHECK_HELP             ((!(strcmp(argv[1], "-h"))) || \
+                                    (!(strcmp(argv[1], "--help"))))
+#define LOL_CHECK_VERSION          ((!(strcmp(argv[1], "-v"))) || \
+                                    (!(strcmp(argv[1], "--version"))))
+#define LOL_WRONG_OPTION           ("lol %s: unrecognized option \'%s\'\n")
 
 #define LOL_TESTING    0
 #define LOL_THEOR_MIN_DISKSIZE 69

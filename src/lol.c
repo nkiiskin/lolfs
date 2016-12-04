@@ -38,12 +38,9 @@ static const struct lfuncs funcs[] =
   {NULL},
 };
 /* ****************************************************************** */
-static const char  vers[] = "0.13";
 static const char   usg[] = "<function> <parameter(s)>";
-static const char  usg2[] = "           Type '%s -h' for help.\n";
-static const char  copy[] = "Copyright (C) 2016, Niko Kiiskinen";
+static const char  usg2[] = "           Type \'%s -h\' for help.\n";
 static const char*  lst[] =
-
 {
   "Possible functions are:\n",
   "           ls  (Lists contents of a given container)",
@@ -55,7 +52,7 @@ static const char*  lst[] =
   NULL
 };
 /* ****************************************************************** */
-void help() {
+static void help() {
   int i = 0;
   while (lst[i]) {
     puts(lst[i++]);
@@ -71,14 +68,25 @@ int main (int argc, char* argv[])
 
   // Process standard --help & --version options.
   if (argc == 2) {
-    if ((!strcmp(argv[1], "-h")) || (!strcmp(argv[1], "--help"))) {
-      printf ("%s v%s. %s\nUsage: %s %s\n", argv[0], vers, copy, argv[0], usg);
-      help ();
-      return 0;
+    if (LOL_CHECK_HELP) {
+
+        printf ("%s v%s. %s\nUsage: %s %s\n", argv[0],
+                lol_version, lol_copyright, argv[0], usg);
+        help ();
+        return 0;
     }
-    if ((!strcmp(argv[1], "-v")) || (!strcmp(argv[1], "--version"))) {
-	printf ("%s v%s %s\n", argv[0], vers, copy);
+    if (LOL_CHECK_VERSION) {
+
+	printf ("%s v%s %s\n", argv[0],
+                lol_version, lol_copyright);
 	return 0;
+    }
+    if (argv[1][0] == '-') {
+
+        printf("%s: unrecognized option \'%s\'\n",
+               argv[0], argv[1]);
+        help();
+        return -1;
     }
   } // end if argc == 2
 
@@ -99,7 +107,7 @@ int main (int argc, char* argv[])
      i++;
   } // end while funcs
 
-  printf("%s: error: unrecognized function \'%s\'\n",
+  printf("%s: unrecognized function \'%s\'\n",
           argv[0], p);
   help();
 

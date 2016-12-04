@@ -13,7 +13,9 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
-/* $Id: lol_ls.c, v0.11 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
+/*
+ $Id: lol_ls.c, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+*/
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,23 +34,38 @@
 
 
 void strip_time(char* t) {
-
   int i, ln;
-
   if (!t)
     return;
 
   ln = strlen(t);
   for(i = 0; i < ln; i++) {
-
     if (t[i] == '\n' || t[i] == '\r') {
         t[i] = '\0';
       break;
     }
-
   }
 }
-
+/* ****************************************************************** */
+static const char params[] = "container";
+static const char    hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char*   lst[] =
+{
+  "  Example:\n",
+  "          lol ls lol.db",
+  "          This lists the files which are inside",
+  "          container file \'lol.db\'\n",
+  "          Type 'man lol' to read the manual.\n",
+  NULL
+};
+/* ****************************************************************** */
+static void help() {
+  int i = 0;
+  while (lst[i]) {
+    puts(lst[i++]);
+  };
+} // end help
+/* ****************************************************************** */
 int lol_ls(int argc, char* argv[])
 {
 
@@ -66,20 +83,49 @@ int lol_ls(int argc, char* argv[])
   int fails = 0;
   int corr  = 0;
 
-       if (argc != 2)     {
-           printf("Usage: lol %s  <container>\n", argv[0]);
-	   puts  ("       Lists files inside a container.");
-           return 0;
-       }
+  // Process standard --help & --version options.
+  if (argc == 2) {
+    if (LOL_CHECK_HELP) {
 
-       if (!(lol_is_validfile(argv[1]))) {
-	    printf("lol %s: %s is not a valid container\n", argv[0], argv[1]);
-            return -1;
+        printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
+                argv[0], lol_version, lol_copyright,
+                argv[0], params);
+        help ();
+        return 0;
+    }
+    if (LOL_CHECK_VERSION) {
 
-       }
+	printf ("lol %s v%s %s\n", argv[0],
+                lol_version, lol_copyright);
+	return 0;
+    }
+    if (argv[1][0] == '-') {
+
+          printf(LOL_WRONG_OPTION, argv[0], argv[1]);
+          printf (hlp, argv[0]);
+          return -1;
+    }
+  } // end if argc == 2
+
+  if (argc != 2) {
+
+        printf ("lol %s v%s. %s\nUsage: lol %s %s\n", argv[0],
+                 lol_version, lol_copyright, argv[0], params);
+	puts  ("       Lists files inside a container");
+        printf (hlp, argv[0]);
+        return 0;
+  }
+
+    if (!(lol_is_validfile(argv[1]))) {
+	  printf("lol %s: %s is not a valid container\n",
+                  argv[0], argv[1]);
+          return -1;
+
+    }
 
     raw_size = lol_get_vdisksize(argv[1], &sb, &st_mode, RECUIRE_SB_INFO);
-    if (raw_size <  LOL_THEOR_MIN_DISKSIZE || sb.num_files > sb.num_blocks)
+    if ((raw_size <  LOL_THEOR_MIN_DISKSIZE) ||
+        (sb.num_files > sb.num_blocks))
     {
 
 	   puts("Corruption detected. Run fsck.lolfs");
@@ -116,7 +162,7 @@ int lol_ls(int argc, char* argv[])
 
     for (i = 0; i < num_blocks; i++) {
 
-      if (fread ((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, vdisk) != 1)
+      if ((fread ((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, vdisk)) != 1)
       {
           printf("Warning: cannot read directory entry number %u\n", i);
 
