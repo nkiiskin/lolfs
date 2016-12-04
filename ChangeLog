@@ -15,3 +15,5 @@
 	+ Added file overwrite checking/warning to lol cp
 	+ Some minor modifications - no bugs found
 	
+0.13    + Relocated allocation indexes and directory entries
+	

@@ -1,4 +1,4 @@
-- Version 0.12 notes:
+- Version 0.13 notes:
 
 - Endianess questions & portability of containers from
   BIG- to LITTLE endian. Must be fixed.
@@ -18,10 +18,8 @@
     file in the filesystem, so this should not be
     a huge problem)
 
-- Thread safety: NOT thread safe as of v0.12.
+- Thread safety: NOT thread safe as of v0.13.
   Should add file lock
 
 - sub-directories?
   Maybe later
-
-
