@@ -2,15 +2,15 @@
 # All Rights Reserved.
 # This file is distributed under the GPLv2 License.
 #
-## $Id: configure.ac  0.12 2016-11-07 01:28:49Z niko $
+## $Id: configure.ac  0.13 2016-12-04 08:10:42 niko $
 #
-# Author: Niko Kiiskinen 2016-11-07
+# Author: Niko Kiiskinen 2016-12-04
 #
 # This file defines the common autoconf macros for LOLFS
 #
 #
 AC_PREREQ([2.69])
-AC_INIT([lolfs], [0.12], [nkiiskin@yahoo.com])
+AC_INIT([lolfs], [0.13], [nkiiskin@yahoo.com])
 AM_INIT_AUTOMAKE([1.9 foreign])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
