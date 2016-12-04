@@ -13,7 +13,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
-/* $Id: lol.c, v0.12 2016/11/11 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
+/* $Id: lol.c, v0.13 2016/11/11 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
 /* ****************************************************************** */
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +38,7 @@ static const struct lfuncs funcs[] =
   {NULL},
 };
 /* ****************************************************************** */
-static const char  vers[] = "0.12";
+static const char  vers[] = "0.13";
 static const char   usg[] = "<function> <parameter(s)>";
 static const char  usg2[] = "           Type '%s -h' for help.\n";
 static const char  copy[] = "Copyright (C) 2016, Niko Kiiskinen";

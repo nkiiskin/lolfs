@@ -58,12 +58,13 @@ int lol_ls(int argc, char* argv[])
   mode_t st_mode;
   FILE *vdisk;
   DWORD i, nf, num_blocks;
+  long bs, doff;
   long raw_size;
   long files = 0;
   char *time_string = 0;
   int j, ln, spaces;
   int fails = 0;
-
+  int corr  = 0;
 
        if (argc != 2)     {
            printf("Usage: lol %s  <container>\n", argv[0]);
@@ -95,13 +96,18 @@ int lol_ls(int argc, char* argv[])
 
       nf = sb.num_files;
       num_blocks = sb.num_blocks;
+      bs = (long)sb.block_size;
+      if (nf > num_blocks)
+	corr = 1;
 
       if (!(vdisk = fopen(argv[1], "r"))) {
            puts("Error: cannot read directory");
 	   return -1;
       }
 
-      if (fseek (vdisk, DISK_HEADER_SIZE, SEEK_SET)) {
+      doff = (long)LOL_DENTRY_OFFSET_EXT(num_blocks, bs);
+
+      if (fseek (vdisk, doff, SEEK_SET)) {
            puts("Error: cannot read directory");
 	   return -1;
       }
@@ -121,8 +127,8 @@ int lol_ls(int argc, char* argv[])
 	  continue;
       }
 
-	     if (!entry.filename[0])
-	         continue;
+      if (!(entry.filename[0]))
+	  continue;
 
               ln = strlen((char *)entry.filename);
 	      if (ln >= LOL_FILENAME_MAX) {
@@ -168,10 +174,10 @@ int lol_ls(int argc, char* argv[])
 
   } // end for i
 
-  if (nf != files || fails)
-    puts("Corruption detected. Run fsck.lolfs");
-  else
-    printf("total %ld\n", files);
+    if ((nf != files) || (fails) || (corr))
+       puts("Corruption detected. Run fsck.lolfs");
+    else
+      printf("total %ld\n", files);
 
   fclose(vdisk);
   return 0;

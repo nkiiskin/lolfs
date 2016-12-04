@@ -21,9 +21,10 @@
 
 
 /*
- *  None of these functions, expressions, etc are NOT meant to be used!
+ *  None of these functions, expressions, etc are NOT meant to be used
+ *  by the end user.
  *  They are here ONLY because they are needed to compile the lolfs library.
- *  The user interface is in the file <lolfs.h>
+ *  The user interface is in the file lolfs.h
  *
  */
 
@@ -79,16 +80,23 @@ enum {
 #endif
 
 // Some macros for common expressions/tasks
-#define LOL_DEVSIZE(x,y)      (DISK_HEADER_SIZE + (x) * ((y) + ENTRY_SIZE + NAME_ENTRY_SIZE))
-#define LOL_INDEX_OFFSET(x,y) (DISK_HEADER_SIZE + (x) * NAME_ENTRY_SIZE + (y) * ENTRY_SIZE)
-#define LOL_GOTO_NENTRY(x,y)  (fseek((x), DISK_HEADER_SIZE + (y) * NAME_ENTRY_SIZE, SEEK_SET))
-#define LOL_GOTO_DENTRY(x)    (fseek((x)->vdisk, DISK_HEADER_SIZE + (x)->nentry_index * NAME_ENTRY_SIZE, SEEK_SET))
-#define LOL_TABLE_START(x)    (DISK_HEADER_SIZE + (x) * NAME_ENTRY_SIZE)
-#define LOL_DATA_START(x)     (DISK_HEADER_SIZE + (x) * (NAME_ENTRY_SIZE + ENTRY_SIZE))
-#define LOL_CHECK_MAGIC(x)    ((x)->sb.reserved[0] != LOL_MAGIC || (x)->sb.reserved[1] != LOL_MAGIC)
-#define LOL_INVALID_MAGIC     (sb.reserved[0] != LOL_MAGIC || sb.reserved[1] != LOL_MAGIC)
-#define LOL_ERR_RETURN(x,y)     { op->err = lol_errno = (x); return (y); }
-#define LOL_ERRSET(x)         { op->err = lol_errno = (x); }
+#define LOL_DEVSIZE(x,y)           (DISK_HEADER_SIZE + (x) * ((y) + ENTRY_SIZE + NAME_ENTRY_SIZE))
+#define LOL_INDEX_OFFSET(x,y,z)    (DISK_HEADER_SIZE + (x) * (NAME_ENTRY_SIZE + (y)) + \
+                                   (z) * ENTRY_SIZE)
+#define LOL_DENTRY_OFFSET(x)       (DISK_HEADER_SIZE + ((x)->sb.num_blocks) * ((x)->sb.block_size))
+#define LOL_DENTRY_OFFSET_EXT(x,y) ((long)(DISK_HEADER_SIZE) + (long)(x) * (long)(y))
+#define LOL_GOTO_NENTRY(x,y,z,w)   (fseek((x), DISK_HEADER_SIZE + (y) * (z) + \
+                                   (w) * NAME_ENTRY_SIZE, SEEK_SET))
+#define LOL_GOTO_DENTRY(x)         (fseek((x)->vdisk, DISK_HEADER_SIZE + (x)->nentry_index * NAME_ENTRY_SIZE + (x)->sb.block_size * (x)->sb.num_blocks, SEEK_SET))
+#define LOL_TABLE_START_EXT(x,y)   (DISK_HEADER_SIZE + (x) * (NAME_ENTRY_SIZE + (y)))
+#define LOL_TABLE_START(x)         (DISK_HEADER_SIZE + ((x)->sb.num_blocks) * \
+                                   (((x)->sb.block_size) + NAME_ENTRY_SIZE))
+#define LOL_DATA_START             (DISK_HEADER_SIZE)
+#define LOL_CHECK_MAGIC(x)         ((x)->sb.reserved[0] != LOL_MAGIC || \
+                                   (x)->sb.reserved[1] != LOL_MAGIC)
+#define LOL_INVALID_MAGIC          (sb.reserved[0] != LOL_MAGIC || sb.reserved[1] != LOL_MAGIC)
+#define LOL_ERR_RETURN(x,y)        { op->err = lol_errno = (x); return (y); }
+#define LOL_ERRSET(x)              { op->err = lol_errno = (x); }
 
 #define LOL_TESTING    0
 #define LOL_THEOR_MIN_DISKSIZE 69
@@ -209,11 +217,12 @@ size_t      lol_num_blocks(lol_FILE *op, const size_t amount, struct lol_loop *l
 void        lol_restore_sighandlers(void);
 long        lol_get_rawdevsize (char *device, struct lol_super *sb, mode_t *m);
 long        lol_get_vdisksize (char *name, struct lol_super *sb, mode_t *mode, int func);
-int         lol_remove_nentry (FILE *f, const DWORD num_blocks, const DWORD nentry,
+int         lol_remove_nentry (FILE *fp, const DWORD nb, const DWORD bs, const DWORD nentry,
                                int remove_idx);
-alloc_entry lol_get_index_value (FILE *f, const DWORD num_blocks, const alloc_entry idx);
-int         lol_set_index_value (FILE *f, const DWORD num_blocks, const alloc_entry idx,
-                                 const alloc_entry new_val);
+alloc_entry lol_get_index_value (FILE *f, const DWORD nb, const DWORD bs,
+                                 const alloc_entry idx);
+int         lol_set_index_value (FILE *f, const DWORD nb, const DWORD bs,
+                                 const alloc_entry idx, const alloc_entry new_val);
 int         lol_supermod (FILE *vdisk, struct lol_super *sb, const int func);
 int         lol_count_file_blocks (FILE *vdisk, struct lol_super *sb,
                                    const alloc_entry first_index, const long dsize,

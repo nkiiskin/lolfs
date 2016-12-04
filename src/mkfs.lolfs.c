@@ -13,14 +13,14 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
-/* $Id: mkfs.lolfs.c, v0.12 2016/11/02 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
+/* $Id: mkfs.lolfs.c, v0.13 2016/11/02 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <lolfs.h>
 
-static const char version[] = "0.12";
+static const char version[] = "0.13";
 static const char usage[] = "<block size (in bytes)>  <number of blocks>  <filename>";
 static const char copy[] = "Copyright (C) 2016, Niko Kiiskinen";
 

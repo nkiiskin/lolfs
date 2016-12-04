@@ -13,7 +13,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
-/* $Id: lol_cp.c, v0.12 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
+/* $Id: lol_cp.c, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
 /* ************************************************************************** */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -103,6 +103,7 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
   size_t src_size;
   size_t last_bytes;
   long dst_size = 0;
+  ino_t cont_ino;
 
       FILE *src;  // We copy from here
   lol_FILE *dest; // ...to here
@@ -118,8 +119,15 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
       return -1;
 
   num_files = argc - 1;
-  vdisk = argv[num_files];
-  len = strlen (vdisk);
+  vdisk     = argv[num_files];
+  len       = strlen (vdisk);
+
+  if (stat (vdisk, &sta)) {
+	printf("lol %s: error in container %s\n", argv[0], vdisk);
+        return -1;
+  }
+
+  cont_ino = sta.st_ino;
 
 #if 0
 
@@ -131,12 +139,14 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 
   for (i = 1; i < num_files; i++) {
 
-    if (stat (argv[i], &st))
-      continue;
+    if (stat (argv[i], &st)) {
+	printf("lol %s: cannot copy to file %s\n", argv[0], argv[i]);
+        continue;
+    }
 
-    if (!(strcmp(argv[i], vdisk))) {
+    if (st.st_ino == cont_ino) {
       //printf("Warning: Skipping file %s\n", argv[i]);
-       continue;
+        continue;
     }
 
     if (!(S_ISREG(st.st_mode))) { // We copy only regular files
@@ -160,7 +170,7 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
     name[len+1] = '/';
 
     ln = strlen(argv[i]);
-    if (!ln)
+    if (!(ln))
        continue;
     if (argv[i][ln-1] == '/')
         continue;
@@ -177,7 +187,8 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 
     memset (base, 0, 1024);
     if (p >= LOL_FILENAME_MAX) {
-	   printf("lol %s: file name \"%s\" too long, truncating..\n", argv[0], argv[i]);
+	   printf("lol %s: file name \"%s\"\n", argv[0], argv[i]);
+	     puts("        too long, truncating");
     }
 
     if (p != ln) {
@@ -255,6 +266,15 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 	  printf("lol %s: cannot copy to file %s\n", argv[0], base);
           continue;
     }
+
+    //if source size is zero, just close and continue
+    if (!(src_size)) {
+        if (lol_fclose(dest)) {
+            printf("lol %s: I/O error\n", argv[0]);
+            return -1;
+        }
+	continue;
+    } // end if !src_size
 
     //printf("DEBUG: src size = %d, dest size = %d\n", (int)src_size, (int)dst_size);
 
@@ -446,10 +466,13 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
     }
 
     src_size = (size_t)src->nentry.file_size;
-    memset(temp, 0, 4096);
-    loops = src_size / 4096;
-    last_bytes = src_size % 4096;
 
+    // Don't copy if zero size, just close
+    if (src_size) {
+
+      memset(temp, 0, 4096);
+      loops = src_size / 4096;
+      last_bytes = src_size % 4096;
 
        for (j = 0; j < loops; j++) {
 
@@ -475,6 +498,8 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
                }
            }
        } while (0);
+
+    } // end if src_size
 
   if (lol_fclose(src)) {
       fclose(dest);
@@ -515,4 +540,3 @@ int lol_cp (int argc, char* argv[]) {
     return copy_from_lolfile_to_disk(argc, argv);
 
 } // end main
-

@@ -41,13 +41,15 @@ int lol_df (int argc, char* argv[])
 
   DWORD num_blocks;
   DWORD block_size;
-
+  //  DWORD num_files;
   DWORD used_blocks = 0;
-  long free_space, files = 0;
-  long occupation;
-  long used_space = 0;
+  long free_space   = 0;
+  long files        = 0;
+  long occupation   = 0;
+  long used_space   = 0;
+  long doff         = 0;
   alloc_entry entry = 0;
-  float available = 0;
+  float available   = 0;
 
   if (argc != 2) {
 
@@ -74,7 +76,9 @@ int lol_df (int argc, char* argv[])
 
   num_blocks = sb.num_blocks;
   block_size = sb.block_size;
+  //num_files = sb.num_files;
   if ((!(num_blocks)) || (!(block_size))) {
+
        printf("Error: Cannot use %s\n", argv[1]);
        return -1;
   }
@@ -94,7 +98,8 @@ int lol_df (int argc, char* argv[])
        return -1;
   }
 
-  if (fseek (vdisk, DISK_HEADER_SIZE, SEEK_SET)) {
+  doff = LOL_DENTRY_OFFSET_EXT(num_blocks, block_size);
+  if (fseek (vdisk, doff, SEEK_SET)) {
 
        fclose(vdisk);
        printf("Error: Cannot read %s\n", argv[1]);
@@ -165,7 +170,7 @@ int lol_df (int argc, char* argv[])
   }
 
 
-  if (used_space > occupation || used_blocks > num_blocks || nf != files)
+  if ((used_space > occupation) || (used_blocks > num_blocks) || (nf != files))
   {
      puts("Filesystem has errors. Run fsck.lolfs");
   }

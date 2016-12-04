@@ -25,13 +25,19 @@
 #include <lol_internal.h>
 #endif
 
+#define LOL_NOT_FOUND "lol %s: %s: No such file or directory\n"
+#define LOL_BUG_FOUND "lol %s: %s: I/O error\n"
+
 int lol_cat (int argc, char *argv[]) {
 
+  struct stat st;
   char ptr[4096];
   lol_FILE *fp;
-  FILE *dest;
-  size_t i, r, t, v, size;
+  FILE     *dest;
+  size_t i, r, t;
+  size_t v, size;
   int ret = -1;
+
 
   if (argc != 2) {
 
@@ -39,45 +45,47 @@ int lol_cat (int argc, char *argv[]) {
       puts  ("       Prints contents of a file to standard output.");
       return 0;
   }
-
+  if ((lol_stat(argv[1], &st))) {
+      printf(LOL_NOT_FOUND, argv[0], argv[1]);
+      return -1;
+  }
+  if (!(st.st_size))
+     return 0;
   if (!(fp = lol_fopen(argv[1], "r"))) {
-      printf("%s: %s: No such file or directory\n", argv[0], argv[1]);
+      printf(LOL_NOT_FOUND, argv[0], argv[1]);
       return -1;
   }
-
   size = (size_t)fp->nentry.file_size;
-
-  if (!(dest = fopen("/dev/stdout", "w"))) {
-
-      lol_fclose(fp);
-      return -1;
+  if (size != st.st_size) {
+      printf(LOL_BUG_FOUND, argv[0], argv[1]);
+      goto errlol;
   }
+  if (!(dest = fopen("/dev/stdout", "w")))
+      goto errlol;
 
   t = size / 4096;
   r = size % 4096;
 
- 
   for (i = 0; i < t; i ++) {
 
      v = lol_fread((char *)ptr, 4096, 1, fp);
-     if (lol_ferror(fp) || v != 1) {
+     if ((lol_ferror(fp)) || (v != 1)) {
         goto error; 
      }
-                  if (lol_fio((char *)ptr, 4096, dest, LOL_WRITE) != 4096) {
-                  goto error;
-              }
-
+     if (lol_fio((char *)ptr, 4096, dest, LOL_WRITE) != 4096) {
+        goto error;
+     }
   } // end for i
 
   if (r) {
 
      v = lol_fread((char *)ptr, r, 1, fp);
-     if (lol_ferror(fp) || v != 1) {
+     if ((lol_ferror(fp)) || (v != 1)) {
         goto error; 
      }
      if (lol_fio((char *)ptr, r, dest, LOL_WRITE) != r) {
-  		  goto error;
-              }
+  	 goto error;
+     }
 
   } // end if r
 
@@ -86,8 +94,9 @@ int lol_cat (int argc, char *argv[]) {
 error:
 
   fclose(dest);
+
+errlol:
+
   lol_fclose(fp);
-
   return ret;
-
 } // end main
