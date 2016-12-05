@@ -120,7 +120,8 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 liblolfs_la_LIBADD =
-am__objects_1 = lol_ls.lo lol_cp.lo lol_rm.lo lol_df.lo lol_cat.lo
+am__objects_1 = lol_ls.lo lol_cp.lo lol_rm.lo lol_df.lo lol_cat.lo \
+	lol_fs.lo
 am__objects_2 =
 am_liblolfs_la_OBJECTS = lolfs.lo $(am__objects_1) $(am__objects_2) \
 	$(am__objects_2)
@@ -327,11 +328,12 @@ mandh = \
 	$(top_builddir)/include/lol_file.h
 
 addh = $(top_builddir)/include/lol_internal.h
-funcs = lol_ls.c \
-	lol_cp.c \
-	lol_rm.c \
-	lol_df.c \
-	lol_cat.c
+funcs = lol_ls.c  \
+	lol_cp.c  \
+	lol_rm.c  \
+	lol_df.c  \
+	lol_cat.c \
+	lol_fs.c
 
 lib_LTLIBRARIES = liblolfs.la
 liblolfs_la_SOURCES = \
@@ -425,6 +427,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_cat.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_cp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_df.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_fs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_ls.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_rm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lolfs.Plo@am__quote@

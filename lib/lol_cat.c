@@ -43,13 +43,6 @@ static const char*   lst[] =
   NULL
 };
 /* ****************************************************************** */
-static void help() {
-  int i = 0;
-  while (lst[i]) {
-    puts(lst[i++]);
-  };
-} // end help
-/* ****************************************************************** */
 int lol_cat (int argc, char *argv[]) {
 
   struct stat st;
@@ -64,15 +57,15 @@ int lol_cat (int argc, char *argv[]) {
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
 
-        printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
-                argv[0], lol_version, lol_copyright,
-                argv[0], params);
-        help ();
+        printf (LOL_USAGE_FMT, argv[0], lol_version,
+                lol_copyright, argv[0], params);
+
+        lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
 
-	printf ("lol %s v%s %s\n", argv[0],
+	printf (LOL_VERSION_FMT, argv[0],
                 lol_version, lol_copyright);
 	return 0;
     }
@@ -86,8 +79,9 @@ int lol_cat (int argc, char *argv[]) {
 
   if (argc != 2) {
 
-        printf ("lol %s v%s. %s\nUsage: lol %s %s\n", argv[0],
-                 lol_version, lol_copyright, argv[0], params);
+        printf (LOL_USAGE_FMT, argv[0], lol_version,
+                lol_copyright, argv[0], params);
+
         printf (hlp, argv[0]);
         return 0;
   }
@@ -145,4 +139,4 @@ errlol:
 
   lol_fclose(fp);
   return ret;
-} // end main
+} // end lol_cat

@@ -59,13 +59,6 @@ static const char*   lst[] =
   NULL
 };
 /* ****************************************************************** */
-static void help() {
-  int i = 0;
-  while (lst[i]) {
-    puts(lst[i++]);
-  };
-} // end help
-/* ****************************************************************** */
 int lol_ls(int argc, char* argv[])
 {
 
@@ -87,15 +80,15 @@ int lol_ls(int argc, char* argv[])
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
 
-        printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
-                argv[0], lol_version, lol_copyright,
-                argv[0], params);
-        help ();
+        printf (LOL_USAGE_FMT, argv[0], lol_version,
+                lol_copyright, argv[0], params);
+
+        lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
 
-	printf ("lol %s v%s %s\n", argv[0],
+	printf (LOL_VERSION_FMT, argv[0],
                 lol_version, lol_copyright);
 	return 0;
     }
@@ -109,8 +102,8 @@ int lol_ls(int argc, char* argv[])
 
   if (argc != 2) {
 
-        printf ("lol %s v%s. %s\nUsage: lol %s %s\n", argv[0],
-                 lol_version, lol_copyright, argv[0], params);
+        printf (LOL_USAGE_FMT, argv[0], lol_version,
+                lol_copyright, argv[0], params);
 	puts  ("       Lists files inside a container");
         printf (hlp, argv[0]);
         return 0;
@@ -128,15 +121,18 @@ int lol_ls(int argc, char* argv[])
         (sb.num_files > sb.num_blocks))
     {
 
-	   puts("Corruption detected. Run fsck.lolfs");
-           return -1;
+      printf("lol %s: container \'%s\' has errors.\n", argv[0], argv[1]);
+      puts(LOL_FSCK_FMT);
+      return -1;
     }
 
     if (LOL_INVALID_MAGIC)
     {
 
-       printf("Corrupted file id [0x%x, 0x%x]. Is this really a lol file?\n",
-	       (unsigned int)sb.reserved[0], (unsigned int)sb.reserved[1]);
+       printf("lol %s: corrupted file id [0x%x, 0x%x].\n",
+	       argv[0], (unsigned int)sb.reserved[0],
+               (unsigned int)sb.reserved[1]);
+       puts(LOL_FSCK_FMT);
        return -1;
     }
 
@@ -147,14 +143,19 @@ int lol_ls(int argc, char* argv[])
 	corr = 1;
 
       if (!(vdisk = fopen(argv[1], "r"))) {
-           puts("Error: cannot read directory");
+
+	   printf("lol %s: cannot read container \'%s\'\n",
+                   argv[0], argv[1]);
+
 	   return -1;
       }
 
       doff = (long)LOL_DENTRY_OFFSET_EXT(num_blocks, bs);
 
       if (fseek (vdisk, doff, SEEK_SET)) {
-           puts("Error: cannot read directory");
+	   fclose(vdisk);
+	   printf("lol %s: cannot read container \'%s\'\n",
+                   argv[0], argv[1]);
 	   return -1;
       }
 
@@ -164,7 +165,7 @@ int lol_ls(int argc, char* argv[])
 
       if ((fread ((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, vdisk)) != 1)
       {
-          printf("Warning: cannot read directory entry number %u\n", i);
+	  printf("lol %s: cannot read file number %u\n", argv[0], i);
 
 	  if (++fails > 3) {
 	      break;
@@ -220,12 +221,18 @@ int lol_ls(int argc, char* argv[])
 
   } // end for i
 
-    if ((nf != files) || (fails) || (corr))
-       puts("Corruption detected. Run fsck.lolfs");
-    else
-      printf("total %ld\n", files);
+    fclose(vdisk);
 
-  fclose(vdisk);
+    if ((nf != files) || (fails) || (corr)) {
+
+       printf("lol %s: container \'%s\' has errors.\n",
+               argv[0], argv[1]);
+       puts(LOL_FSCK_FMT);
+    }
+    else {
+      printf("total %ld\n", files);
+    }
+
   return 0;
 
 } // end lol_ls

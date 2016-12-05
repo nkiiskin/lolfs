@@ -115,7 +115,10 @@ enum {
 #define LOL_CHECK_VERSION          ((!(strcmp(argv[1], "-v"))) || \
                                     (!(strcmp(argv[1], "--version"))))
 #define LOL_WRONG_OPTION           ("lol %s: unrecognized option \'%s\'\n")
-
+#define LOL_VERSION_FMT            ("lol %s v%s %s\n")
+#define LOL_USAGE_FMT              ("lol %s v%s. %s\nUsage: lol %s %s\n")
+#define LOL_FSCK_FMT               ("        fsck.lolfs recommended")
+#define LOL_INTERERR_FMT           ("Internal error. Sorry!")
 #define LOL_TESTING    0
 #define LOL_THEOR_MIN_DISKSIZE 69
 #define LOL_READ  0
@@ -150,8 +153,9 @@ enum {
 #define LOL_ERR_BUSY    (-12)
 #define LOL_ERR_SIG     (-13)
 
-
-
+#define LOL_KILOBYTE (1024)
+#define LOL_MEGABYTE (1048576)
+#define LOL_GIGABYTE (1073741824)
 // Signal handlers (internal use only. Do NOT change these!)
 #define LOL_SIGHUP  0
 #define LOL_SIGINT  1
@@ -223,6 +227,8 @@ typedef size_t (*lol_io_func)(void *, size_t, size_t, FILE *);
 
 void        lol_index_free (const size_t amount);
 size_t      null_fill(const size_t bytes, FILE *);
+void        lol_help(const char* lst[]);
+int         lol_size_to_str(const unsigned long size, char *s);
 size_t      lol_fio(char *ptr, const size_t bytes, FILE *s, const int func);
 int         lol_delete_chain_from(lol_FILE *, int);
 int         lol_read_nentry(lol_FILE *);
@@ -248,12 +254,13 @@ int         lol_count_file_blocks (FILE *vdisk, struct lol_super *sb,
 long lol_free_space (char *container, const int mode);
 
 // N_LOLFUNCS must match the number of functions below it
-#define N_LOLFUNCS 5
-int lol_ls  (int a, char* b[]);
-int lol_rm  (int a, char* b[]);
-int lol_cp  (int a, char* b[]);
-int lol_df  (int a, char* b[]);
-int lol_cat (int a, char* b[]);
+#define N_LOLFUNCS 6
+int lol_ls   (int a, char* b[]);
+int lol_rm   (int a, char* b[]);
+int lol_cp   (int a, char* b[]);
+int lol_df   (int a, char* b[]);
+int lol_cat  (int a, char* b[]);
+int lol_fs   (int a, char* b[]);
 
 //
 // These constants are here just for reference

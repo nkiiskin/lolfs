@@ -660,6 +660,59 @@ BOOL lol_is_validfile(char *name) {
    //  Looks like a valid lol container
    return 1;
 } // end lol_is_validfile
+/* ********************************************************* */
+void lol_help(const char* lst[]) {
+  int i = 0;
+  if (!(lst))
+    return;
+  while (lst[i]) {
+    puts(lst[i++]);
+  };
+} // end lol_help
+/* ********************************************************* */
+int lol_size_to_str(const unsigned long size, char *s) {
+
+  float siz = 0.0;
+
+  if (!(s))
+    return -1;
+
+  siz = (float)size;
+
+       if (siz < LOL_KILOBYTE) {
+         sprintf(s, "%2.2f ", siz);
+	 strcat(s, "bytes");
+         return 0;
+
+       }
+       else {
+	 if (siz < LOL_MEGABYTE) {
+	     siz /= 1024.0;
+             sprintf(s, "%2.2f ", siz);
+	     strcat(s, "Kb");
+             return 0;
+	 }
+	 else {
+	     // >= 1Mb
+	     if (siz < LOL_GIGABYTE) {
+	       siz /= (float)LOL_MEGABYTE;
+               sprintf(s, "%2.2f ", siz);
+	       strcat(s, "Mb");
+               return 0;
+	     }
+	     else {
+	       // >= 1Gb
+	       siz /= (float)LOL_GIGABYTE;
+               sprintf(s, "%2.2f ", siz);
+	       strcat(s, "Gb");
+	     }
+	 }
+
+      } // end else size
+
+       return 0;
+
+} // end lol_size_to_str
 /* **********************************************************
  * lol_count_file_blocks:
  * Follow the chain and count reserved VALID blocks of a file.

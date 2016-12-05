@@ -13,7 +13,10 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
-/* $Id: lol_cp.c, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $" */
+/*
+ $Id: lol_cp.c, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+
+*/
 /* ************************************************************************** */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -536,27 +539,22 @@ static const char*   lst[] =
   NULL
 };
 /* ****************************************************************** */
-static void help() {
-  int i = 0;
-  while (lst[i]) {
-    puts(lst[i++]);
-  };
-} // end help
-/* ****************************************************************** */
 int lol_cp (int argc, char* argv[]) {
-
 
   // Process standard --help & --version options.
   if (argc == 2) {
 
     if (LOL_CHECK_HELP) {
-       printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
-               argv[0], lol_version, lol_copyright, argv[0], params);
-      help ();
-      return 0;
+
+        printf (LOL_USAGE_FMT, argv[0], lol_version,
+                lol_copyright, argv[0], params);
+
+        lol_help(lst);
+        return 0;
     }
     if (LOL_CHECK_VERSION) {
-	printf ("lol %s v%s %s\n", argv[0], lol_version, lol_copyright);
+	printf (LOL_VERSION_FMT, argv[0],
+                lol_version, lol_copyright);
 	return 0;
     }
     if (argv[1][0] == '-') {
@@ -568,11 +566,12 @@ int lol_cp (int argc, char* argv[]) {
 
   if (argc < 3) {
 
-      printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
-               argv[0], lol_version, lol_copyright, argv[0], params);
-      puts  ("       Copies file(s) to and from a container.");
-      printf (hlp, argv[0]);
-      return 0;
+        printf (LOL_USAGE_FMT, argv[0], lol_version,
+                lol_copyright, argv[0], params);
+
+        puts  ("       Copies file(s) to and from a container.");
+        printf (hlp, argv[0]);
+        return 0;
   }
 
   // Do we copy TO or FROM lolfile?
@@ -589,4 +588,4 @@ int lol_cp (int argc, char* argv[]) {
     // So, we copy files from a container to disk..
     return copy_from_lolfile_to_disk(argc, argv);
 
-} // end main
+} // end lol_cp

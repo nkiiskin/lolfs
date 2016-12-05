@@ -43,24 +43,16 @@ static const char*   lst[] =
   NULL
 };
 /* ****************************************************************** */
-static void help() {
-  int i = 0;
-  while (lst[i]) {
-    puts(lst[i++]);
-  };
-} // end help
-/* ****************************************************************** */
 int lol_df (int argc, char* argv[])
 {
 
+  char number[1024];
   struct lol_name_entry name_e;
   struct lol_super sb;
   FILE *vdisk;
   DWORD i, nf;
-
   DWORD num_blocks;
   DWORD block_size;
-  //  DWORD num_files;
   DWORD used_blocks = 0;
   long free_space   = 0;
   long files        = 0;
@@ -75,15 +67,15 @@ int lol_df (int argc, char* argv[])
 
     if (LOL_CHECK_HELP) {
 
-        printf ("lol %s v%s. %s\nUsage: lol %s %s\n",
-                argv[0], lol_version, lol_copyright,
-                argv[0], params);
-        help ();
+        printf (LOL_USAGE_FMT, argv[0], lol_version,
+                lol_copyright, argv[0], params);
+
+        lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
 
-	printf ("lol %s v%s %s\n", argv[0],
+	printf (LOL_VERSION_FMT, argv[0],
                 lol_version, lol_copyright);
 	return 0;
     }
@@ -95,11 +87,10 @@ int lol_df (int argc, char* argv[])
     }
   } // end if argc == 2
 
-
   if (argc != 2) {
 
-        printf ("lol %s v%s. %s\nUsage: lol %s %s\n", argv[0],
-                 lol_version, lol_copyright, argv[0], params);
+        printf (LOL_USAGE_FMT, argv[0], lol_version,
+                lol_copyright, argv[0], params);
         puts  ("       Shows container space usage.");
         printf (hlp, argv[0]);
         return 0;
@@ -109,15 +100,15 @@ int lol_df (int argc, char* argv[])
 
   if (free_space < LOL_THEOR_MIN_DISKSIZE) {
 
-       printf("Error: Cannot use %s\n", argv[1]);
+       printf("lol %s: cannot use %s\n", argv[0], argv[1]);
        return -1;
   }
 
   if (LOL_INVALID_MAGIC) {
 
-    printf("Error: Invalid file id [0x%x, 0x%x]. Run fsck.lolfs\n",
-	  (int)sb.reserved[0], (int)sb.reserved[1]);
-
+    printf("lol %s: invalid file id [0x%x, 0x%x].\n",
+	   argv[0], (int)sb.reserved[0], (int)sb.reserved[1]);
+      puts(LOL_FSCK_FMT);
       return -1;
   }
 
@@ -126,14 +117,17 @@ int lol_df (int argc, char* argv[])
   //num_files = sb.num_files;
   if ((!(num_blocks)) || (!(block_size))) {
 
-       printf("Error: Cannot use %s\n", argv[1]);
-       return -1;
+      printf("lol %s: cannot use %s\n", argv[0], argv[1]);
+      return -1;
   }
 
   free_space = (long)(num_blocks * block_size);
 
-  printf("Total container space is %ld Kb [%u blocks, each %u bytes]\n",
-         ((long)(free_space >> LOL_DIV_1024)),
+  memset((char *)number, 0, 1024);
+  lol_size_to_str((unsigned long)free_space, number);
+
+  printf("Total space is %s [%u blocks, each %u bytes]\n",
+         number,
          ((unsigned int)(num_blocks)),
 	 ((unsigned int)(block_size)));
 
@@ -141,7 +135,7 @@ int lol_df (int argc, char* argv[])
 
   if (!(vdisk = fopen(argv[1], "r"))) {
 
-       printf("Error: Cannot read %s\n", argv[1]);
+       printf("lol %s: cannot read %s\n", argv[0], argv[1]);
        return -1;
   }
 
@@ -149,7 +143,7 @@ int lol_df (int argc, char* argv[])
   if (fseek (vdisk, doff, SEEK_SET)) {
 
        fclose(vdisk);
-       printf("Error: Cannot read %s\n", argv[1]);
+       printf("lol %s: cannot read %s\n", argv[0], argv[1]);
        return -1;
   }
 
@@ -157,8 +151,9 @@ int lol_df (int argc, char* argv[])
   for (i = 0; i < num_blocks; i++) {
 
     if ((fread((char *)&name_e, (size_t)(NAME_ENTRY_SIZE), 1, vdisk)) != 1) {
+
        fclose(vdisk);
-       printf("Error: Cannot read %s\n", argv[1]);
+       printf("lol %s: cannot read %s\n", argv[0], argv[1]);
        return -1;
     }
 
@@ -177,12 +172,13 @@ int lol_df (int argc, char* argv[])
 
     if ((fread((char *)&entry, (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
        fclose(vdisk);
-       printf("Error: Cannot read %s\n", argv[1]);
+       printf("lol %s: cannot read %s\n", argv[0], argv[1]);
        return -1;
     }
 
-    if (entry != FREE_LOL_INDEX)
+    if (entry != FREE_LOL_INDEX) {
         used_blocks++;
+    }
 
   } // end for i
 
@@ -195,21 +191,21 @@ int lol_df (int argc, char* argv[])
   available  /= ((float)(num_blocks));
   available  *= ((float)(100.0));
 
-  printf("Unused space is %ld Kb (%ld bytes), %2.1f%% free\n",
-	 ((long)((free_space >> LOL_DIV_1024))),
+  memset((char *)number, 0, 1024);
+  lol_size_to_str((unsigned long)free_space, number);
+
+  printf("Unused space is %s (%ld bytes), %2.1f%% free\n",
+	 number,
          ((long)(free_space)), available);
 
   if (files) {
-    /*
-         available   = (float)(used_blocks);
-         available  /= ((float)(num_blocks));
-         available  *= ((float)(100.0));
-    */
+
          available = 100.0 - available;
-         printf("Used space is %ld Kb (%ld bytes), %2.1f%% full\n",
-                ((long)(occupation >> LOL_DIV_1024)),
-		used_space,
-                available);
+         memset((char *)number, 0, 1024);
+         lol_size_to_str((unsigned long)(occupation), number);
+
+         printf("Used space is %s (%ld bytes), %2.1f%% full\n",
+                number, used_space, available);
 
   }
   else {
@@ -217,11 +213,14 @@ int lol_df (int argc, char* argv[])
   }
 
 
-  if ((used_space > occupation) || (used_blocks > num_blocks) || (nf != files))
-  {
-     puts("Filesystem has errors. Run fsck.lolfs");
+  if ((used_space > occupation)  ||
+      (used_blocks > num_blocks) || (nf != files)) {
+
+    printf("lol %s: container \'%s\' has errors.\n",
+            argv[0], argv[1]);
+    puts(LOL_FSCK_FMT);
   }
 
   return 0;
 
-} // end main
+} // end lol_df
