@@ -32,7 +32,7 @@ AC_CONFIG_FILES([Makefile lib/Makefile bin/Makefile src/Makefile include/Makefil
 AC_CHECK_HEADER([linux/fs.h], [AC_DEFINE([HAVE_LINUX_FS_H], [1], [Building with raw device support])], [AC_MSG_WARN([Can not find <linux/fs.h> Unsupported build])])
 
 AC_CHECK_HEADERS([errno.h sys/types.h sys/stat.h unistd.h time.h stdio.h stdlib.h string.h fcntl.h signal.h])
-AC_CHECK_FILE([/sbin/ldconfig], [], [AC_MSG_WARN([Can not find ldconfig script])])
+AC_CHECK_FILE([ldconfig], [], [AC_MSG_WARN([Can not find ldconfig script])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UID_T

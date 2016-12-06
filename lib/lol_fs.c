@@ -36,6 +36,11 @@ static const char*   lst[] =
   NULL
 };
 /* ************************************************************************ */
+static const char
+       lol_overwrite_prompt[] = "                       Overwrite [y/n]? ";
+static const char
+   lol_proceed_prompt[] = "                               Proceed [y/n]? ";
+/* ************************************************************************ */
 // This is a terrible hack but it is the only one, hopefully...
 void lol_fs_help(char* name) {
   const char lol[] = "lol";
@@ -152,7 +157,7 @@ int lol_fs (int argc, char* argv[])
 
        printf("%s: warning! All the data in %s will be lost!\n",
                name, argv[3]);
-       printf("                Proceed [y/n]? ");
+       printf("%s", lol_proceed_prompt);
        ret = prompt_mkfs();
        if (ret)
 	  return 0;
@@ -164,7 +169,7 @@ int lol_fs (int argc, char* argv[])
 
          printf("%s: warning! The file \"%s\" exists.\n",
               name, argv[3]);
-         printf("            Overwrite [y/n]? ");
+         printf("%s", lol_overwrite_prompt);
 	 ret = prompt_mkfs();
          if (ret)
 	    return 0;

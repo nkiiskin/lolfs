@@ -61,11 +61,10 @@ static const char*   lst[] =
 /* ****************************************************************** */
 int lol_ls(int argc, char* argv[])
 {
-
   struct lol_super sb;
   struct lol_name_entry entry;
   char tmp[128];
-  mode_t st_mode;
+  // mode_t st_mode;
   FILE *vdisk;
   DWORD i, nf, num_blocks;
   long bs, doff;
@@ -104,19 +103,19 @@ int lol_ls(int argc, char* argv[])
 
         printf (LOL_USAGE_FMT, argv[0], lol_version,
                 lol_copyright, argv[0], params);
-	puts  ("       Lists files inside a container");
+	puts  ("       Lists files inside a container.");
         printf (hlp, argv[0]);
         return 0;
   }
 
     if (!(lol_is_validfile(argv[1]))) {
-	  printf("lol %s: %s is not a valid container\n",
+	  printf("lol %s: %s is not a valid container.\n",
                   argv[0], argv[1]);
           return -1;
 
     }
 
-    raw_size = lol_get_vdisksize(argv[1], &sb, &st_mode, RECUIRE_SB_INFO);
+    raw_size = lol_get_vdisksize(argv[1], &sb, NULL, RECUIRE_SB_INFO);
     if ((raw_size <  LOL_THEOR_MIN_DISKSIZE) ||
         (sb.num_files > sb.num_blocks))
     {
@@ -144,7 +143,7 @@ int lol_ls(int argc, char* argv[])
 
       if (!(vdisk = fopen(argv[1], "r"))) {
 
-	   printf("lol %s: cannot read container \'%s\'\n",
+	   printf("lol %s: cannot read container \'%s\'.\n",
                    argv[0], argv[1]);
 
 	   return -1;
@@ -154,7 +153,7 @@ int lol_ls(int argc, char* argv[])
 
       if (fseek (vdisk, doff, SEEK_SET)) {
 	   fclose(vdisk);
-	   printf("lol %s: cannot read container \'%s\'\n",
+	   printf("lol %s: cannot read container \'%s\'.\n",
                    argv[0], argv[1]);
 	   return -1;
       }

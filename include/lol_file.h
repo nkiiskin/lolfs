@@ -8,6 +8,8 @@
 static const char     lol_version[] = LOLFS_VERSION;
 static const char   lol_copyright[] = LOLFS_COPYRIGHT;
 static const char   lol_inter_err[] = LOLFS_INTERNAL_ERR;
+
+
 #define LOL_FILENAME_MAX 32
 #define LOL_DEVICE_MAX   256
 #define LOL_PATH_MAX (LOL_DEVICE_MAX + LOL_FILENAME_MAX)
@@ -47,6 +49,7 @@ typedef struct lol_name_entry {
   int unused;
 #endif
   alloc_entry i_idx;
+  // TODO: DWORD -> ULONG
   DWORD  file_size;
 
 } *lol_name_entry_ptr;
@@ -57,9 +60,12 @@ struct lol_open_mode
   mode_t device;
   int    mode_num;
   char   mode_str[6];
-  char   vd_mode[4];
+  char    vd_mode[4];
 };
-
+// TODO: The filename is in two places:
+//     - In vdisk_file
+//     - In nentry.filename
+// Maybe the other should be removed
 struct _lol_FILE
 {
 
@@ -71,7 +77,7 @@ struct _lol_FILE
 
   struct lol_super sb;
   struct lol_name_entry nentry;
-
+  // TODO: make vdisk_size ULONG
   DWORD vdisk_size;
   FILE  *vdisk;
 

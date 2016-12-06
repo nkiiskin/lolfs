@@ -12269,22 +12269,22 @@ fi
 
 done
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for /sbin/ldconfig" >&5
-$as_echo_n "checking for /sbin/ldconfig... " >&6; }
-if ${ac_cv_file__sbin_ldconfig+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ldconfig" >&5
+$as_echo_n "checking for ldconfig... " >&6; }
+if ${ac_cv_file_ldconfig+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/sbin/ldconfig"; then
-  ac_cv_file__sbin_ldconfig=yes
+if test -r "ldconfig"; then
+  ac_cv_file_ldconfig=yes
 else
-  ac_cv_file__sbin_ldconfig=no
+  ac_cv_file_ldconfig=no
 fi
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__sbin_ldconfig" >&5
-$as_echo "$ac_cv_file__sbin_ldconfig" >&6; }
-if test "x$ac_cv_file__sbin_ldconfig" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file_ldconfig" >&5
+$as_echo "$ac_cv_file_ldconfig" >&6; }
+if test "x$ac_cv_file_ldconfig" = xyes; then :
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Can not find ldconfig script" >&5

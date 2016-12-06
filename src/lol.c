@@ -35,11 +35,12 @@ static const struct lfuncs funcs[] =
 {
   {"ls",   lol_ls},
   {"rm",   lol_rm},
+  {"cc",   lol_cc},
   {"cp",   lol_cp},
   {"df",   lol_df},
   {"cat",  lol_cat},
   {"fs",   lol_fs},
-  {NULL},
+  {NULL,   NULL},
 };
 /* ****************************************************************** */
 static const char params[] = "<function> <parameter(s)>";
@@ -48,6 +49,7 @@ static const char*   lst[] =
 {
   "Possible functions are:\n",
   "           cat  (Outputs a file inside a container)",
+  "           cc   (Checks container for errors)",
   "           cp   (Copies files to and from a container)",
   "           df   (Prints space usage of a container)",
   "           fs   (Creates a new container file)",
@@ -105,10 +107,10 @@ int main (int argc, char* argv[])
   p  = argv[1];
 
   // Which function shall we use?
-  while (i < N_LOLFUNCS) {
+  while (funcs[i].name) {
      if (!(strcmp(p, funcs[i].name))) {
          return funcs[i].func(a, av);
-  }
+     }
      i++;
   } // end while funcs
 

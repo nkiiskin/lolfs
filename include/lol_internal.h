@@ -68,7 +68,8 @@ enum {
 #define LOL_FILE_SIZE (sizeof(struct _lol_FILE))
 #define DISK_HEADER_SIZE (sizeof(struct lol_super))
 #define ENTRY_SIZE (sizeof(alloc_entry))
-
+#define LOL_FILE_DEV  (0xf64affc8)
+#define LOL_FILE_RDEV (0)
 // LOL_MAGIC number is actually 0x1414, so we only need one definition
 #define LOL_MAGIC 0x14
 
@@ -103,24 +104,26 @@ enum {
                                    (NAME_ENTRY_SIZE + (y)))
 #define LOL_TABLE_START(x)         (DISK_HEADER_SIZE + ((x)->sb.num_blocks) * \
                                    (((x)->sb.block_size) + NAME_ENTRY_SIZE))
-#define LOL_DATA_START             (DISK_HEADER_SIZE)
+
 #define LOL_CHECK_MAGIC(x)         ((x)->sb.reserved[0] != LOL_MAGIC || \
                                    (x)->sb.reserved[1] != LOL_MAGIC)
-#define LOL_INVALID_MAGIC          ((sb.reserved[0] != LOL_MAGIC) ||	\
-				    (sb.reserved[1] != LOL_MAGIC))
 #define LOL_ERR_RETURN(x,y)        { op->err = lol_errno = (x); return (y); }
 #define LOL_ERRSET(x)              { op->err = lol_errno = (x); }
 #define LOL_CHECK_HELP             ((!(strcmp(argv[1], "-h"))) || \
                                     (!(strcmp(argv[1], "--help"))))
 #define LOL_CHECK_VERSION          ((!(strcmp(argv[1], "-v"))) || \
                                     (!(strcmp(argv[1], "--version"))))
+#define LOL_INVALID_MAGIC          ((sb.reserved[0] != LOL_MAGIC) ||	\
+				    (sb.reserved[1] != LOL_MAGIC))
+#define LOL_DATA_START             (DISK_HEADER_SIZE)
 #define LOL_WRONG_OPTION           ("lol %s: unrecognized option \'%s\'\n")
 #define LOL_VERSION_FMT            ("lol %s v%s %s\n")
 #define LOL_USAGE_FMT              ("lol %s v%s. %s\nUsage: lol %s %s\n")
 #define LOL_FSCK_FMT               ("        fsck.lolfs recommended")
 #define LOL_INTERERR_FMT           ("Internal error. Sorry!")
 #define LOL_TESTING    0
-#define LOL_THEOR_MIN_DISKSIZE 69
+// #define LOL_THEOR_MIN_DISKSIZE (DISK_HEADER_SIZE + NAME_ENTRY_SIZE + ENTRY_SIZE + 2)
+extern const long LOL_THEOR_MIN_DISKSIZE;
 #define LOL_READ  0
 #define LOL_WRITE 1
 
@@ -135,6 +138,11 @@ enum {
 // Private constants, not to use in the interface!
 #define LAST_LOL_INDEX  -1
 #define FREE_LOL_INDEX  -2
+
+// Constants for lol_check_corr
+#define LOL_CHECK_SB    1
+#define LOL_CHECK_FILE  2
+#define LOL_CHECK_BOTH  3
 
 // Private error constants, not to be used also
 #define LOL_OK           (0)
@@ -152,6 +160,8 @@ enum {
 #define LOL_ERR_PARAM   (-11)
 #define LOL_ERR_BUSY    (-12)
 #define LOL_ERR_SIG     (-13)
+#define LOL_ERR_BADFD   (-14)
+
 
 #define LOL_KILOBYTE (1024)
 #define LOL_MEGABYTE (1048576)
@@ -226,6 +236,8 @@ typedef size_t (*lol_io_func)(void *, size_t, size_t, FILE *);
 // not to be used in the interface
 
 void        lol_index_free (const size_t amount);
+int         lol_valid_sb(const lol_FILE *op);
+int         lol_check_corr(const lol_FILE *op, const int mode);
 size_t      null_fill(const size_t bytes, FILE *);
 void        lol_help(const char* lst[]);
 int         lol_size_to_str(const unsigned long size, char *s);
@@ -239,8 +251,8 @@ long        lol_io_dblock(lol_FILE *op, const size_t block_number,
 			      char *ptr, const size_t bytes, int func);
 size_t      lol_num_blocks(lol_FILE *op, const size_t amount, struct lol_loop *loop);
 void        lol_restore_sighandlers(void);
-long        lol_get_rawdevsize (char *device, struct lol_super *sb, mode_t *m);
-long        lol_get_vdisksize (char *name, struct lol_super *sb, mode_t *mode, int func);
+long        lol_get_rawdevsize (char *device, struct lol_super *sb, struct stat *st);
+long        lol_get_vdisksize (char *name, struct lol_super *sb, struct stat *st, int func);
 int         lol_remove_nentry (FILE *fp, const DWORD nb, const DWORD bs, const DWORD nentry,
                                int remove_idx);
 alloc_entry lol_get_index_value (FILE *f, const DWORD nb, const DWORD bs,
@@ -251,16 +263,18 @@ int         lol_supermod (FILE *vdisk, struct lol_super *sb, const int func);
 int         lol_count_file_blocks (FILE *vdisk, struct lol_super *sb,
                                    const alloc_entry first_index, const long dsize,
                                    long *count, const int terminate);
-long lol_free_space (char *container, const int mode);
+long        lol_free_space (char *container, const int mode);
+void        lol_align(const char *before, const char *after, const size_t len);
 
 // N_LOLFUNCS must match the number of functions below it
-#define N_LOLFUNCS 6
+#define N_LOLFUNCS 7
 int lol_ls   (int a, char* b[]);
 int lol_rm   (int a, char* b[]);
 int lol_cp   (int a, char* b[]);
 int lol_df   (int a, char* b[]);
 int lol_cat  (int a, char* b[]);
 int lol_fs   (int a, char* b[]);
+int lol_cc   (int a, char* b[]);
 
 //
 // These constants are here just for reference

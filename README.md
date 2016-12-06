@@ -24,12 +24,13 @@ Manifesto
      in your computer somewhere) which has other files inside it.
 
      Once you create a lol container file (using the included
-     'mkfs.lolfs' utility or lol_mkfs API function), you can
-     then use the lolfs API explained in <lolfs.h> to create,
-     modify and delete files in this container.
+     'mkfs.lolfs' utility or 'lol fs' command or lol_mkfs API
+     function), you can then use the lolfs API, which is explained
+     in <lolfs.h> to create, modify and delete files in this container.
 
-     The installation package also contains a program "lol",
-     which may be used to do the common file operations:
+     The installation package contains a program called 'lol',
+     which serves as a wrapper app to do common file operations.
+     See below for details.
 
 
 
@@ -72,71 +73,116 @@ Manifesto
                    You have been warned! :)
 
 
+
     lol program:
     ============
 
                 The "lol" app has a couple of built-in functions which
-                can be used to do some common file tasks.
+                can be used to do some common file operations.
                 These functions are currently (in v 0.13) :
 
-                - ls
-                - cp
-                - rm
-                - df
                 - cat
+                - cc
+                - cp
+                - df
+                - fs
+                - ls
+                - rm
 
-                For example, if you want to list all the files
-                inside a container file "mycontainer", type:
 
-                lol ls mycontainer
 
-                So, use it like "lol ls mycontainer", where
-                "mycontainer" is the name of the container file
+                 lol cat function:
+                 -----------------
 
-                lol cp function:
-                ---------------
+                 lol cat  Prints the contents of a file (inside a container)
+                          to standard output.
+                          Use like: "lol cat mycontainer:/readme.txt"
+                          Or like: "lol cat mycontainer:/somefile > somefile.bak"
 
-                lol cp copies files to (and from) your container file.
 
-                 If you want to copy a file /home/you/readme.txt to your
-                 container file 'mycontainer', use:
-                 lol cp /home/you/readme.txt mycontainer
 
-                 If you want to copy a file which is inside the container
-                 back to your normal filesystem, use:
 
-                 lol cp mycontainer:/readme.txt /some/directory
+                 lol cc function:
+                 -----------------
 
-                 NOTE: When accessing files inside your container, you must
-                       separate the path with ':' like in above example.
+                 lol cc     checks if a container has errors
+
+                            Use like: "lol cc mycontainer"
+
+
+
+
+                 lol cp function:
+                 ----------------
+
+                 lol cp copies files to (and from) your container file.
+
+                   If you want to copy a file /home/you/readme.txt to your
+                   container file 'mycontainer', use:
+                   lol cp /home/you/readme.txt mycontainer
+
+                   If you want to copy a file which is inside the container
+                   back to your normal filesystem, use:
+
+                   lol cp mycontainer:/readme.txt /some/directory
+
+                   NOTE: When accessing files inside your container, you must
+                         separate the path with ':' like in above example.
+
+
+
+
+                 lol df function:
+                 ----------------
+
+                 lol df  Shows how much space is used in container file.
+                         Use like: "lol df mycontainer"
+
+
+
+
+                 lol fs function:
+                 ----------------
+
+                 lol fs   creates a new container file.
+
+                 Example:
+
+                         Use like: "lol fs 1000 5000 mycontainer"
+
+                         (This example creates a container file
+                          'mycontainer' which has 5000 data blocks,
+                          each 1000 bytes. So the storage capacity
+                          for this example is 1000 * 5000 bytes).
+
+
+
+
+                 lol ls function:
+                 ----------------
+
+                 lol ls   lists the files inside a container.
+
+                          For example, if you want to list all the files
+                          inside a container file "mycontainer", type:
+
+                          lol ls mycontainer
+
+
 
 
                  lol rm function:
-                 ---------------
+                 ----------------
 
-                lol rm   deletes a file from your container file.
-                         Use like: "lol rm mycontainer:/readme.txt"
+                 lol rm   deletes a file from your container file.
+                          Use like: "lol rm mycontainer:/readme.txt"
 
                  NOTE:   Note also here (this is common feature when accessing
                          files inside a container), that you must separate
                          the file with a ':' from it's container.
 
 
-                 lol df function:
-                 ---------------
 
-                 lol df  Shows how much space is used in container file.
-                         Use like: "lol df mycontainer"
-
-
-                 lol cat function:
-                 ----------------
-
-                 lol cat  Prints the contents of a file (inside a container)
-                          to standard output.
-                          Use like: "lol cat mycontainer:/readme.txt"
-                          Or like: "lol cat mycontainer:/somefile > somefile.bak"
-      
 
 
 lolfs API:
@@ -157,22 +203,22 @@ lolfs API:
      Example: Create a file "test.txt" inside container called 'mycontainer'.
 
 
-  #include <string.h>
-  #include <lolfs.h>
+  #include  <string.h>
+  #include  <lolfs.h>
 
   int main() {
 
-             lol_FILE *fp;
-             char text[] = "Hello World!\n";
+      lol_FILE *fp;
+      char text[] = "Hello World!\n";
 
-             fp = lol_fopen("mycontainer:/test.txt", "w");
+      fp = lol_fopen("mycontainer:/test.txt", "w");
+      lol_fwrite((char *)text, strlen(text), 1, fp);
+      lol_fclose(fp);
 
-             lol_fwrite((char *)text, strlen(text), 1, fp);
-             lol_fclose(fp);
-             return 0;
-
+      return 0;
   }
       
+
 
   How to compile and link a lolfs enabled program:
 
@@ -189,4 +235,4 @@ Questions, Bug reports, etc..
      https://github.com/nkiiskin/lolfs
 
 
-Distribution date: Mon Dec  5 07:19:26 EET 2016
+Distribution date: Tue Dec  6 23:07:10 EET 2016

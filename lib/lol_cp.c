@@ -367,7 +367,6 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
   int dest_is_dir = 0;
   char *dir = 0;
 
-
   if (argc < 3)
     return -1;
 
@@ -403,7 +402,7 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
 
       // Not a directory.
       // Does it exist already?
-      if (!i) {
+      if (!(i)) {
 
 	// It does, but is it a regular file?
         if (!(S_ISREG(st.st_mode))) {
@@ -418,7 +417,6 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
     } // end else is_dir
 
   } // end else num_files > 1
-
 
   len = strlen (dir);
 

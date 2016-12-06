@@ -80,7 +80,7 @@ int lol_rm (int argc, char* argv[])
   while (i < argc)
   {
      if (lol_unlink(argv[i])) {
-         printf("lol %s: cannot remove '%s'\n",
+         printf("lol %s: cannot delete '%s'\n",
                 argv[0], argv[i]);
      }
      else {
@@ -94,7 +94,7 @@ int lol_rm (int argc, char* argv[])
     puts("No files deleted");
     break;
   case 1 :
-    puts("One file deleted");
+    puts("1 file deleted");
     break;
   default:
     printf("%d files deleted\n", rm);
