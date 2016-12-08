@@ -16,4 +16,6 @@
 	+ Some minor modifications - no bugs found
 	
 0.13    + Relocated allocation indexes and directory entries
+	+ Added fsck.lolfs app (checks container for errors)
+	+ Added 'lol fs' and 'lol cc' functions.
 	

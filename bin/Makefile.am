@@ -24,7 +24,8 @@ noinst_HEADERS = $(proj_heads)
 
 bin_PROGRAMS =  \
 	lol     \
-	mkfs.lolfs
+	mkfs.lolfs \
+	fsck.lolfs
 
 lol_SOURCES      = $(top_builddir)/src/lol.c $(proj_heads)
 lol_LDADD        = $(proj_lib)
@@ -35,3 +36,8 @@ mkfs_lolfs_SOURCES      = $(top_builddir)/src/mkfs.lolfs.c $(proj_heads)
 mkfs_lolfs_LDADD        = $(proj_lib)
 mkfs_lolfs_DEPENDENCIES = $(proj_lib)
 mkfs_lolfs_LDFLAGS      = -rpath $(libdir)
+
+fsck_lolfs_SOURCES      = $(top_builddir)/src/fsck.lolfs.c $(proj_heads)
+fsck_lolfs_LDADD        = $(proj_lib)
+fsck_lolfs_DEPENDENCIES = $(proj_lib)
+fsck_lolfs_LDFLAGS      = -rpath $(libdir)

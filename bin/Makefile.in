@@ -79,7 +79,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = lol$(EXEEXT) mkfs.lolfs$(EXEEXT)
+bin_PROGRAMS = lol$(EXEEXT) mkfs.lolfs$(EXEEXT) fsck.lolfs$(EXEEXT)
 subdir = bin
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(noinst_HEADERS)
@@ -94,12 +94,17 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__objects_1 =
-am_lol_OBJECTS = lol.$(OBJEXT) $(am__objects_1)
-lol_OBJECTS = $(am_lol_OBJECTS)
+am_fsck_lolfs_OBJECTS = fsck.lolfs.$(OBJEXT) $(am__objects_1)
+fsck_lolfs_OBJECTS = $(am_fsck_lolfs_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+fsck_lolfs_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(fsck_lolfs_LDFLAGS) $(LDFLAGS) -o $@
+am_lol_OBJECTS = lol.$(OBJEXT) $(am__objects_1)
+lol_OBJECTS = $(am_lol_OBJECTS)
 lol_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(lol_LDFLAGS) $(LDFLAGS) -o $@
@@ -141,8 +146,9 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(lol_SOURCES) $(mkfs_lolfs_SOURCES)
-DIST_SOURCES = $(lol_SOURCES) $(mkfs_lolfs_SOURCES)
+SOURCES = $(fsck_lolfs_SOURCES) $(lol_SOURCES) $(mkfs_lolfs_SOURCES)
+DIST_SOURCES = $(fsck_lolfs_SOURCES) $(lol_SOURCES) \
+	$(mkfs_lolfs_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -313,6 +319,10 @@ mkfs_lolfs_SOURCES = $(top_builddir)/src/mkfs.lolfs.c $(proj_heads)
 mkfs_lolfs_LDADD = $(proj_lib)
 mkfs_lolfs_DEPENDENCIES = $(proj_lib)
 mkfs_lolfs_LDFLAGS = -rpath $(libdir)
+fsck_lolfs_SOURCES = $(top_builddir)/src/fsck.lolfs.c $(proj_heads)
+fsck_lolfs_LDADD = $(proj_lib)
+fsck_lolfs_DEPENDENCIES = $(proj_lib)
+fsck_lolfs_LDFLAGS = -rpath $(libdir)
 all: all-am
 
 .SUFFIXES:
@@ -397,6 +407,10 @@ clean-binPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+fsck.lolfs$(EXEEXT): $(fsck_lolfs_OBJECTS) $(fsck_lolfs_DEPENDENCIES) $(EXTRA_fsck_lolfs_DEPENDENCIES) 
+	@rm -f fsck.lolfs$(EXEEXT)
+	$(AM_V_CCLD)$(fsck_lolfs_LINK) $(fsck_lolfs_OBJECTS) $(fsck_lolfs_LDADD) $(LIBS)
+
 lol$(EXEEXT): $(lol_OBJECTS) $(lol_DEPENDENCIES) $(EXTRA_lol_DEPENDENCIES) 
 	@rm -f lol$(EXEEXT)
 	$(AM_V_CCLD)$(lol_LINK) $(lol_OBJECTS) $(lol_LDADD) $(LIBS)
@@ -411,6 +425,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fsck.lolfs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mkfs.lolfs.Po@am__quote@
 
@@ -434,6 +449,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+fsck.lolfs.o: $(top_builddir)/src/fsck.lolfs.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT fsck.lolfs.o -MD -MP -MF $(DEPDIR)/fsck.lolfs.Tpo -c -o fsck.lolfs.o `test -f '$(top_builddir)/src/fsck.lolfs.c' || echo '$(srcdir)/'`$(top_builddir)/src/fsck.lolfs.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/fsck.lolfs.Tpo $(DEPDIR)/fsck.lolfs.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/src/fsck.lolfs.c' object='fsck.lolfs.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fsck.lolfs.o `test -f '$(top_builddir)/src/fsck.lolfs.c' || echo '$(srcdir)/'`$(top_builddir)/src/fsck.lolfs.c
+
+fsck.lolfs.obj: $(top_builddir)/src/fsck.lolfs.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT fsck.lolfs.obj -MD -MP -MF $(DEPDIR)/fsck.lolfs.Tpo -c -o fsck.lolfs.obj `if test -f '$(top_builddir)/src/fsck.lolfs.c'; then $(CYGPATH_W) '$(top_builddir)/src/fsck.lolfs.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/src/fsck.lolfs.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/fsck.lolfs.Tpo $(DEPDIR)/fsck.lolfs.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/src/fsck.lolfs.c' object='fsck.lolfs.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fsck.lolfs.obj `if test -f '$(top_builddir)/src/fsck.lolfs.c'; then $(CYGPATH_W) '$(top_builddir)/src/fsck.lolfs.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/src/fsck.lolfs.c'; fi`
 
 lol.o: $(top_builddir)/src/lol.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lol.o -MD -MP -MF $(DEPDIR)/lol.Tpo -c -o lol.o `test -f '$(top_builddir)/src/lol.c' || echo '$(srcdir)/'`$(top_builddir)/src/lol.c

@@ -5,9 +5,9 @@
   (LE containers are currently not readable in BE systems
    and vice versa).
 
-- global lol_errno must be set correctly in lol_functions
-
-- lol cp: check lol_cp.c for details
+- lol cp: cannot copy between containers yet,
+          just between one container and host
+          filesystem.
 
 - Missing interface functions: opendir() etc.
 
@@ -20,6 +20,8 @@
 
 - Thread safety: NOT thread safe as of v0.13.
   Should add file lock
+
+- Manual(s)
 
 - sub-directories?
   Maybe later

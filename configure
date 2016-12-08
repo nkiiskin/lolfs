@@ -12269,28 +12269,7 @@ fi
 
 done
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ldconfig" >&5
-$as_echo_n "checking for ldconfig... " >&6; }
-if ${ac_cv_file_ldconfig+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "ldconfig"; then
-  ac_cv_file_ldconfig=yes
-else
-  ac_cv_file_ldconfig=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file_ldconfig" >&5
-$as_echo "$ac_cv_file_ldconfig" >&6; }
-if test "x$ac_cv_file_ldconfig" = xyes; then :
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Can not find ldconfig script" >&5
-$as_echo "$as_me: WARNING: Can not find ldconfig script" >&2;}
-fi
-
+##AC_CHECK_FILE([ldconfig], [], [AC_MSG_WARN([Can not find ldconfig script])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uid_t in sys/types.h" >&5

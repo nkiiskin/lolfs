@@ -62,11 +62,18 @@
 // Some globals
 /* ********************************************************** */
 
-const long LOL_THEOR_MIN_DISKSIZE = (long)((long)(DISK_HEADER_SIZE) +
+const long LOL_THEOR_MIN_DISKSIZE = 69;
+
+/*
+(long)((long)(DISK_HEADER_SIZE) +
                          (long)(NAME_ENTRY_SIZE) + (long)(ENTRY_SIZE) + 2);
+*/
+
 int lol_errno = 0;
+//int lol_buffer_lock = 0;
 alloc_entry *lol_index_buffer = 0;
 alloc_entry  lol_storage_buffer[LOL_STORAGE_SIZE+1];
+const char lol_valid_filechars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-_:!+#%[]{}?,;&()1234567890=";
 struct sigaction lol_sighand_store[LOL_NUM_SIGHANDLERS+1];
 
 static const int lol_signals[LOL_NUM_SIGHANDLERS + 1] = {
@@ -821,7 +828,7 @@ int lol_size_to_str(const unsigned long size, char *s) {
  *  0 : success
  *  1 : Corrupted chain.
  * ********************************************************** */
-int lol_count_file_blocks(FILE *vdisk, struct lol_super *sb,
+int lol_count_file_blocks(FILE *vdisk, const struct lol_super *sb,
                           const alloc_entry first_index,
                           const long dsize, long *count,
                           const int terminate)
@@ -1566,7 +1573,7 @@ int lol_is_writable(const lol_FILE *op) {
   return 0;
 } // end lol_is_writable
 /* ********************************************************** *
- * lol_get_free_index:
+ * lol_get_free_index: TODO: FIX THIS FUNCTION! BUFFER THE I/O
  * Find the first free index in list and mark it as used if
  * the flag is set.
  *
@@ -3927,6 +3934,41 @@ long lol_free_space (char *disk, const int mode)
 
   return free_space;
 } // end lol_free_space
+/* ********************************************************** */
+int lol_garbage_filename(const char *name) {
+  size_t i, j, k, ln;
+  int found;
+  int errs;
+  char ch;
+
+  if (!(name))
+    return -1;
+
+  k = strlen(name);
+  if (!(k))
+    return -1;
+  ln = strlen(lol_valid_filechars);
+
+  errs = 0;
+  for (i = 0; i < k; i++) {
+    ch = name[i];
+    found = 0;
+
+    for(j = 0; j < ln; j++) {
+      if (ch == lol_valid_filechars[j]) {
+        found = 1;
+	break;
+      }
+    } // end for j
+
+     if (!(found)) {
+       errs++;
+     }
+  } // end for i
+
+  return errs;
+
+} // end if lol_garbage_filename
 /* ********************************************************** */
 int lol_mkfs (DWORD bs, DWORD nb, const char *path)
 {

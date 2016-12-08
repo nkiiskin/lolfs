@@ -260,11 +260,12 @@ alloc_entry lol_get_index_value (FILE *f, const DWORD nb, const DWORD bs,
 int         lol_set_index_value (FILE *f, const DWORD nb, const DWORD bs,
                                  const alloc_entry idx, const alloc_entry new_val);
 int         lol_supermod (FILE *vdisk, struct lol_super *sb, const int func);
-int         lol_count_file_blocks (FILE *vdisk, struct lol_super *sb,
+int         lol_count_file_blocks (FILE *vdisk, const struct lol_super *sb,
                                    const alloc_entry first_index, const long dsize,
                                    long *count, const int terminate);
 long        lol_free_space (char *container, const int mode);
 void        lol_align(const char *before, const char *after, const size_t len);
+int         lol_garbage_filename(const char *name);
 
 // N_LOLFUNCS must match the number of functions below it
 #define N_LOLFUNCS 7
