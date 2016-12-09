@@ -1449,6 +1449,7 @@ void delete_lol_FILE(lol_FILE *fp) {
 int lol_fclose(lol_FILE *op)
 {
   int ret = 0;
+  int i = 10;
 
   if (!(op)) {
        lol_errno = EBADF;
@@ -1457,18 +1458,26 @@ int lol_fclose(lol_FILE *op)
 
    if (op->vdisk) {
 
-        ret = fclose(op->vdisk);
+       do { /* Try to close 10 times */
 
-	if (ret) {
-	  lol_errno = errno;
-	  ret = EOF;
-	}
+           ret = fclose(op->vdisk);
+	   i--;
 
-         op->vdisk = NULL;
+	   if (ret) {
+	      lol_errno = errno;
+	   }
+	   else {
+	      lol_errno = 0;
+	   }
+
+       } while ((i) && (ret));
+
+     op->vdisk = NULL;
+
    }
    else {
-     lol_errno = EBADF;
-     ret = EOF;
+      lol_errno = EBADF;
+      ret = EOF;
    }
 
     delete_lol_FILE(op);

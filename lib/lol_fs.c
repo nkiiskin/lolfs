@@ -41,7 +41,10 @@ static const char
 static const char
    lol_proceed_prompt[] = "                               Proceed [y/n]? ";
 /* ************************************************************************ */
-// This is a terrible hack but it is the only one, hopefully...
+// This is a terrible hack, I made a mistake: I planned that this
+// function (lol_fs) will be called only from the 'lol' app.
+// Then I changed my mind and made a separate 'mkfs.lolfs' app
+// which calls lol_fs also..
 void lol_fs_help(char* name) {
   const char lol[] = "lol";
   int i = 2;

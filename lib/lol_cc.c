@@ -363,20 +363,22 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
 
     // How about the size of the file?
     assumed_fblocks = (long)nentry.file_size;
+
     if ((assumed_fblocks < 0) || (idx < 0) || (idx >= nb)) {
       num_corrupted++;
       lol_fsck_message(me, "invalid file size found", LOL_FSCK_ERROR);
       continue;
     }
 
-   if (assumed_fblocks) {
-       assumed_fblocks /= bs;
-       if (assumed_fblocks % bs)
-           assumed_fblocks++;
-   }
-   else {
-     assumed_fblocks = 1;
-   } // end else
+
+    if (assumed_fblocks) {
+        assumed_fblocks /= bs;
+        if (((long)nentry.file_size) % bs)
+            assumed_fblocks++;
+    }
+    else {
+      assumed_fblocks = 1;
+    } // end else
 
 
     if ((assumed_fblocks > nb)) {
@@ -391,9 +393,13 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
 		     nentry.i_idx, cont_size, &actual_fblocks, 0);
 
 
-    if (!(rval)) {
+    if (!(rval)) { /* not error? */
 
       if (assumed_fblocks != actual_fblocks) {
+      /* printf("Filename: \"%s\", assumed blocks = %ld  actual blocks = %ld\n",
+      (char *)nentry.filename, assumed_fblocks, actual_fblocks);
+      */
+
 	num_corrupted++;
       }
 
@@ -444,7 +450,7 @@ static const lol_check_func lol_check_funcs[] =
 {
     {lol_fsck_sb,     "header", "   header metadata self consistency:"},
     {lol_fsck_geom, "geometry", " container geometry:"},
-    {lol_fsck_nent, "directory", "directory entry self consistency:"},
+    {lol_fsck_nent, "directory", "directory consistency:"},
     {NULL, NULL, NULL},
 };
 /* ****************************************************************** */
@@ -467,7 +473,7 @@ static const char*   lst[] =
 };
 /* ****************************************************************** */
 void lol_fsck_help(char *me) {
-  // Another hack
+  // Another stupid hack
   int j = 11, i = 2;
   if (!(me))
     return;
