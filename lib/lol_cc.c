@@ -52,7 +52,9 @@ static const char* lol_tag_list[] = {
   "[INTERNAL ERROR]\n",
   NULL,
 };
-#define LOL_FSCK_ALIGN 62
+// We want to fit in terminal,
+// align should be < 80
+#define LOL_FSCK_ALIGN 68
 #define CONT_NOT_FOUND "%s: cannot find container \'%s\'\n"
 static const char      lol_fsck_cc[] = "lol cc";
 static const char   lol_fsck_lolfs[] = "fsck.lolfs";
@@ -62,7 +64,7 @@ static const char   lol_fsck_nentry_io[] = "cannot read entry number ";
 static const char   lol_fsck_err_super[] = "cannot read header metadata";
 static const char  lol_fsck_corr_super[] = "corrupted header metadata";
 static const char   lol_fsck_incons_sb[] = "inconsistent container size";
-static const char   lol_fsck_wrong_siz[] = "inconsistent container size";
+static const char   lol_fsck_wrong_siz[] = "inconsistent geometry of container";
 static const char   lol_fsck_wrong_dev[] = "unsupported media type";
 static const char  lol_fsck_corr_entry[] = "corrupted file entry at: ";
 static const char          lol_fsck_io[] = "I/O error";
@@ -377,7 +379,7 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
             assumed_fblocks++;
     }
     else {
-      assumed_fblocks = 1;
+      assumed_fblocks = 1; // 0 size files consume 1 block
     } // end else
 
 
@@ -396,11 +398,7 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
     if (!(rval)) { /* not error? */
 
       if (assumed_fblocks != actual_fblocks) {
-      /* printf("Filename: \"%s\", assumed blocks = %ld  actual blocks = %ld\n",
-      (char *)nentry.filename, assumed_fblocks, actual_fblocks);
-      */
-
-	num_corrupted++;
+	  num_corrupted++;
       }
 
       continue;
@@ -441,7 +439,7 @@ typedef struct lol_check_func_t
 {
 
   lol_check_t     func;
-         char    *self;
+         char    *alias;
          char   *descr;
 
 } lol_check_func;
@@ -478,7 +476,8 @@ void lol_fsck_help(char *me) {
   if (!(me))
     return;
   puts(lst[0]);
-  if (me[0] != 'l') {
+  if (me[0] != 'l') { /* If the calling functions is not 'lol'
+                         then it must (hopefully) be fsck.lolfs */
     j--;
     puts("          fsck.lolfs lol.db");
   }
@@ -525,6 +524,7 @@ int lol_cc (int argc, char *argv[]) {
 
   // Process standard --help & --version options.
   if (argc == 2) {
+
     if (LOL_CHECK_HELP) {
 
          printf ("%s v%s. %s\nUsage: %s %s\n", me,
@@ -534,6 +534,7 @@ int lol_cc (int argc, char *argv[]) {
         lol_fsck_help(me);
         return 0;
     }
+
     if (LOL_CHECK_VERSION) {
 
 	printf ("%s v%s %s\n", me,
@@ -574,8 +575,7 @@ int lol_cc (int argc, char *argv[]) {
   while (lol_check_funcs[i].func) {
 
     desc = lol_check_funcs[i].descr;
-    curr = lol_check_funcs[i].self;
-    //printf("%s: %s\n", curr, desc);
+    curr = lol_check_funcs[i].alias;
 
     rv = lol_check_funcs[i].func(fp, cont, curr);
     if (!(rv))
