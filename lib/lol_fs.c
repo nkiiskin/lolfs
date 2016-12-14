@@ -14,7 +14,7 @@
 
 */
 /*
- $Id: mkfs.lolfs.c, v0.13 2016/11/02 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+ $Id: lol_fs.c, v0.13 2016/11/02 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
 */
 
 #include <stdio.h>

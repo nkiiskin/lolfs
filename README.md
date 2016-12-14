@@ -88,7 +88,7 @@ Manifesto
                 - fs
                 - ls
                 - rm
-
+                - rs
 
 
                  lol cat function:
@@ -183,6 +183,26 @@ Manifesto
 
 
 
+                 lol rs function:
+                 ----------------
+
+                 lol rs    extends a container file by adding more
+                           empty space into it.
+
+                 Example 1:
+
+                         Use like: "lol rs -b 1000 mycontainer"
+
+                         (This adds 1000 new data blocks to
+                          container 'mycontainer')
+
+                 Example 2:
+
+                         "lol rs -s 20M mycontainer"
+
+                         (This adds 20 Megabytes new space to
+                          container 'mycontainer').
+
 
 
 lolfs API:
@@ -235,4 +255,4 @@ Questions, Bug reports, etc..
      https://github.com/nkiiskin/lolfs
 
 
-Distribution date: Fri Dec  9 22:04:38 EET 2016
+Distribution date: Wed Dec 14 06:38:39 EET 2016

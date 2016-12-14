@@ -4076,6 +4076,276 @@ void lol_align(const char *before, const char *after, const size_t len) {
 
 } // end lol_align
 /* ***************************************************************** */
+int lol_is_number(const char ch) {
+  const char numbers[] = "1234567890";
+  int i;
+
+  for (i = 0; i < 10; i++) {
+    if (ch == numbers[i])
+      return 0;
+  }
+  return -1;
+} // end lol_is_number
+/* ***************************************************************** */
+int lol_is_integer(const char *str) {
+  int i, len;
+  int ret = 0;
+
+  if (!(str))
+    return -1;
+  if(!(str[0]))
+    return -1;
+  if (str[0] == '0')
+    return -1;
+  len = (int)strlen(str);
+  // Check all characters
+  for (i = 0; i < len; i++) {
+    if ((lol_is_number((const char)str[i]))) {
+        ret++;
+    }
+  } // end for i
+  return ret;
+} // end lol_is_integer
+/* ***************************************************************** */
+int lol_size_to_blocks(const char *size, const char *container,
+                       const struct lol_super *sb,
+                       const struct stat *st, DWORD *nb)
+{
+
+  char    siz[256];
+  long    raw_size = 0;
+  long    dev_size = 0;
+  long         ret = 0;
+  long          bs = 0;
+  long      num_bl = 0;
+  long  multiplier = 1;
+  // DWORD num_blocks = 0;
+  // DWORD block_size = 0;
+  size_t       len = 0;
+  int        plain = 0;
+  int    n_letters = 0;
+  char mult;
+
+  if ((!(size)) || (!(container)) || (!(sb)) || (!(st)) || (!(nb)))
+    return -1;
+
+  bs     = (long)sb->block_size;
+  num_bl = (long)sb->num_blocks;
+  if ((bs < 1) || (num_bl < 1))
+    return -1;
+
+  // Get block device size if we use one
+  if ((S_ISBLK(st->st_mode))) {
+      raw_size = lol_get_rawdevsize((char *)container, NULL, NULL);
+      if (raw_size < LOL_THEOR_MIN_DISKSIZE)
+	return -1;
+  }
+
+  len = strlen(size);
+  if ((len < 1) || (len > 11))
+    return -1;
+
+  mult = size[len - 1];
+  n_letters = lol_is_integer(size);
+
+  if ((n_letters < 0) || (n_letters > 1)) {
+    return -1;
+  }
+
+  if ((n_letters) && (!(lol_is_number(mult)))) {
+    return -1;
+  }
+
+  if (!(n_letters)) {
+      plain = 1;
+  }
+  else {
+     switch (mult) {
+
+       case 'B' :
+       case 'b' :
+         break;
+       case 'K' :
+       case 'k' :
+         multiplier = 1024;
+        break;
+       case 'M':
+       case 'm':
+         multiplier = 1048576;
+        break;
+      case 'G':
+      case 'g':
+        multiplier = 1073741824;
+       break;
+      default:
+        multiplier = 0;
+       break;
+
+    } // end switch
+  } // end else is number
+
+  if (!(multiplier))
+      return -1;
+
+  if ((!(plain)) && (len < 2))
+     return -1;
+
+  memset((char *)siz, 0, 256);
+  strcat((char *)siz, size);
+
+  if (!(plain))
+    siz[len - 1] = '\0';
+
+    ret = strtol(siz, NULL, 10);
+    if (errno)
+      return -1;
+    // if ((ret == LONG_MIN) || (ret == LONG_MAX))
+    //    return -1;
+    if (ret < 1)
+      return -1;
+
+    // Ok, we got it.
+    ret *= multiplier;
+
+    if ((S_ISBLK(st->st_mode))) {
+
+        dev_size = (long)LOL_DEVSIZE(num_bl, bs);
+	dev_size += ret;
+
+       if (dev_size > raw_size)
+	  return -1;
+    }
+
+    ret /= bs;
+    if (!(ret))
+      return -1;
+
+    *nb = (DWORD)(ret);
+    return 0;
+
+} // end lol_size_to_blocks
+
+/* **********************************************************
+ * lol_extendfs: Extends container space by given amount
+ *               of data blocks.
+ * NOTE: This function does not check much. User should
+ *       first use another function to evaluate if the
+ *       given container is valid and consistent.
+ *
+ * Input value sb will be overwritten with new values.
+ *
+ * return value:
+ * < 0 : error
+ *   0 : success
+ ************************************************************ */
+int lol_extendfs(const char *container, const DWORD new_blocks,
+                struct lol_super *sb, const struct stat *st)
+{
+  char  buffer[4096];
+  long  nb, bs, add;
+  long  data_size;
+  long  old_offset;
+  long  new_offset;
+  long  i, times;
+  size_t  last;
+  int pass = 0;
+  FILE *fp;
+
+  if ((!(container)) || (!(sb)) || (!(st)))
+    return -1;
+  if (new_blocks < 1)
+    return -1;
+
+  nb  = (long)sb->num_blocks;
+  bs  = (long)sb->block_size;
+  add = (long)new_blocks;
+  // First we relocate the index entries
+  // Let's calculate their total size
+  // and current and new offsets.
+
+  data_size  = (long)ENTRY_SIZE;
+  data_size *= (long)(nb);
+  old_offset = (long)LOL_TABLE_START_EXT(nb, bs);
+  new_offset = (long)LOL_TABLE_START_EXT(nb + add, bs);
+
+  times = data_size >> LOL_DIV_4096;
+  last  = (size_t)(data_size % 4096);
+
+  fp = fopen(container, "r+");
+  if (!(fp))
+    return -1;
+
+do_relocate:
+
+  for (i = 0; i < times; i++) {
+     if ((fseek(fp, old_offset, SEEK_SET)))
+         goto err;
+     if ((lol_fio(buffer, 4096, fp, LOL_READ)) != 4096)
+         goto err;
+     if ((fseek(fp, new_offset, SEEK_SET)))
+         goto err;
+     if ((lol_fio(buffer, 4096, fp, LOL_WRITE)) != 4096)
+         goto err;
+
+     old_offset += 4096;
+     new_offset += 4096;
+  } // end for i
+
+  if (last) {
+     if ((fseek(fp, old_offset, SEEK_SET)))
+         goto err;
+     if ((lol_fio(buffer, last, fp, LOL_READ)) != last)
+         goto err;
+     if ((fseek(fp, new_offset, SEEK_SET)))
+         goto err;
+     if ((lol_fio(buffer, last, fp, LOL_WRITE)) != last)
+         goto err;
+  } // end if last
+
+  pass++;
+
+  // Next we add the new indexes or name entries
+  if (pass == 1) {
+      last = (size_t)((size_t)(new_blocks) * (size_t)(ENTRY_SIZE));
+      if ((lol_fill_with_value(FREE_LOL_INDEX, last, fp)) != last) {
+          goto err;
+      }
+  }// end if pass == 1
+  else {
+     last = (size_t)((size_t)(new_blocks) * (size_t)(NAME_ENTRY_SIZE));
+     if ((null_fill (last, fp)) != last) {
+        goto err;
+     }
+  } // end else
+
+  if (pass > 1) {
+    // Adjust the meta block and return
+     sb->num_blocks += new_blocks;
+     if ((fseek(fp, 0, SEEK_SET)))
+         goto err;
+     if ((lol_fio((char *)sb,
+         (size_t)DISK_HEADER_SIZE, fp, LOL_WRITE)) != DISK_HEADER_SIZE)
+         goto err;
+     fclose(fp);
+     return 0;
+  }
+
+  // Next we relocate the name entries
+  // Let's calculate their total size
+  // and current and new offsets.
+  data_size  = (long)NAME_ENTRY_SIZE;
+  data_size *= (long)(nb);
+  old_offset = (long)LOL_DENTRY_OFFSET_EXT(nb, bs);
+  new_offset = (long)LOL_DENTRY_OFFSET_EXT(nb + add, bs);
+  times = data_size >> LOL_DIV_4096;
+  last  = (size_t)(data_size % 4096);
+  goto do_relocate;
+
+err:
+ fclose(fp);
+ return -1;
+} // end lol_extendfs
+/* ********************************************************** */
 // stat structure is here just for reference
 #if 0
           struct stat {

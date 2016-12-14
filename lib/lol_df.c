@@ -31,9 +31,11 @@
 #include <lol_internal.h>
 #endif
 /* ****************************************************************** */
-static const char params[] = "container";
-static const char    hlp[] = "       Type 'lol %s -h' for help.\n";
-static const char*   lst[] =
+static const char  cantuse[] = "lol %s: cannot use %s\n";
+static const char cantread[] = "lol %s: cannot read %s\n";
+static const char   params[] = "container";
+static const char      hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char*     lst[] =
 {
   "  Example:\n",
   "          lol df lol.db",
@@ -109,7 +111,7 @@ int lol_df (int argc, char* argv[])
 
   if (free_space < LOL_THEOR_MIN_DISKSIZE) {
 
-       printf("lol %s: cannot use %s\n", me, argv[1]);
+       printf(cantuse, me, argv[1]);
        return -1;
   }
 
@@ -123,10 +125,10 @@ int lol_df (int argc, char* argv[])
 
   num_blocks = sb.num_blocks;
   block_size = sb.block_size;
-  //num_files = sb.num_files;
+
   if ((!(num_blocks)) || (!(block_size))) {
 
-      printf("lol %s: cannot use %s\n", me, argv[1]);
+      printf(cantuse, me, argv[1]);
       return -1;
   }
 
@@ -144,7 +146,7 @@ int lol_df (int argc, char* argv[])
 
   if (!(vdisk = fopen(argv[1], "r"))) {
 
-       printf("lol %s: cannot read %s\n", me, argv[1]);
+       printf(cantread, me, argv[1]);
        return -1;
   }
 
@@ -152,7 +154,7 @@ int lol_df (int argc, char* argv[])
   if (fseek (vdisk, doff, SEEK_SET)) {
 
        fclose(vdisk);
-       printf("lol %s: cannot read %s\n", me, argv[1]);
+       printf(cantread, me, argv[1]);
        return -1;
   }
 
@@ -162,13 +164,13 @@ int lol_df (int argc, char* argv[])
     if ((fread((char *)&name_e, (size_t)(NAME_ENTRY_SIZE), 1, vdisk)) != 1) {
 
        fclose(vdisk);
-       printf("lol %s: cannot read %s\n", me, argv[1]);
+       printf(cantread, me, argv[1]);
        return -1;
     }
 
     if (name_e.filename[0]) { // Should check more but this will do now
-      files++;
-      used_space += name_e.file_size;
+        files++;
+        used_space += name_e.file_size;
     }
   } // end for i
 
@@ -180,9 +182,9 @@ int lol_df (int argc, char* argv[])
    // a buffer with a few reads, something todo...
 
     if ((fread((char *)&entry, (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
-       fclose(vdisk);
-       printf("lol %s: cannot read %s\n", me, argv[1]);
-       return -1;
+         fclose(vdisk);
+         printf(cantread, me, argv[1]);
+         return -1;
     }
 
     if (entry != FREE_LOL_INDEX) {
@@ -194,7 +196,6 @@ int lol_df (int argc, char* argv[])
   fclose(vdisk);
   occupation = (long)(used_blocks * block_size);
   free_space = (long)(num_blocks - used_blocks);
-  //printf("DEBUG: Free blocks = %ld\n", (long)(free_space));
   available  = (float)(free_space);
   free_space *= block_size;
   available  /= ((float)(num_blocks));

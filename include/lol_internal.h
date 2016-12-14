@@ -13,7 +13,7 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lol_internal.h, v0.11 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+ * $Id: lol_internal.h, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
  *
  *
  */
@@ -104,7 +104,6 @@ enum {
                                    (NAME_ENTRY_SIZE + (y)))
 #define LOL_TABLE_START(x)         (DISK_HEADER_SIZE + ((x)->sb.num_blocks) * \
                                    (((x)->sb.block_size) + NAME_ENTRY_SIZE))
-
 #define LOL_CHECK_MAGIC(x)         ((x)->sb.reserved[0] != LOL_MAGIC || \
                                    (x)->sb.reserved[1] != LOL_MAGIC)
 #define LOL_ERR_RETURN(x,y)        { op->err = lol_errno = (x); return (y); }
@@ -266,9 +265,16 @@ int         lol_count_file_blocks (FILE *vdisk, const struct lol_super *sb,
 long        lol_free_space (char *container, const int mode);
 void        lol_align(const char *before, const char *after, const size_t len);
 int         lol_garbage_filename(const char *name);
+int         lol_size_to_blocks(const char *size, const char *container,
+                               const struct lol_super *sb,
+                               const struct stat *st, DWORD *nb);
+int         lol_is_number(const char ch);
+int         lol_is_integer(const char *str);
+int         lol_extendfs(const char *container, const DWORD new_blocks,
+			 struct lol_super *sb, const struct stat *st);
 
 // N_LOLFUNCS must match the number of functions below it
-#define N_LOLFUNCS 7
+#define N_LOLFUNCS 8
 int lol_ls   (int a, char* b[]);
 int lol_rm   (int a, char* b[]);
 int lol_cp   (int a, char* b[]);
@@ -276,6 +282,7 @@ int lol_df   (int a, char* b[]);
 int lol_cat  (int a, char* b[]);
 int lol_fs   (int a, char* b[]);
 int lol_cc   (int a, char* b[]);
+int lol_rs   (int a, char* b[]);
 
 //
 // These constants are here just for reference

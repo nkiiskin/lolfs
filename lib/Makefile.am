@@ -26,7 +26,9 @@ funcs = lol_ls.c  \
 	lol_df.c  \
 	lol_cat.c \
 	lol_fs.c  \
-	lol_cc.c
+	lol_cc.c \
+	lol_rs.c
+
 
 lib_LTLIBRARIES = liblolfs.la
 ##lib_LIBRARIES = liblolfs.a

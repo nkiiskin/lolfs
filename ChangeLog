@@ -17,5 +17,5 @@
 	
 0.13    + Relocated allocation indexes and directory entries
 	+ Added fsck.lolfs app (checks container for errors)
-	+ Added 'lol fs' and 'lol cc' functions.
+	+ Added 'lol fs', 'lol cc' and 'lol rs' functions.
 	

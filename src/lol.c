@@ -35,6 +35,7 @@ static const struct lfuncs funcs[] =
 {
   {"ls",   lol_ls},
   {"rm",   lol_rm},
+  {"rs",   lol_rs},
   {"cc",   lol_cc},
   {"cp",   lol_cp},
   {"df",   lol_df},
@@ -54,7 +55,8 @@ static const char*   lst[] =
   "           df   (Prints space usage of a container)",
   "           fs   (Creates a new container file)",
   "           ls   (Lists contents of a given container)",
-  "           rm   (Removes a file(s) from a container)\n",
+  "           rm   (Removes a file(s) from a container)",
+  "           rs   (Resizes a container)\n",
   "           Type 'man lol' to read the manual.\n",
   NULL
 };
