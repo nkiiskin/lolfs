@@ -4453,6 +4453,7 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
                 struct lol_super *sb, const struct stat *st)
 {
 
+  char      temp[4096];
   long nb, bs, add = 0;
   char     *buffer = 0;
   long   i = 0, io = 0;
@@ -4464,6 +4465,7 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
   long     dir_end = 0;
   size_t      frac = 0;
   int         pass = 0;
+  int        alloc = 0;
   FILE         *fp = 0;
 
   if ((!(container)) || (!(sb)) || (!(st)))
@@ -4479,9 +4481,13 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
   data_size  = (long)NAME_ENTRY_SIZE;
   data_size *= (long)(nb);
   io = lol_get_io_size(data_size);
-  if (!(buffer = (char *)lol_malloc((size_t)(io))))
-     return -1;
-
+  if (!(buffer = (char *)lol_malloc((size_t)(io)))) {
+     buffer = temp;
+     io     = 4096;
+  }
+  else {
+    alloc = 1;
+  }
   // First we relocate the index entries
   // Let's calculate their total size
   // and current and new offsets.
@@ -4563,7 +4569,9 @@ do_relocate:
      if ((fwrite((char *)sb,
 	 (size_t)DISK_HEADER_SIZE, 1, fp)) != 1)
          goto err;
-     lol_free((size_t)(io));
+     if (alloc) {
+        lol_free((size_t)(io));
+     }
      fclose(fp);
      return 0;
   }
@@ -4587,7 +4595,9 @@ do_relocate:
 err:
  fclose(fp);
 ret:
- lol_free((size_t)(io));
+ if (alloc) {
+   lol_free((size_t)(io));
+ }
  return -1;
 } // end lol_extendfs
 /* ********************************************************** */
