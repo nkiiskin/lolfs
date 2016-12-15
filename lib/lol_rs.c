@@ -176,7 +176,7 @@ syntax_err:
 
   if (LOL_INVALID_MAGIC) {
 
-    printf("lol %s: invalid file id [0x%x, 0x%x].\n",
+     printf("lol %s: invalid file id [0x%x, 0x%x].\n",
 	   me, (int)sb.reserved[0], (int)sb.reserved[1]);
       puts(LOL_FSCK_FMT);
       return -1;
@@ -190,7 +190,6 @@ syntax_err:
       return -1;
   }
 
-  // free_space = (long)(nb * bs);
   // Seems like a valid container, let's see what we'll do
 
   // We only add blocks, so if user wants to add size,
@@ -256,8 +255,8 @@ syntax_err:
    // We have green light, let's begin expanding
    if ((lol_extendfs(container, new_blocks, &sb, &st))) {
 
-      printf("lol %s: error extending container.\n", me);
-      return -1;
+        printf("lol %s: error extending container.\n", me);
+        return -1;
    } // end if error
    else {
      puts("Done");

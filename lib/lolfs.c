@@ -70,7 +70,7 @@ const long LOL_THEOR_MIN_DISKSIZE = 69;
 */
 
 int lol_errno = 0;
-//int lol_buffer_lock = 0;
+int lol_buffer_lock = 0;
 alloc_entry *lol_index_buffer = 0;
 alloc_entry  lol_storage_buffer[LOL_STORAGE_SIZE+1];
 const char lol_valid_filechars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-_:!+#%[]{}?,;&()1234567890=";
@@ -126,7 +126,8 @@ void lol_index_free (const size_t amount) {
         // Just clear...
         lol_memset_indexbuffer(LAST_LOL_INDEX, LOL_STORAGE_ALL);
     }
-}
+  lol_buffer_lock = 0;
+} // end lol_index_free
 /* ********************************************************** */
 static void lol_freemem_hdl(int sig, siginfo_t *so, void *c)
 {
@@ -577,17 +578,24 @@ error:
  * <0 : error code
  *  0 : success
  * ********************************************************** */
-int lol_index_malloc(const size_t num_entries, lol_FILE *op) {
+int lol_index_malloc(const size_t num_entries) {
 
   size_t last, bytes;
+#if 0
 
   if (!(op)) {
     lol_errno = EIO; // Fake, but then again..
     return LOL_ERR_PTR;
   }
-
-  if (!(num_entries))
-    LOL_ERR_RETURN(EINVAL, LOL_ERR_PARAM);
+#endif
+  if (lol_buffer_lock) {
+      lol_errno = EBUSY;
+      return LOL_ERR_BUSY;
+  }
+  if (!(num_entries)) {
+    lol_errno = EINVAL;
+    return  LOL_ERR_PARAM;
+  }
 
   last  = num_entries + 1;
   bytes = last * ENTRY_SIZE;
@@ -598,13 +606,17 @@ int lol_index_malloc(const size_t num_entries, lol_FILE *op) {
   // then we allocate memory dynamically.
   // Else, we use a global static buffer.
 
-    if (lol_index_buffer)
-        LOL_ERR_RETURN(EBUSY, LOL_ERR_BUSY);
+    if (lol_index_buffer) {
+        lol_buffer_lock = 1;
+        lol_errno = EBUSY;
+        return  LOL_ERR_BUSY;
+    }
 
     // TODO: maybe we should reallocate
-      if (!(lol_index_buffer = (alloc_entry *)malloc(bytes)))
-            LOL_ERR_RETURN(ENOMEM, LOL_ERR_MEM);
-
+    if (!(lol_index_buffer = (alloc_entry *)malloc(bytes))) {
+        lol_errno = ENOMEM;
+        return LOL_ERR_MEM;
+    }
 
   } // end if num_entries
   else {
@@ -616,7 +628,7 @@ int lol_index_malloc(const size_t num_entries, lol_FILE *op) {
 
   if (num_entries > (LOL_STORAGE_SIZE)) { // handlers are only to free
                                           // dynamic memory
-      if (lol_setup_sighandlers()) {
+    if ((lol_setup_sighandlers())) {
 	// We cannot call lol_index_free because
 	// It would try to restore the signal
 	// handlers also
@@ -624,9 +636,11 @@ int lol_index_malloc(const size_t num_entries, lol_FILE *op) {
                 if (lol_index_buffer) {
                     free (lol_index_buffer);
                     lol_index_buffer = 0;
+		    lol_buffer_lock = 0;
                 }
 
-          LOL_ERR_RETURN(EBUSY, LOL_ERR_SIG);
+		lol_errno = EBUSY;
+                return LOL_ERR_SIG;
 
       }
 #if LOL_TESTING
@@ -634,8 +648,61 @@ int lol_index_malloc(const size_t num_entries, lol_FILE *op) {
 #endif
   }
 
+  lol_buffer_lock = 1;
   return LOL_OK;
 } // end lol_index_malloc
+/* **********************************************************
+ * lol_malloc:
+ *
+ *   Allocate a buffer like malloc but uses preallocated.
+ *   buffer if the request is small enough. Also set signal
+ *   handlers.
+ *
+ * NOTE: Free this memory using lol_free
+ *
+ * Return value:
+ * A pointer to the allocated memory.
+ * NULL if error
+ * ********************************************************** */
+void* lol_malloc(const size_t size) {
+  size_t entries = 0;
+  size_t frac    = 0;
+  const size_t e_size = (size_t)(ENTRY_SIZE);
+
+  if ((lol_buffer_lock) || (!(size)))
+    return NULL;
+
+  // We use lol_index_malloc, which allocates
+  // memory in ENTRY_SIZE sized units.
+
+  frac = size % e_size;
+  entries = size / e_size;
+  if (frac)
+    entries++;
+
+  if ((lol_index_malloc(entries)))
+    return NULL;
+
+  return (void *)(lol_index_buffer);
+} // end lol_malloc
+/* ********************************************************** */
+void lol_free(const size_t size) {
+
+  size_t entries = 0;
+  size_t frac    = 0;
+  const size_t e_size = (size_t)(ENTRY_SIZE);
+
+  if ((!(lol_buffer_lock)) || (!(size)))
+     return;
+
+  frac = size % e_size;
+  entries = size / e_size;
+  if (frac)
+    entries++;
+
+  lol_index_free(entries);
+
+} // end lol_free
 /* ********************************************************** */
 size_t lol_fill_with_value(const alloc_entry value,
                            size_t bytes, FILE *s)
@@ -2937,7 +3004,7 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 
    mem = lol_num_blocks(op, amount, &loop);
 
-   if (lol_index_malloc(mem, op))
+   if (lol_index_malloc(mem))
        LOL_ERR_RETURN(ENOMEM, 0);
 
    ret = lol_read_index_chain(op, mem);
@@ -3166,7 +3233,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 
    } // end if error
 
-   if (lol_index_malloc((size_t)(write_blocks), op))
+   if (lol_index_malloc((size_t)(write_blocks)))
        LOL_ERR_RETURN(ENOMEM, 0);
 
     ret = lol_create_index_chain(op, olds, news, &last_old);
@@ -4224,20 +4291,8 @@ int lol_size_to_blocks(const char *size, const char *container,
     return 0;
 
 } // end lol_size_to_blocks
-
-/* **********************************************************
- * lol_extendfs: Extends container space by given amount
- *               of data blocks.
- * NOTE: This function does not check much. User should
- *       first use another function to evaluate if the
- *       given container is valid and consistent.
- *
- * Input value sb will be overwritten with new values.
- *
- * return value:
- * < 0 : error
- *   0 : success
- ************************************************************ */
+/* ********************************************************** */
+#if 0
 int lol_extendfs(const char *container, const DWORD new_blocks,
                 struct lol_super *sb, const struct stat *st)
 {
@@ -4259,6 +4314,7 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
   nb  = (long)sb->num_blocks;
   bs  = (long)sb->block_size;
   add = (long)new_blocks;
+  add += nb;
   // First we relocate the index entries
   // Let's calculate their total size
   // and current and new offsets.
@@ -4266,9 +4322,9 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
   data_size  = (long)ENTRY_SIZE;
   data_size *= (long)(nb);
   old_offset = (long)LOL_TABLE_START_EXT(nb, bs);
-  new_offset = (long)LOL_TABLE_START_EXT(nb + add, bs);
+  new_offset = (long)LOL_TABLE_START_EXT(add, bs);
 
-  times = data_size >> LOL_DIV_4096;
+  times = data_size / 4096;
   last  = (size_t)(data_size % 4096);
 
   fp = fopen(container, "r+");
@@ -4278,13 +4334,15 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
 do_relocate:
 
   for (i = 0; i < times; i++) {
+    printf("Writing from offset %ld to offset %ld (delta = %ld)\n", old_offset, new_offset, (new_offset - old_offset));
+     memset((char *)buffer, 0, 4096);
      if ((fseek(fp, old_offset, SEEK_SET)))
          goto err;
-     if ((lol_fio(buffer, 4096, fp, LOL_READ)) != 4096)
+     if ((fread(buffer, 4096, 1, fp)) != 1)
          goto err;
      if ((fseek(fp, new_offset, SEEK_SET)))
          goto err;
-     if ((lol_fio(buffer, 4096, fp, LOL_WRITE)) != 4096)
+     if ((fwrite(buffer, 4096, 1, fp)) != 1)
          goto err;
 
      old_offset += 4096;
@@ -4292,13 +4350,15 @@ do_relocate:
   } // end for i
 
   if (last) {
+    printf("Writing last = %ld from offset %ld to offset %ld\n", (long)last, old_offset, new_offset);
+     memset((char *)buffer, 0, 4096);
      if ((fseek(fp, old_offset, SEEK_SET)))
          goto err;
-     if ((lol_fio(buffer, last, fp, LOL_READ)) != last)
+     if ((fread(buffer, last, 1, fp)) != 1)
          goto err;
      if ((fseek(fp, new_offset, SEEK_SET)))
          goto err;
-     if ((lol_fio(buffer, last, fp, LOL_WRITE)) != last)
+     if ((fwrite(buffer, last, 1, fp)) != 1)
          goto err;
   } // end if last
 
@@ -4323,8 +4383,8 @@ do_relocate:
      sb->num_blocks += new_blocks;
      if ((fseek(fp, 0, SEEK_SET)))
          goto err;
-     if ((lol_fio((char *)sb,
-         (size_t)DISK_HEADER_SIZE, fp, LOL_WRITE)) != DISK_HEADER_SIZE)
+     if ((fwrite((char *)sb,
+	 (size_t)DISK_HEADER_SIZE, 1, fp)) != 1)
          goto err;
      fclose(fp);
      return 0;
@@ -4336,13 +4396,198 @@ do_relocate:
   data_size  = (long)NAME_ENTRY_SIZE;
   data_size *= (long)(nb);
   old_offset = (long)LOL_DENTRY_OFFSET_EXT(nb, bs);
-  new_offset = (long)LOL_DENTRY_OFFSET_EXT(nb + add, bs);
-  times = data_size >> LOL_DIV_4096;
+  new_offset = (long)LOL_DENTRY_OFFSET_EXT(add, bs);
+  printf("Calculated dentry old_offset = %ld new_offset %ld, delta = %ld\n", old_offset, new_offset, (new_offset - old_offset));
+  times = data_size / 4096;
   last  = (size_t)(data_size % 4096);
   goto do_relocate;
 
 err:
  fclose(fp);
+ return -1;
+} // end lol_extendfs
+#endif
+/* ********************************************************* */
+long lol_get_io_size(const long size) {
+
+  long j;
+  long div;
+  long frac;
+
+  if (!(size))
+    return 1;
+  if (size >= LOL_GIGABYTE)
+    return LOL_MEGABYTE;
+  if (size < 4096)
+     return 4096;
+
+  for (j = 4096; j <= LOL_MEGABYTE; j <<= 1) {
+    if (size == j)
+      return j;
+  }
+  for (j = LOL_GIGABYTE; j >= 131072; j >>= 1) {
+      if (size > j) {
+	div = size >> 3;
+	frac = div % 4096;
+	div -= frac;
+        return div;
+      }
+  } // end for j
+
+ return 4096;
+} // end lol_get_io_size
+/* **********************************************************
+ * lol_extendfs: Extends container space by given amount
+ *               of data blocks.
+ * NOTE: This function does not check much. User should
+ *       first use another function to evaluate if the
+ *       given container is valid and consistent.
+ *
+ * Input value sb will be overwritten with new values.
+ *
+ * return value:
+ * < 0 : error
+ *   0 : success
+ ************************************************************ */
+int lol_extendfs(const char *container, const DWORD new_blocks,
+                struct lol_super *sb, const struct stat *st)
+{
+
+  long nb, bs, add = 0;
+  char     *buffer = 0;
+  long   i = 0, io = 0;
+  long   data_size = 0;
+  long  old_offset = 0;
+  long  new_offset = 0;
+  long   table_end = 0;
+  long       times = 0;
+  long     dir_end = 0;
+  size_t      frac = 0;
+  int         pass = 0;
+  FILE         *fp = 0;
+
+  if ((!(container)) || (!(sb)) || (!(st)))
+    return -1;
+  if (new_blocks < 1)
+    return -1;
+
+  nb  = (long)sb->num_blocks;
+  bs  = (long)sb->block_size;
+  add = (long)new_blocks;
+  add += nb;
+
+  data_size  = (long)NAME_ENTRY_SIZE;
+  data_size *= (long)(nb);
+  io = lol_get_io_size(data_size);
+  if (!(buffer = (char *)lol_malloc((size_t)(io))))
+     return -1;
+
+  // First we relocate the index entries
+  // Let's calculate their total size
+  // and current and new offsets.
+
+   data_size  = (long)ENTRY_SIZE;
+   data_size *= (long)(nb);
+  old_offset  = (long)LOL_TABLE_START_EXT(nb, bs);
+  new_offset  = (long)LOL_TABLE_START_EXT(add, bs);
+  old_offset += data_size;
+  new_offset += data_size;
+   table_end  = new_offset;
+
+  times = data_size / io;
+  frac  = (size_t)(data_size % io);
+
+  fp = fopen(container, "r+");
+  if (!(fp))
+    goto ret;
+
+do_relocate:
+
+  if (frac) {
+
+     old_offset -= frac;
+     new_offset -= frac;
+
+     if ((fseek(fp, old_offset, SEEK_SET)))
+         goto err;
+     if ((lol_fio(buffer, frac, fp, LOL_READ)) != frac)
+         goto err;
+     if ((fseek(fp, new_offset, SEEK_SET)))
+         goto err;
+     if ((lol_fio(buffer, frac, fp, LOL_WRITE)) != frac)
+         goto err;
+
+  } // end if frac
+
+  for (i = 0; i < times; i++) {
+
+     old_offset -= io;
+     new_offset -= io;
+
+     if ((fseek(fp, old_offset, SEEK_SET)))
+         goto err;
+     if ((lol_fio(buffer, io, fp, LOL_READ)) != io)
+         goto err;
+     if ((fseek(fp, new_offset, SEEK_SET)))
+         goto err;
+     if ((lol_fio(buffer, io, fp, LOL_WRITE)) != io)
+         goto err;
+
+  } // end for i
+
+  pass++;
+
+  // Next we add the new indexes or new name entries
+  if (pass == 1) {
+      frac = (size_t)((size_t)(new_blocks) * (size_t)(ENTRY_SIZE));
+     if ((fseek(fp, table_end, SEEK_SET)))
+         goto err;
+      if ((lol_fill_with_value(FREE_LOL_INDEX, frac, fp)) != frac) {
+          goto err;
+      }
+  }// end if pass == 1
+  else {
+     frac = (size_t)((size_t)(new_blocks) * (size_t)(NAME_ENTRY_SIZE));
+     if ((fseek(fp, dir_end, SEEK_SET)))
+         goto err;
+     if ((null_fill (frac, fp)) != frac) {
+        goto err;
+     }
+  } // end else
+
+  if (pass > 1) {
+    // Adjust the meta block and return
+     sb->num_blocks += new_blocks;
+     if ((fseek(fp, 0, SEEK_SET)))
+         goto err;
+     if ((fwrite((char *)sb,
+	 (size_t)DISK_HEADER_SIZE, 1, fp)) != 1)
+         goto err;
+     lol_free((size_t)(io));
+     fclose(fp);
+     return 0;
+  }
+
+  // Next we relocate the name entries
+  // Let's calculate their total size
+  // and current and new offsets.
+
+   data_size  = (long)NAME_ENTRY_SIZE;
+   data_size *= (long)(nb);
+  old_offset  = (long)LOL_DENTRY_OFFSET_EXT(nb,  bs);
+  new_offset  = (long)LOL_DENTRY_OFFSET_EXT(add, bs);
+  old_offset += data_size;
+  new_offset += data_size;
+     dir_end  = new_offset;
+       times  = data_size / io;
+        frac  = (size_t)(data_size % io);
+
+  goto do_relocate;
+
+err:
+ fclose(fp);
+ret:
+ lol_free((size_t)(io));
  return -1;
 } // end lol_extendfs
 /* ********************************************************** */

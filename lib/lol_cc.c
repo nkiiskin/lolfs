@@ -271,7 +271,7 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
 
   nf = (long)sb.num_files;
   dentry_off  = LOL_DENTRY_OFFSET_EXT(nb, bs);
-
+  // printf("DEBUG: dentry begins at offset %ld\n", dentry_off);
   dentry_area = (long)(dentry_off + dentry_size);
   // We MUST have at least 1 entry to analyze.
   if (cont_size < dentry_area) {
@@ -348,7 +348,7 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
 
     } // end if no name
 
-    // So, there is a filename
+    // So, there is a file
     n_files++;
     // Check if it seems to be ok
     if ((nentry.filename[((LOL_FILENAME_MAX) - 1)])) {
@@ -357,9 +357,10 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
     }
     if ((lol_garbage_filename((char *)(nentry.filename)))) {
 
-          memset((char *)message, 0, 512);
-	  sprintf(message, "%s\'%s\'", lol_fsck_susp_name, (char *)(nentry.filename));
-          lol_fsck_message(me, message, LOL_FSCK_INFO);
+         memset((char *)message, 0, 512);
+	 sprintf(message, "%s\'%s\'", lol_fsck_susp_name,
+                                 (char *)(nentry.filename));
+         lol_fsck_message(me, message, LOL_FSCK_INFO);
 
     } // end if garbage name
 
@@ -372,7 +373,6 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
       continue;
     }
 
-
     if (assumed_fblocks) {
         assumed_fblocks /= bs;
         if (((long)nentry.file_size) % bs)
@@ -381,7 +381,6 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
     else {
       assumed_fblocks = 1; // 0 size files consume 1 block
     } // end else
-
 
     if ((assumed_fblocks > nb)) {
        num_corrupted++;
@@ -393,7 +392,6 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
     // TODO: We could actually fix the chain here by settin the flag
     rval = (long)lol_count_file_blocks(fp, &sb,
 		     nentry.i_idx, cont_size, &actual_fblocks, 0);
-
 
     if (!(rval)) { /* not error? */
 
@@ -429,9 +427,7 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
     if (num_corrupted)
       return LOL_FSCK_ERROR;
 
-
-  return 0;
-
+   return 0;
 } // end lol_fsck_nent
 /* ****************************************************************** */
 typedef int (*lol_check_t)(FILE *, const char *, const char *);

@@ -234,7 +234,10 @@ typedef size_t (*lol_io_func)(void *, size_t, size_t, FILE *);
 // Miscallaneous helper-functions,
 // not to be used in the interface
 
+int         lol_index_malloc(const size_t num_entries);
 void        lol_index_free (const size_t amount);
+void*       lol_malloc(const size_t size);
+void        lol_free(const size_t size);
 int         lol_valid_sb(const lol_FILE *op);
 int         lol_check_corr(const lol_FILE *op, const int mode);
 size_t      null_fill(const size_t bytes, FILE *);
@@ -270,6 +273,7 @@ int         lol_size_to_blocks(const char *size, const char *container,
                                const struct stat *st, DWORD *nb);
 int         lol_is_number(const char ch);
 int         lol_is_integer(const char *str);
+long        lol_get_io_size(const long size);
 int         lol_extendfs(const char *container, const DWORD new_blocks,
 			 struct lol_super *sb, const struct stat *st);
 

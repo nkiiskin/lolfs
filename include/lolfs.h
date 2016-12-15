@@ -106,6 +106,4 @@ int       lol_stat     (const char *path, struct stat *);
 // }
 //
 
-int lol_mkfs (const DWORD bs, const DWORD nb, const char *path);
-
-
+int   lol_mkfs (const DWORD bs, const DWORD nb, const char *path);
