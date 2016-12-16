@@ -1,0 +1,156 @@
+.\" Copyright (c) 2016, Niko Kiiskinen
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.\"     @(#)lol.5 0.13 16/12/16
+.\"
+.\" Modified, niko, 2016-12-16
+.\"
+.TH "lol" "5" "2016-12-16" "LOLFS v0.13" "Lolfs Package Manual"
+.SH "NAME"
+lol \- execute lolfs commands
+.SH "SYNOPSIS"
+.B lol
+[\fIFUNCTION\fR] [\fIARGUMENTS\fR]...
+.SH "DESCRIPTION"
+'lol' command creates a lolfs container, copies files to and
+from it. It can also delete files, list files inside a container,
+show available space in a container and resize a container.
+.SH "OPTIONS"
+.TP
+.B \-v --version
+Shows lolfs version. Every lol command executed by lol has
+this option also.
+.TP
+.B \-h --help
+Shows a list of commands that can be executed. Every one of
+these commands has also this option to receive more information
+about each command.
+.SH "FUNCTIONS"
+.TP
+.B \ cat
+Prints a file which is inside a lolfs container to
+.I standard output.
+See example below.
+.TP
+.B \ cc
+Checks a lolfs container for errors.
+.TP
+.B \ cp
+Copies files to and from a lolfs container.
+.TP
+.B \ df
+Shows used and available space in a container.
+.TP
+.B \ fs
+Creates a lolfs container. See example below.
+.TP
+.B \ ls
+Lists files inside a lolfs container.
+.TP
+.B \ rm
+Deletes file(s) inside a container.
+.TP
+.B \ rs
+Allocates more space to a container. If a container
+becomes full or almost full, use this command to
+resize it.
+.SH "EXAMPLES"
+.TP
+lol \ cc --help
+.IP
+Shows information about the 'lol cc' command.
+.TP
+lol \ fs 400 50000 my.db
+.IP
+Creates a lolfs container 'my.db' which has 50000
+data blocks, each 400 bytes. So, this container can
+store about 20 Megabytes of data.
+.TP
+lol \ ls my.db
+.IP
+List files in 'my.db' container.
+.TP
+lol \ cp *.txt my.db
+.IP
+Copies all text files into 'my.db'.
+.TP
+lol \ cat my.db:/memo.txt
+.IP
+Prints the file 'memo.txt' which is inside a container 'my.db' to
+.I standard output.
+.TP
+lol \ rs -b 10000 my.db
+.IP
+Allocates 10000 more data blocks to 'my.db'.
+.TP
+lol \ rs -s 300M my.db
+.IP
+Allocates additional 300 Megabytes to 'my.db'.
+.TP
+lol \ rm my.db:/mother_in_law.jpg
+.IP
+Deletes a file from 'my.db'.
+.TP
+lol \ df my.db
+.IP
+Shows free and used space in 'my.db' container.
+.TP
+lol \ cc my.db
+.IP
+Checks container 'my.db' for errors.
+.SH "ENVIRONMENT"
+Not implemented.
+.SH "DIAGNOSTICS"
+The
+.B lol
+program and all of it's functions return 0 after
+succesfull execution. Otherwise return value is < 0.
+.SH "AUTHOR"
+Written by Niko Kiiskinen.
+.SH "BUGS"
+Report bugs to <\%nkiiskin@yahoo.com\%>.
+.SH "COPYRIGHT"
+Copyright \(co 2015, 2016 Niko Kiiskinen.
+.BR
+.PP
+License: GNU GPL version 2 or later. <\%https://www.gnu.org/licenses\%>.
+.BR
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+.BR mkfs.lolfs(5),
+.BR fsck.lolfs(5).
+.PP
+The full documentation for
+.B lol
+related commands and
+.B
+C API
+is maintained as man manual pages. If
+.B lolfs
+package is properly installed at your site.
+.SH "COLOPHON"
+This page is part of release 0.13 of the lolfs project
+man-pages. The website of the project and the latest vaersion,
+can be found at
+\%https://nkiiskin.github.io/lolfs\%

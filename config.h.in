@@ -39,6 +39,9 @@
 /* Define to 1 if you have the <signal.h> header file. */
 #undef HAVE_SIGNAL_H
 
+/* Define to 1 if you have the `sprintf' function. */
+#undef HAVE_SPRINTF
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -47,6 +50,9 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strcat' function. */
+#undef HAVE_STRCAT
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H

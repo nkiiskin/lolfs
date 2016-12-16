@@ -21,14 +21,14 @@
 .\" <http://www.gnu.org/licenses/>.
 .\" %%%LICENSE_END
 .\"
-.\"     @(#)lol_fopen.3	0.13 11/07/16
+.\"     @(#)lol_fopen.5	0.13 11/07/16
 .\"
-.\" Modified, niko, , 2016-11-07
+.\" Modified, niko, 2016-12-16
 .\"
-.TH LOL_FOPEN 3  2016-11-07 "LOLFS" "Lolfs API Manual"
-.SH NAME
+.TH "lol_fopen" "5" "2016-11-07" "LOLFS v0.13" "Lolfs Package Manual"
+.SH "NAME"
 lol_fopen \- open a file inside lolfs container
-.SH SYNOPSIS
+.SH "SYNOPSIS"
 .nf
 .B #include <lolfs.h>
 .sp
@@ -38,9 +38,9 @@ lol_fopen \- open a file inside lolfs container
 .in -4n
 .in
 .sp
-.SH DESCRIPTION
+.SH "DESCRIPTION"
 The
-.BR lol_fopen ()
+.BR lol_fopen
 function opens the file inside a lolfs container whose name
 is the string pointed to by
 .I path
@@ -102,39 +102,49 @@ The
 .I mode
 of the lol stream is one of the values "r", "r+", "w", "w+", "a", "a+"
 with a possible combination with "b", like "rb" or "wb" etc.
-
 .I mode
 argument is used just as in the
-.BR fopen ()
+.BR fopen
 function with exception that path must include
 the container file and the filename inside the
 container like:
-.I "containername:/filename"
-.SH EXAMPLE
+.I "container:/filename"
+.SH "EXAMPLE"
 lol_FILE *fp;
 .sp
-fp = lol_fopen("mycont:/README.txt", "r");
-.SH RETURN VALUE
+fp = lol_fopen("my.db:/README.txt", "r");
+.SH "RETURN VALUE"
 Upon successful completion
-.BR lol_fopen()
+.BR lol_fopen
 returns a
 .I lol_FILE
 pointer.
-Otherwise, NULL is returned
-
-
-	Thread safety	Not thread safe as of v0.13
-
-
-.BR lol_fopen ()
+Otherwise,
+.I NULL
+is returned.
+.PP
+Thread safety: Not thread safe as of v0.13.
+.BR lol_fopen
 limits the number of characters examined in
 .I mode
-to 4 
-.SH SEE ALSO
-.BR lol_ferror (3),
-.BR lol_fclose (3),
-.SH COLOPHON
+to 4
+.SH "AUTHOR"
+Written by Niko Kiiskinen.
+.SH "BUGS"
+Report bugs to <\%nkiiskin@yahoo.com\%>.
+.SH "COPYRIGHT"
+Copyright \(co 2015, 2016 Niko Kiiskinen.
+.BR
+.PP
+License: GNU GPL version 2 or later. <\%https://www.gnu.org/licenses\%>.
+.BR
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+.BR lol_fclose(5),
+.BR lol_ferror(5)
+.SH "COLOPHON"
 This page is part of release 0.13 of the lolfs project
-.I man-pages
-A description of the project, can be found at
+man-pages. The website of the project and the latest vaersion,
+can be found at
 \%https://nkiiskin.github.io/lolfs\%

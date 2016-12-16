@@ -804,11 +804,11 @@ uninstall-am:
 dist-hook:
 	chmod u+w $(distdir)/README.md
 	sed -i "/Distribution date/c\Distribution date: `date`" README.md
-	rm -f *~ bin/*~ src/*.o src/*~ lib/*.o lib/*.so lib/*~
+	rm -f *~ bin/*~ src/*.o src/*~ lib/*.o lib/*.so lib/*~ man/*~
 	mkdir -p $(distdir)/m4
 
 install-data-local:
-	@mkdir -p ${datarootdir}/man/man3
+	@mkdir -p ${datarootdir}/man/man5
 
 install-exec-local:
 	@echo '******************************'

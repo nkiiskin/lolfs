@@ -10,6 +10,7 @@
 #
 #
 AUTOMAKE_OPTIONS = foreign
-dist_man3_MANS = \
-	lol_fopen.3 \
-	lol_fclose.3
+dist_man5_MANS = \
+	lol.5 \
+	lol_fopen.5 \
+	lol_fclose.5
