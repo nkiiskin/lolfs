@@ -23,7 +23,7 @@
 .\"
 .\"     @(#)lol.3 0.13 16/12/16
 .\"
-.\" Modified, niko, 2016-12-16
+.\" Modified, niko, 2016-12-17
 .\"
 .de URL
 \\$2 \(laURL: \\$1 \(ra\\$3
@@ -34,6 +34,7 @@
 lol \- execute lolfs commands
 .SH "SYNOPSIS"
 .SY lol
+.OP \-hv
 .OP \fIFUNCTION\fR
 .RI [ \fIARGUMENTS\fR
 .IR .\|.\|. ]
@@ -46,7 +47,9 @@ The
 .B lol
 command is followed by a \fIfunction\fP and it's \fIarguments\fP.
 .P
-These functions can:
+These
+.I functions
+can:
 .br 
 .RS
 \(bu create a new container.
@@ -58,26 +61,29 @@ These functions can:
 \(bu copy files between computer and container.
 .RE
 .RS
-\(bu and much more. See the functions below...
+\(bu See the other functions below...
 .RE
-.\"command creates a lolfs container, copies files to and
-.\"from it. It can also delete files, list files inside a container,
-.\"show available space in a container and resize it. It is the
-.\"\fIinterface\fP to create and access lolfs containers.
 .SH "OPTIONS"
 .TP
 .B \-v \-\-version
-Shows lolfs version. Every lol command executed by lol has
-this option also.
+Shows program version. Every
+.I function
+executed by
+.B lol
+also has this option separately.
 .TP
 .B \-h \-\-help
-Shows a list of commands that can be executed. Every one of
-these commands has also this option to receive more information
-about each command.
+Shows a list of
+.I functions
+that can be executed. Each
+.I function
+has also this option separately.
 .SH "FUNCTIONS"
 .TP
 .B cat
-Prints a file which is inside a lolfs container to
+Prints a file which is inside a
+.B lolfs
+container to
 .I standard output.
 See example below.
 .TP
@@ -113,7 +119,7 @@ lol fs 400 50000 my.db
 .IP
 Creates a lolfs container 'my.db' which has 50000
 data blocks, each 400 bytes. So, this container can
-store about 20 Megabytes of data.
+store 400 * 50,000 bytes (which is about 20 Megabytes) of data.
 .TP
 lol ls my.db
 .IP
@@ -153,22 +159,12 @@ Not implemented.
 The
 .B lol
 program and all of it's functions return 0 after
-succesfull execution. Otherwise return value is < 0.
+succesful execution. Otherwise return value is < 0.
 .SH "AUTHOR"
-Written by Niko Kiiskinen.
-.SH "BUGS"
-Report bugs to
+Written by
 .MT nkiiskin@\:yahoo.com
-Niko Kiiskinen,
+Niko Kiiskinen.
 .ME
-thank you!.
-.BR
-.PP
-License GNU GPL version 2 or later.
-.URL https://\:www.gnu.org/\:licenses
-.BR
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.
 .SH "SEE ALSO"
 .BR mkfs.lolfs(3),
 .BR fsck.lolfs(3).
@@ -183,8 +179,15 @@ is maintained as man manual pages. If
 package is properly installed at your site.
 .SH "COPYRIGHT"
 Copyright \(co 2015, 2016 Niko Kiiskinen.
+.BR
+.PP
+License GNU GPL version 2 or later.
+.URL https://\:www.gnu.org/\:licenses
+.BR
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
 .SH "COLOPHON"
 This page is part of release 0.13 of the lolfs project
-man-pages. The website of the project and the latest vaersion,
+man-pages. The website of the project and the latest version,
 can be found at Github:
 .URL https://\:nkiiskin.github.io/\:lolfs

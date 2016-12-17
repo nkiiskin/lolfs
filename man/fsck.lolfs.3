@@ -21,7 +21,7 @@
 .\" <http://www.gnu.org/licenses/>.
 .\" %%%LICENSE_END
 .\"
-.\"     @(#)lol_fclose.3 0.13 11/12/16
+.\"     @(#)fsck.lolfs.3 0.13 2016/12/17
 .\"
 .\" Modified, niko, 2016-12-17
 .\"
@@ -29,40 +29,62 @@
 \\$2 \(laURL: \\$1 \(ra\\$3
 ..
 .if \n[.g] .mso www.tmac
-.TH "lol_fclose" "3" "17 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
+.TH "fsck.lolfs" "3" "16 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
 .SH "NAME"
-lol_fclose \- close a lol stream
+fsck.lolfs \- check lolfs container for errors
 .SH "SYNOPSIS"
-.B #include <lolfs.h>
-.sp
-.BI "int fclose(lol_FILE *" stream );
+.SY fsck.lolfs
+.OP \-hv
+.RI [ file
+.IR .\|.\|. ]
+.YS
 .SH "DESCRIPTION"
+.B fsck.lolfs
+is used to check and optionally repair one or more
+.B lolfs
+containers. Usually containers are normal files but in Linux,
+a container may also be a device name (e.g. /dev/hdc1).
 The
-.BR lol_fclose
-function closes the stream pointed to by
-.I stream
-opened by
-.BR lol_fopen(3).
-.SH "RETURN VALUE"
-Upon successful completion 0 is returned.
-Otherwise,
-.B EOF
-is returned.
-.SH "ERRORS"
-.PP
+.B fsck.lolfs
+command is followed by the name of the
+.B lolfs
+container \fIfile\fP or the \fIdevice\fP.
+.SH "OPTIONS"
+.TP
+.B \-v \-\-version
+Shows fsck.lolfs program version.
+.TP
+.B \-h \-\-help
+Shows a short description of usage.
+.SH "EXAMPLES"
+.TP
+fsck.lolfs my.db
+.IP
+Checks the lolfs container 'my.db' for errors.
+.SH "ENVIRONMENT"
+Not implemented.
+.SH "DIAGNOSTICS"
 The
-.BR lol_fclose
-function may fail, in which case
-.I lol_ferror(3)
-returns the error code.
+.B fsck.lolfs
+program returns 0 after succesful execution.
+Otherwise the return value is < 0.
 .SH "AUTHOR"
 Written by
 .MT nkiiskin@\:yahoo.com
 Niko Kiiskinen.
 .ME
 .SH "SEE ALSO"
-.BR lol_fopen(3),
-.BR lol_ferror(3)
+.BR mkfs.lolfs(3),
+.BR lol(3).
+.PP
+The full documentation for
+.B lolfs
+related commands and
+.B
+C API
+is maintained as man manual pages. If the
+.B lolfs
+package is properly installed at your site.
 .SH "COPYRIGHT"
 Copyright \(co 2015, 2016 Niko Kiiskinen.
 .BR
@@ -75,6 +97,5 @@ There is NO WARRANTY, to the extent permitted by law.
 .SH "COLOPHON"
 This page is part of release 0.13 of the lolfs project
 man-pages. The website of the project and the latest version,
-can be found at
+can be found at Github:
 .URL https://\:nkiiskin.github.io/\:lolfs
-.\"\%https://nkiiskin.github.io/lolfs\%
