@@ -21,11 +21,15 @@
 .\" <http://www.gnu.org/licenses/>.
 .\" %%%LICENSE_END
 .\"
-.\"     @(#)lol_fopen.5	0.13 11/07/16
+.\"     @(#)lol_fopen.3	0.13 11/07/16
 .\"
-.\" Modified, niko, 2016-12-16
+.\" Modified, niko, 2016-12-17
 .\"
-.TH "lol_fopen" "5" "2016-11-07" "LOLFS v0.13" "Lolfs Package Manual"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH "lol_fopen" "3" "17 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
 .SH "NAME"
 lol_fopen \- open a file inside lolfs container
 .SH "SYNOPSIS"
@@ -131,20 +135,26 @@ to 4
 .SH "AUTHOR"
 Written by Niko Kiiskinen.
 .SH "BUGS"
-Report bugs to <\%nkiiskin@yahoo.com\%>.
-.SH "COPYRIGHT"
-Copyright \(co 2015, 2016 Niko Kiiskinen.
+Report bugs to
+.MT nkiiskin@\:yahoo.com
+Niko Kiiskinen,
+.ME
+thank you!.
 .BR
 .PP
-License: GNU GPL version 2 or later. <\%https://www.gnu.org/licenses\%>.
+License GNU GPL version 2 or later.
+.URL https://\:www.gnu.org/\:licenses
 .BR
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 .SH "SEE ALSO"
-.BR lol_fclose(5),
-.BR lol_ferror(5)
+.BR lol_fclose(3),
+.BR lol_ferror(3)
+.SH "COPYRIGHT"
+Copyright \(co 2015, 2016 Niko Kiiskinen.
 .SH "COLOPHON"
 This page is part of release 0.13 of the lolfs project
 man-pages. The website of the project and the latest vaersion,
 can be found at
-\%https://nkiiskin.github.io/lolfs\%
+.URL https://\:nkiiskin.github.io/\:lolfs
+.\"\%https://nkiiskin.github.io/lolfs\%

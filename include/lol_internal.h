@@ -65,6 +65,12 @@ enum {
 
 };
 
+/* TODO: Move all the defining macros to a separate .h -file
+         so that parameters (such as size of index buffer, size of
+         alloc_entry etc..) may be changed just by editing one file.
+*/
+
+
 #define LOL_FILE_SIZE (sizeof(struct _lol_FILE))
 #define DISK_HEADER_SIZE (sizeof(struct lol_super))
 #define ENTRY_SIZE (sizeof(alloc_entry))

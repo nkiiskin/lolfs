@@ -23,7 +23,7 @@ dist-hook:
 	mkdir -p $(distdir)/m4
 
 install-data-local:
-	@mkdir -p ${datarootdir}/man/man5
+	@mkdir -p ${datarootdir}/man/man3
 
 install-exec-local:
 	@echo '******************************'

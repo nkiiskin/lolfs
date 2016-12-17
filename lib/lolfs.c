@@ -4045,7 +4045,14 @@ int lol_garbage_filename(const char *name) {
   return errs;
 
 } // end if lol_garbage_filename
-/* ********************************************************** */
+/* **********************************************************
+ * TODO: SHOULD ADD POSSIBILITY TO CREATE A CONTAINER
+ *       WITH ONLY SINGLE VALUE: THE SIZE!
+ * lol_mkfs: Create a lolfs container.
+ * return value:
+ * < 0  : error
+ * >= 0 : free space
+ ************************************************************ */
 int lol_mkfs (DWORD bs, DWORD nb, const char *path)
 {
   struct stat st;
