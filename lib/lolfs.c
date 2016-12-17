@@ -3315,7 +3315,6 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 	    goto error;
         }
 	
-
     } // end for i
 
     if (start_bytes) {
@@ -3346,10 +3345,9 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 
   off /= size;
 
-  // MUST ALSO WRITE MODIFIED CHAIN !
+    // MUST ALSO WRITE MODIFIED CHAIN !
 
-  ret = 0;
-
+     ret = 0;
      op->nentry.file_size = (DWORD)new_filesize;
      ret = lol_update_nentry(op);
 
@@ -3520,12 +3518,14 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
  long pos, file_size;
  int ret = 0;
 
-  if (!(op))
+  if (!(op)) {
+    lol_errno = EBADF;
     return -1;
-
-  if ((!(op->vdisk)) || (op->opened != 1))
+  }
+  if ((!(op->vdisk)) || (op->opened != 1)) {
+    lol_errno = EBADF;
     return -1;
-
+  }
   // It is possible to fseek over the file size.
   // But not under --> return -1
 
@@ -3542,7 +3542,6 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
 	    }
             else
 	      op->curr_pos = offset;
-
 	    break;
 
           case SEEK_CUR :
@@ -3553,7 +3552,6 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
 	    }
             else
                 op->curr_pos += offset;
-
 	    break;
 
           case SEEK_END :
@@ -3564,13 +3562,11 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
 	    }
             else
                 op->curr_pos = file_size + offset;
-
 	    break;
 
           default :
             ret = -1;
 	    op->err = lol_errno = EINVAL;
-
 	    break;
 
       } // end switch
@@ -3665,19 +3661,19 @@ int lol_unlink(const char *name) {
 
   memset((char *)&entry, 0, NAME_ENTRY_SIZE);
 
-  if ((fwrite((char *)&entry, (size_t)(NAME_ENTRY_SIZE),
-               1, fp->vdisk)) != 1)                     {
+  if ((fwrite((char *)&entry,
+      (size_t)(NAME_ENTRY_SIZE), 1, fp->vdisk)) != 1) {
 
-	    if ((ferror(fp->vdisk))) {
+      if ((ferror(fp->vdisk))) {
 	        lol_errno = errno;
                 goto error;
-	    }
-	    else{
-	      lol_errno = EIO;
-	      goto error;
-	    }
+      }
+      else{
+	lol_errno = EIO;
+	goto error;
+      }
 
-	 goto error;
+      goto error;
 
   } // end if fwrite
 
@@ -3731,7 +3727,7 @@ void lol_clearerr(lol_FILE *op) {
    op->err = 0;
 
 } // end lol_clearerr
-// FIX lol_ferror: return mixed POSIX & lol -errors?
+// FIX lol_ferror: returns now mixed POSIX & lol -errors?
 /* **********************************************************
  * lol_ferror:
  * Tests the error indicator for the stream pointed to by stream,
@@ -3741,11 +3737,13 @@ void lol_clearerr(lol_FILE *op) {
  * ********************************************************** */
 int lol_ferror(lol_FILE *op) {
 
-  if (!(op))
-    return EBADF;
+  if (!(op)) {
+    lol_errno = EBADF;
+    return -1;
+  }
 
   return op->err;
-}
+} // end lol_ferror
 /* **********************************************************
  * lol_ftell:
  * Returns the current value of the file position

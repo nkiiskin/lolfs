@@ -1,26 +1,23 @@
 
 
 
-	Liblolfs - Little Object List (LOL) filesystem - by Niko Kiiskinen
+	LOLFS - Little Object List (LOL) FileSystem - by Niko Kiiskinen
                                       
 
         Please see file 'INSTALL' for detailed installation instructions
         The file COPYING is a copy of the General Public License v2,
         under which this software is distributed.
 
-        This software package comes with some install scripts which
-        are distributed under The General Public License v3.
+        This software package comes with some install scripts, some
+        of which are distributed under The General Public License v3.
         See the file gpl3.txt for information about this license.
-
 
 
 
 Manifesto
 
 
-     I enjoy (re-)inventing wheels, here is another excr.. example.
-
-     Lolfs is a container file. It means that it is a file (stored
+     LolFS is a container file. It means that it is a file (stored
      in your computer somewhere) which has other files inside it.
 
      Once you create a lol container file (using the included
@@ -33,51 +30,11 @@ Manifesto
      See below for details.
 
 
-
-    mkfs.lolfs program:
-    ===================
-
-
-                "mkfs.lolfs" creates a container file.
-
-
-                It takes 3 parameters:
-                - block size: the number of bytes a "block" has
-                              (this is a number which you can choose
-                               freely. Try to choose it as average file size
-                               to gain best performance).
-
-                - number of blocks: the number of data blocks. This depends
-                                    on how big container you want.
-                                    Try like 50000 first and try it
-
-                - filename: this is just the name which you like to use
-                            as the name of the container file. Ex:
-                            'mycontainer'
-
-                 Use like: "mkfs.lolfs  100  5000  mycontainer"
-
-                           ( This creates a container file 'mycontainer' which
-                             has 1000 * 5000 bytes of storage capacity ).
-
-
-                 ( In Linux, lolfs may be used directly with removable storage,
-                   without warranty of course!
-
-                   So, you may actually insert an SDHC card to your Linux
-                   and create a lol storage directly there. In that case the
-                   "filename" parameter is just the name of the device,
-                   for example "mkfs.lolfs 512 4000000 /dev/sdb"
-                   You MUST know what you are doing then, and of course
-                   you must be root to do that - or anything similar.
-                   You have been warned! :)
-
-
-
     lol program:
     ============
-
-                The "lol" app has a couple of built-in functions which
+                The 'lol' program is the main user interface to create
+                and access files of a lolfs container.
+                The 'lol' app has several built-in functions which
                 can be used to do some common file operations.
                 These functions are currently (in v 0.13) :
 
@@ -96,18 +53,17 @@ Manifesto
 
                  lol cat  Prints the contents of a file (inside a container)
                           to standard output.
-                          Use like: "lol cat mycontainer:/readme.txt"
-                          Or like: "lol cat mycontainer:/somefile > somefile.bak"
-
+                          Use like: 'lol cat container:/readme.txt'.
+                          Or like: 'lol cat container:/somefile > file.bak'.
 
 
 
                  lol cc function:
                  -----------------
 
-                 lol cc     checks if a container has errors
+                 lol cc     checks if a container has errors.
 
-                            Use like: "lol cc mycontainer"
+                            Use like: "lol cc mycontainer".
 
 
 
@@ -117,18 +73,20 @@ Manifesto
 
                  lol cp copies files to (and from) your container file.
 
-                   If you want to copy a file /home/you/readme.txt to your
-                   container file 'mycontainer', use:
-                   lol cp /home/you/readme.txt mycontainer
+                  If you want to copy a file /home/you/readme.txt to your
+                  container file 'mycontainer', use:
+                  lol cp /home/you/readme.txt mycontainer
 
-                   If you want to copy a file which is inside the container
-                   back to your normal filesystem, use:
 
-                   lol cp mycontainer:/readme.txt /some/directory
+                  You can copy multiple files like: 'lol cp *.jpg container'
 
-                   NOTE: When accessing files inside your container, you must
-                         separate the path with ':' like in above example.
+                  If you want to copy a file which is inside the container
+                  back to your normal filesystem, use:
 
+                  lol cp mycontainer:/readme.txt /some/directory
+
+                  NOTE: When accessing files inside your container, you must
+                        separate the path with ':' like in above example.
 
 
 
@@ -137,7 +95,6 @@ Manifesto
 
                  lol df  Shows how much space is used in container file.
                          Use like: "lol df mycontainer"
-
 
 
 
@@ -154,8 +111,6 @@ Manifesto
                           'mycontainer' which has 5000 data blocks,
                           each 1000 bytes. So the storage capacity
                           for this example is 1000 * 5000 bytes).
-
-
 
 
                  lol ls function:
@@ -202,6 +157,60 @@ Manifesto
 
                          (This adds 20 Megabytes new space to
                           container 'mycontainer').
+
+
+
+    mkfs.lolfs program:
+    ===================
+
+
+                "mkfs.lolfs" creates a container file.
+
+
+                It takes 3 parameters:
+                - block size: the number of bytes a "block" has
+                              (this is a number which you can choose
+                               freely. Try to choose it as average file size
+                               to gain best performance).
+
+                - number of blocks: the number of data blocks. This depends
+                                    on how big container you want.
+                                    Try like 50000 first and try it
+
+                - filename: this is just the name which you like to use
+                            as the name of the container file. Ex:
+                            'mycontainer'
+
+                 Use like: "mkfs.lolfs  100  5000  mycontainer"
+
+                           ( This creates a container file 'mycontainer' which
+                             has 1000 * 5000 bytes of storage capacity ).
+
+
+                 ( In Linux, lolfs may be used directly with removable storage,
+                   without warranty of course!
+                   So, you may actually insert an SDHC card to your Linux
+                   and create a lol storage directly there. In that case the
+                   "filename" parameter is just the name of the device,
+                   for example "mkfs.lolfs 512 4000000 /dev/sdb"
+                   You MUST know what you are doing then, and of course
+                   you must be root to do that - or anything similar.
+                   You have been warned! :)
+
+
+
+    fsck.lolfs program:
+    ===================
+
+
+                "fsck.lolfs" checks a lol container for errors.
+
+                It takes one parameter:
+                - the name of the container
+
+
+                 Use like: "fsck.lolfs mycontainer"
+
 
 
 
@@ -255,4 +264,4 @@ Questions, Bug reports, etc..
      https://github.com/nkiiskin/lolfs
 
 
-Distribution date: Sat Dec 17 14:40:06 EET 2016
+Distribution date: Sat Dec 17 18:26:23 EET 2016

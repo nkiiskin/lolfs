@@ -15,4 +15,5 @@ dist_man3_MANS = \
 	mkfs.lolfs.3 \
 	fsck.lolfs.3 \
 	lol_fopen.3 \
-	lol_fclose.3
+	lol_fclose.3 \
+	lol_ferror.3
