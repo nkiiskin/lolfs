@@ -1,0 +1,75 @@
+.\" Copyright (c) 2016, Niko Kiiskinen
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.\"     @(#)lol_clearerr.3 0.13 11/12/18
+.\"
+.\" Modified, niko, 2016-12-18
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH "lol_clearerr" "3" "18 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
+.SH "NAME"
+lol_clearerr \- clears the error and eof indicators for the stream
+.SH "SYNOPSIS"
+.B #include <lolfs.h>
+.sp
+.BI "void lol_clearerr(lol_FILE *" stream );
+.SH "DESCRIPTION"
+The function
+.BR lol_clearerr
+clears the end-of-file and error indicators for
+the stream pointed to by
+.I stream.
+.SH "RETURN VALUE"
+N/A
+.SH "ERRORS"
+.PP
+This function should fail only if its argument is
+not a valid stream. Then it will set
+.I lol_errno
+to \fBEBADF\fP.
+.SH "AUTHOR"
+Written by
+.MT nkiiskin@\:yahoo.com
+Niko Kiiskinen.
+.ME
+.SH "SEE ALSO"
+.BR lol_feof(3),
+.BR lol_ferror(3)
+.SH "COPYRIGHT"
+Copyright \(co 2015, 2016 Niko Kiiskinen.
+.BR
+.PP
+License GNU GPL version 2 or later.
+.URL https://\:www.gnu.org/\:licenses
+.BR
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "COLOPHON"
+This page is part of release 0.13 of the lolfs project
+man-pages. The website of the project and the latest version,
+can be found at
+.URL https://\:nkiiskin.github.io/\:lolfs
+.\"\%https://nkiiskin.github.io/lolfs\%

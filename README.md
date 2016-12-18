@@ -249,12 +249,12 @@ lolfs API:
       
 
 
-  How to compile and link a lolfs enabled program:
+  HOW TO compile and link a lolfs enabled program:
 
-  gcc program.c -o program -llolfs
+  gcc program.c -o program -L/path/to/liblolfs -llolfs
 
-  (You may need to include compiler option -L/path/to/librarydir
-   if the linker does not find lolfs library)
+  Usually '/path/to/liblolfs' is /usr/local/lib or /usr/local/lib64
+  depending on how you configured the installation.
 
   
 Questions, Bug reports, etc..
@@ -264,4 +264,4 @@ Questions, Bug reports, etc..
      https://github.com/nkiiskin/lolfs
 
 
-Distribution date: Sat Dec 17 18:26:23 EET 2016
+Distribution date: Sun Dec 18 02:46:18 EET 2016

@@ -203,10 +203,10 @@ int lol_ls(int argc, char* argv[])
                           }
                            // Append file size;
                            memset(tmp, 0, 128);
-                           sprintf(tmp, "%d", entry.file_size);
+                           sprintf(tmp, "%lu", entry.file_size);
                            printf("%s", tmp);
                           ln = strlen(tmp);
-                         spaces = 10 - ln;
+                         spaces = 16 - ln;
                         if (spaces < 4)
 	                      spaces = 4;
                        for (j = 0; j < spaces; j++) {
@@ -215,8 +215,8 @@ int lol_ls(int argc, char* argv[])
                      printf("%s\n", entry.filename);
                  } // end if time_string
                  else
-                    printf("01-Jan 00:00:00 1970          %d     %s\n",
-                            entry.file_size, entry.filename);
+                    printf("01-Jan 00:00:00 1970          %lu     %s\n",
+			   entry.file_size, entry.filename);
 
   } // end for i
 

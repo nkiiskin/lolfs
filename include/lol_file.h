@@ -49,8 +49,7 @@ typedef struct lol_name_entry {
   int unused;
 #endif
   alloc_entry i_idx;
-  // TODO: DWORD -> ULONG
-  DWORD  file_size;
+  ULONG  file_size;
 
 } *lol_name_entry_ptr;
 
@@ -77,13 +76,13 @@ struct _lol_FILE
 
   struct lol_super sb;
   struct lol_name_entry nentry;
-  // TODO: make vdisk_size ULONG
-  DWORD vdisk_size;
+  ULONG vdisk_size;
   FILE  *vdisk;
 
   struct lol_open_mode open_mode;
   alloc_entry nentry_index;
-
+  // TODO Make curr_pos ULONG
+  // Because file_size is ULONG too !!
   DWORD curr_pos;
   BOOL  opened;
   WORD  eof;

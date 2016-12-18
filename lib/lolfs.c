@@ -62,7 +62,8 @@
 // Some globals
 /* ********************************************************** */
 
-const long LOL_THEOR_MIN_DISKSIZE = 69;
+const long LOL_THEOR_MIN_DISKSIZE = 77;
+const long LOL_DEFAULT_BLOCKSIZE = 2048;
 
 /*
 (long)((long)(DISK_HEADER_SIZE) +
@@ -344,17 +345,15 @@ long lol_get_vdisksize(char *name, struct lol_super *sb,
  * ********************************************************** */
 int lol_valid_sb(const lol_FILE *op) {
 
-  DWORD size;
-  long sz;
+  ULONG size;
 
   if (!(op))
     return -1;
   if ((!(op->sb.num_blocks)) || (!(op->sb.block_size)))
     return -2;
-  sz = (long)(op->vdisk_size);
-  if (sz < LOL_THEOR_MIN_DISKSIZE)
+  if (op->vdisk_size < LOL_THEOR_MIN_DISKSIZE)
     return -3;
-  size = LOL_DEVSIZE(op->sb.num_blocks, op->sb.block_size);
+  size = (ULONG)LOL_DEVSIZE(op->sb.num_blocks, op->sb.block_size);
   if (op->vdisk_size != size)
      return -4;
   if ((LOL_CHECK_MAGIC(op)))
@@ -405,7 +404,7 @@ int lol_check_corr(const lol_FILE *op, const int mode) {
 
     bs = op->sb.block_size;
     nb = op->sb.num_blocks;
-    fs = (ULONG)op->nentry.file_size;
+    fs = op->nentry.file_size;
 
     space = (ULONG)(((ULONG)(nb)) * ((ULONG)(bs)));
     if (fs > space)
@@ -1140,7 +1139,7 @@ int lol_delete_chain_from(lol_FILE *op, const int flags) {
   DWORD first_index = 0;
   DWORD num_blocks  = 0;
   DWORD block_size  = 0;
-  DWORD file_size   = 0;
+  ULONG file_size   = 0;
   DWORD file_blocks = 1;
   long  skip;
   long  offset;
@@ -1623,7 +1622,7 @@ int lol_is_writable(const lol_FILE *op) {
   int   mode;
   DWORD num_blocks;
   DWORD block_size;
-  DWORD shouldbe;
+  ULONG shouldbe;
   UCHAR file_exists;
 
   // Can't use lol_check_corr here
@@ -1641,7 +1640,7 @@ int lol_is_writable(const lol_FILE *op) {
   if (mode < 1) // Opened "r"?                                                  
     return -3;
 
-  shouldbe = LOL_DEVSIZE(num_blocks, block_size);
+  shouldbe = (ULONG)LOL_DEVSIZE(num_blocks, block_size);
 
   if (op->vdisk_size != shouldbe)
      return -4;
@@ -1723,7 +1722,7 @@ int lol_touch_file(lol_FILE *op) {
   DWORD num_blocks;
   DWORD block_size;
   DWORD files;
-  DWORD shouldbe;
+  ULONG shouldbe;
   fpos_t pos;
   size_t len, bytes;
   struct lol_name_entry entry;
@@ -1765,7 +1764,7 @@ int lol_touch_file(lol_FILE *op) {
       lol_errno = ENAMETOOLONG;
   }
 
-  shouldbe = LOL_DEVSIZE(num_blocks, block_size);
+  shouldbe = (ULONG)LOL_DEVSIZE(num_blocks, block_size);
 
   if (op->vdisk_size != shouldbe) {
      lol_errno = EIO;
@@ -1863,7 +1862,7 @@ error:
 int lol_truncate_to_zero(lol_FILE *op) {
 
   int   mode;
-  DWORD size;
+  ULONG size;
   fpos_t pos;
   struct lol_name_entry entry;
   char *name;
@@ -2135,6 +2134,7 @@ int lol_update_chain(lol_FILE *op, const long olds,
  * ***********************************************************/
 int lol_feof(lol_FILE *op) {
   if (!(op)) {
+    lol_errno = EBADF;
     return -1;
   }
   return (int)(op->eof);
@@ -2168,7 +2168,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
   int       mode_len = 0;
   int       trunc    = 0;
   long      size     = 0;
-  DWORD     fs       = 0;
+  ULONG     fs       = 0;
 
   if ((!path) || (!mode)) {
     lol_errno = EINVAL;
@@ -2220,7 +2220,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
       delete_return_NULL(op);
   }
 
-  op->vdisk_size = (DWORD)size;
+  op->vdisk_size = (ULONG)size;
   op->open_mode.device = st.st_mode;
 
   if(!(op->vdisk = fopen(op->vdisk_name, op->open_mode.vd_mode))) {
@@ -2518,7 +2518,7 @@ int lol_read_index_chain(lol_FILE *op, const size_t read_blocks)
 
   DWORD block_size;
   DWORD num_blocks;
-  DWORD file_size;
+  ULONG file_size;
   DWORD pos, bb;
   DWORD blocks_in_file;
   alloc_entry first_index;
@@ -2632,7 +2632,7 @@ int lol_create_index_chain(lol_FILE *op, const long olds,
   DWORD block_size;
   DWORD num_blocks;
   alloc_entry first_index;
-  DWORD       file_size;
+  ULONG       file_size;
   long skip, offset;
   alloc_entry current_index;
   alloc_entry skip_indexes;
@@ -3348,7 +3348,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
     // MUST ALSO WRITE MODIFIED CHAIN !
 
      ret = 0;
-     op->nentry.file_size = (DWORD)new_filesize;
+     op->nentry.file_size = (ULONG)new_filesize;
      ret = lol_update_nentry(op);
 
      if (ret) {
@@ -3527,7 +3527,7 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
     return -1;
   }
   // It is possible to fseek over the file size.
-  // But not under --> return -1
+  // But not under --> return -1 & EINVAL
 
   file_size = (long)op->nentry.file_size;
   pos       = (long)op->curr_pos;
@@ -3538,7 +3538,7 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
 	    // Seeking relative to start
             if (offset < 0) {
                ret = -1;
-               op->err = lol_errno = ESPIPE;
+               op->err = lol_errno = EINVAL;
 	    }
             else
 	      op->curr_pos = offset;
@@ -3548,7 +3548,7 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
 
 	    if ((pos + offset) < 0) {
 	        ret = -1;
-                op->err = lol_errno = ESPIPE;
+                op->err = lol_errno = EINVAL;
 	    }
             else
                 op->curr_pos += offset;
@@ -3558,7 +3558,7 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
 
 	    if ((file_size + offset) < 0) {
 	        ret = -1;
-                op->err = lol_errno = ESPIPE;
+                op->err = lol_errno = EINVAL;
 	    }
             else
                 op->curr_pos = file_size + offset;
@@ -3720,9 +3720,10 @@ void lol_clearerr(lol_FILE *op) {
 
   lol_errno = 0;
 
-  if (!(op))
+  if (!(op)) {
+    lol_errno = EBADF;
     return;
-
+  }
    op->eof = 0;
    op->err = 0;
 
@@ -4183,7 +4184,6 @@ int lol_size_to_blocks(const char *size, const char *container,
                        const struct lol_super *sb,
                        const struct stat *st, DWORD *nb)
 {
-
   char    siz[256];
   long    raw_size = 0;
   long    dev_size = 0;
@@ -4191,8 +4191,6 @@ int lol_size_to_blocks(const char *size, const char *container,
   long          bs = 0;
   long      num_bl = 0;
   long  multiplier = 1;
-  // DWORD num_blocks = 0;
-  // DWORD block_size = 0;
   size_t       len = 0;
   int        plain = 0;
   int    n_letters = 0;
@@ -4296,122 +4294,7 @@ int lol_size_to_blocks(const char *size, const char *container,
     return 0;
 
 } // end lol_size_to_blocks
-/* ********************************************************** */
-#if 0
-int lol_extendfs(const char *container, const DWORD new_blocks,
-                struct lol_super *sb, const struct stat *st)
-{
-  char  buffer[4096];
-  long  nb, bs, add;
-  long  data_size;
-  long  old_offset;
-  long  new_offset;
-  long  i, times;
-  size_t  last;
-  int pass = 0;
-  FILE *fp;
-
-  if ((!(container)) || (!(sb)) || (!(st)))
-    return -1;
-  if (new_blocks < 1)
-    return -1;
-
-  nb  = (long)sb->num_blocks;
-  bs  = (long)sb->block_size;
-  add = (long)new_blocks;
-  add += nb;
-  // First we relocate the index entries
-  // Let's calculate their total size
-  // and current and new offsets.
-
-  data_size  = (long)ENTRY_SIZE;
-  data_size *= (long)(nb);
-  old_offset = (long)LOL_TABLE_START_EXT(nb, bs);
-  new_offset = (long)LOL_TABLE_START_EXT(add, bs);
-
-  times = data_size / 4096;
-  last  = (size_t)(data_size % 4096);
-
-  fp = fopen(container, "r+");
-  if (!(fp))
-    return -1;
-
-do_relocate:
-
-  for (i = 0; i < times; i++) {
-    printf("Writing from offset %ld to offset %ld (delta = %ld)\n", old_offset, new_offset, (new_offset - old_offset));
-     memset((char *)buffer, 0, 4096);
-     if ((fseek(fp, old_offset, SEEK_SET)))
-         goto err;
-     if ((fread(buffer, 4096, 1, fp)) != 1)
-         goto err;
-     if ((fseek(fp, new_offset, SEEK_SET)))
-         goto err;
-     if ((fwrite(buffer, 4096, 1, fp)) != 1)
-         goto err;
-
-     old_offset += 4096;
-     new_offset += 4096;
-  } // end for i
-
-  if (last) {
-    printf("Writing last = %ld from offset %ld to offset %ld\n", (long)last, old_offset, new_offset);
-     memset((char *)buffer, 0, 4096);
-     if ((fseek(fp, old_offset, SEEK_SET)))
-         goto err;
-     if ((fread(buffer, last, 1, fp)) != 1)
-         goto err;
-     if ((fseek(fp, new_offset, SEEK_SET)))
-         goto err;
-     if ((fwrite(buffer, last, 1, fp)) != 1)
-         goto err;
-  } // end if last
-
-  pass++;
-
-  // Next we add the new indexes or name entries
-  if (pass == 1) {
-      last = (size_t)((size_t)(new_blocks) * (size_t)(ENTRY_SIZE));
-      if ((lol_fill_with_value(FREE_LOL_INDEX, last, fp)) != last) {
-          goto err;
-      }
-  }// end if pass == 1
-  else {
-     last = (size_t)((size_t)(new_blocks) * (size_t)(NAME_ENTRY_SIZE));
-     if ((null_fill (last, fp)) != last) {
-        goto err;
-     }
-  } // end else
-
-  if (pass > 1) {
-    // Adjust the meta block and return
-     sb->num_blocks += new_blocks;
-     if ((fseek(fp, 0, SEEK_SET)))
-         goto err;
-     if ((fwrite((char *)sb,
-	 (size_t)DISK_HEADER_SIZE, 1, fp)) != 1)
-         goto err;
-     fclose(fp);
-     return 0;
-  }
-
-  // Next we relocate the name entries
-  // Let's calculate their total size
-  // and current and new offsets.
-  data_size  = (long)NAME_ENTRY_SIZE;
-  data_size *= (long)(nb);
-  old_offset = (long)LOL_DENTRY_OFFSET_EXT(nb, bs);
-  new_offset = (long)LOL_DENTRY_OFFSET_EXT(add, bs);
-  printf("Calculated dentry old_offset = %ld new_offset %ld, delta = %ld\n", old_offset, new_offset, (new_offset - old_offset));
-  times = data_size / 4096;
-  last  = (size_t)(data_size % 4096);
-  goto do_relocate;
-
-err:
- fclose(fp);
- return -1;
-} // end lol_extendfs
-#endif
+/* ********************************************************* */
 /* ********************************************************* */
 long lol_get_io_size(const long size) {
 

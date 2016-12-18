@@ -1,0 +1,114 @@
+.\" Copyright (c) 2016, Niko Kiiskinen
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.\"     @(#)lol_fseek.3 0.13 11/12/18
+.\"
+.\" Modified, niko, 2016-12-18
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH "lol_fseek" "3" "18 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
+.SH "NAME"
+lol_fseek \- sets the file position for the stream
+.SH "SYNOPSIS"
+.B #include <lolfs.h>
+.sp
+.BI "int lol_fseek(lol_FILE *" stream ", long " offset ", int " whence );
+.SH "DESCRIPTION"
+The
+.BR lol_fseek
+function sets the file position indicator for the stream pointed to by
+.IR stream .
+The new position, measured in bytes, is obtained by adding
+.I offset
+bytes to the position specified by
+.IR whence .
+If
+.I whence
+is set to
+.BR SEEK_SET ,
+.BR SEEK_CUR ,
+or
+.BR SEEK_END ,
+the offset is relative to the start of the file, the current position
+indicator, or end-of-file, respectively.
+A successful call to the
+.BR lol_fseek
+function clears the end-of-file indicator for the stream.
+.PP
+The current value of the file position indicator for the
+.I stream,
+can be obtained by
+.BR lol_ftell(3)
+function.
+.SH "RETURN VALUE"
+Upon successful completion,
+.B lol_fseek
+returns 0. Otherwise, -1 is returned and
+.I lol_errno
+is set to indicate the error.
+.SH "ERRORS"
+.TP
+.B EBADF
+The
+.I stream
+specified is not a seekable lolfs stream.
+.TP
+.B EINVAL
+The
+.I whence
+argument to
+.BR fseek
+was not
+.BR SEEK_SET ,
+.BR SEEK_END ,
+or
+.BR SEEK_CUR .
+Or: the resulting file offset would be negative.
+.SH "AUTHOR"
+Written by
+.MT nkiiskin@\:yahoo.com
+Niko Kiiskinen.
+.ME
+.SH "SEE ALSO"
+.BR lol_ftell(3) ,
+.BR lol_feof(3) ,
+.BR lol_ferror(3) ,
+.BR lol_clearerr(3) .
+.SH "COPYRIGHT"
+Copyright \(co 2015, 2016 Niko Kiiskinen.
+.BR
+.PP
+License GNU GPL version 2 or later.
+.URL https://\:www.gnu.org/\:licenses
+.BR
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "COLOPHON"
+This page is part of release 0.13 of the lolfs project
+man-pages. The website of the project and the latest version,
+can be found at
+.URL https://\:nkiiskin.github.io/\:lolfs
+.\"\%https://nkiiskin.github.io/lolfs\%

@@ -135,6 +135,7 @@ static int lol_fsck_sb(FILE *fp, const char* cont, const char *me) {
       lol_fsck_message(me, message, LOL_FSCK_INFO);
   }
 
+
   return ret;
 } // end lol_fsck_sb
 /* ******************************************************************
@@ -343,7 +344,7 @@ static int lol_fsck_nent(FILE *fp, const char* cont, const char *me) {
   UCHAR  filename[LOL_FILENAME_MAX];
   time_t created;
   alloc_entry i_idx;
-  DWORD  file_size;
+  ULONG  file_size;
 #endif
 
     } // end if no name

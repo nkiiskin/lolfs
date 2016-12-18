@@ -44,29 +44,38 @@
 //
 // Remember also, that if you "lol_fopen()" a file inside
 // the container or need to refer a file by name by any
-// other means by using a path and filename inside a container,
-// please separate the actual path in the host machine
-// from the file inside the container by a ":".
-// (And don't worry if your app does not do it correctly,
-//  lol-API functions will return a false value just like
-//  a non-lol function would).
+// other means, using a path and filename inside a container,
+// separate the actual path in the host machine from the
+// file inside the container by a ":".
+//
 //
 // Example in C-language:
 //
-// lol_FILE *fp;
-// fp = lol_fopen("/path/to/db:/myfile.txt", "r+"); // <- See the ":"
-// (Above, the "/path/to/db" is your normal filesystem
+// const char text[] = "Hello World!\n";
+// int main()
+// {
+//   lol_FILE *fp;
+//   fp = lol_fopen("/path/to/db:/myfile.txt", "w");
+//   lol_fwrite((char *)text, strlen(text), 1, fp);
+//   lol_fclose(fp);
+//   return 0;
+// }
+//
+// > lol cat db:/myfile.txt
+// > Hello World!
+//
+//  Above, the "/path/to/db" is your normal filesystem
 //  path to the container file - called "db" in this
-//  example. After the ":/" comes the actual file name INSIDE
-//  the container, which in this case is "myfile.txt".
+//  example. After the ":/" comes the actual file
+//  name INSIDE the container, which in this case
+//  is "myfile.txt".
 //
 // To use this API correctly, one should first create
 // at least one container file, either using the
-// "mkfs.lolfs" app or the interface function "lol_mkfs()".
+// 'mkfs.lolfs' app, the 'lol cc' command, or the
+// interface function 'lol_mkfs'.
 //
-// (Sorry if I repeat myself but I feel that it might be
-//  usefull to anybody who can make use of this s*it :)
-//
+
 
 extern int lol_errno;
 

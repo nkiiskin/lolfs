@@ -78,22 +78,13 @@ enum {
 #define LOL_FILE_RDEV (0)
 // LOL_MAGIC number is actually 0x1414, so we only need one definition
 #define LOL_MAGIC 0x14
-
 #define LOL_FALSE 0xFEFFFFDF
-
-// My SPARC box has sizeof(time_t) = 4 !
-// Must have this here until I find out a better solution
-#ifndef __SPARC__
-#define NAME_ENTRY_SIZE ((sizeof(DWORD) << 1) + sizeof(time_t) + \
-                         LOL_FILENAME_MAX)
-#else
-#define NAME_ENTRY_SIZE ((sizeof(DWORD) << 1) + sizeof(int) + \
-        sizeof(time_t) + LOL_FILENAME_MAX)
-#endif
+#define NAME_ENTRY_SIZE (sizeof(struct lol_name_entry))
 
 // Some macros for common expressions/tasks
-#define LOL_DEVSIZE(x,y)           (DISK_HEADER_SIZE + (x) * ((y) + \
-                                    ENTRY_SIZE + NAME_ENTRY_SIZE))
+#define LOL_DEVSIZE(x,y)           (DISK_HEADER_SIZE + ((ULONG)(x)) * \
+                                   (((ULONG)(y)) + ENTRY_SIZE + \
+                                   NAME_ENTRY_SIZE))
 #define LOL_INDEX_OFFSET(x,y,z)    (DISK_HEADER_SIZE + (x) * \
                                    (NAME_ENTRY_SIZE + (y)) + (z) * ENTRY_SIZE)
 #define LOL_DENTRY_OFFSET(x)       (DISK_HEADER_SIZE + ((x)->sb.num_blocks) * \
@@ -129,6 +120,7 @@ enum {
 #define LOL_TESTING    0
 // #define LOL_THEOR_MIN_DISKSIZE (DISK_HEADER_SIZE + NAME_ENTRY_SIZE + ENTRY_SIZE + 2)
 extern const long LOL_THEOR_MIN_DISKSIZE;
+extern const long LOL_DEFAULT_BLOCKSIZE;
 #define LOL_READ  0
 #define LOL_WRITE 1
 
@@ -207,12 +199,11 @@ enum lol_divs {
 // Constants for lol_free_space func
 #define LOL_SPACE_BYTES   1
 #define LOL_SPACE_BLOCKS  2
+// Constants for lol_size_to_blocks func
 
 // Storage size here is the limit, after which we will
 // allocate memory dynamically.
-// Bigger LOL_STORAGE_SIZE may result in better performance,
-// however it's void warranty anyhow, so if you MUST try
-// another value, it's not up to me in ANY WAY!
+// Bigger LOL_STORAGE_SIZE may result in better performance.
 #define LOL_STORAGE_SIZE 16383
 #define LOL_STORAGE_ALL  ((size_t)(LOL_STORAGE_SIZE + 1))
 
