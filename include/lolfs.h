@@ -30,9 +30,11 @@
 #endif
 
 //
-// lolfs API:
+// lolfs (LOL stands for "Little Object List") API:
 // First create a lol container
-// using the "mkfs.lolfs" app or lol_mkfs function.
+// using the "mkfs.lolfs" app, "lol fs" command or C API-
+// function lol_mkfs.
+//
 // After that, these functions can be used to create
 // and manipulate files inside that container.
 //
@@ -48,31 +50,38 @@
 // separate the actual path in the host machine from the
 // file inside the container by a ":".
 //
-//
 // Example in C-language:
 //
+// First create container:
+// shell> lol fs 256 10000 ~/lol.db
+// ...
+// const char lolfile[] = "~/lol.db:/myfile.txt";
 // const char text[] = "Hello World!\n";
 // int main()
 // {
 //   lol_FILE *fp;
-//   fp = lol_fopen("/path/to/db:/myfile.txt", "w");
+//   fp = lol_fopen(lolfile, "w");
+//   if (!(fp)) {
+//       printf("cannot open the file %s\n", lolfile);
+//       return -1;
+//   }
 //   lol_fwrite((char *)text, strlen(text), 1, fp);
 //   lol_fclose(fp);
 //   return 0;
 // }
 //
-// > lol cat db:/myfile.txt
-// > Hello World!
+// shell> lol cat db:/myfile.txt
+// >      Hello World!
 //
-//  Above, the "/path/to/db" is your normal filesystem
-//  path to the container file - called "db" in this
-//  example. After the ":/" comes the actual file
+//  Above, the "~/lol.db" is your normal filesystem
+//  path to the container file - called "lol.db" in
+//  this example. After the ":/" comes the actual file
 //  name INSIDE the container, which in this case
 //  is "myfile.txt".
 //
 // To use this API correctly, one should first create
 // at least one container file, either using the
-// 'mkfs.lolfs' app, the 'lol cc' command, or the
+// 'mkfs.lolfs' app, the 'lol fs' command, or the
 // interface function 'lol_mkfs'.
 //
 
