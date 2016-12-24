@@ -19,5 +19,10 @@
 	+ Added fsck.lolfs app (checks container for errors)
 	+ Added 'lol fs', 'lol cc' and 'lol rs' functions.
 	+ Added manual pages for 'lol', 'mkfs.lolfs', 'fsck.lolfs'
-	  and API functions 'lol_ferror', 'lol_feof', 'lol_clearerr'
-	  and 'lol_fseek'.
+	  and API functions 'lol_ferror', 'lol_feof', 'lol_clearerr',
+	  'lol_fseek', 'lol_fread', 'lol_fwrite', 'lol_ftell' and
+	  'lol_unlink'.
+	+ Added option '-s' to mkfs.lolfs and 'lol fs' to be able to
+	  choose the container size directly instead of tampering
+	  with option '-b' (block size and number of blocks).
+	

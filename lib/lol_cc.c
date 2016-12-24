@@ -449,21 +449,21 @@ static const lol_check_func lol_check_funcs[] =
     {NULL, NULL, NULL},
 };
 /* ****************************************************************** */
-static const char params[] = "container";
-static const char    hlp[] = "       Type '%s -h' for help.\n";
+static const char params[] = "<container>";
+static const char    hlp[] = "       Type: '%s -h' for help.\n";
 static const char*   lst[] =
 {
   "  Example:\n",
   "          lol cc lol.db",
-  "          This checks the container \'lol.db\'",
-  "          for errors.\n",
+  "          This checks the container",
+  "          \'lol.db\' for errors.\n",
   "  There are 5 levels of information output:\n",
   "         - OK    (one check has has been passed).",
   "         - INFO  (some information, not error).",
   "         - WARN  (warning, something is wrong).",
   "         - ERROR (something that needs repair).",
   "         - FATAL (needs immediate repair).\n",
-  "          Type 'man lol' to read the manual.\n",
+  "          Type: 'man lol' to read the manual.\n",
   NULL
 };
 /* ****************************************************************** */

@@ -27,12 +27,9 @@
 #include <lolfs.h>
 #include <lol_internal.h>
 /* ********************************************************************** */
-#define LOL_RS_BLOCKS 1
-#define LOL_RS_SIZE   2
-/* ********************************************************************** */
 static const char params[] =
-          "-b <blocks> <container>\n       lol rs -s   <size> <container>";
-static const char    hlp[] = "Type: \'lol %s -h\' for help.\n";
+          "-b <blocks> <container>\n       lol rs -s <size> <container>";
+static const char    hlp[] = "       Type: \'lol %s -h\' for help.\n";
 static const char*   lst[] =
 {
   "  Example 1:\n",
@@ -41,7 +38,7 @@ static const char*   lst[] =
   "  Example 2:\n",
   "          lol rs -s 400k lol.db",
   "          This adds 400 Kilobytes new space to container file \'lol.db\'.\n",
-  "          Type \'man lol\' to read the manual.\n",
+  "          Type: \'man lol\' to read the manual.\n",
   NULL
 };
 /* ********************************************************************** */
@@ -198,7 +195,9 @@ syntax_err:
   switch (opt) {
 
      case LOL_RS_SIZE :
-       if ((lol_size_to_blocks(amount, container, &sb, &st, &new_blocks))) {
+       if ((lol_size_to_blocks(amount, container,
+            &sb, &st, &new_blocks, LOL_EXISTING_FILE))) {
+
 	   val = -1;
        }
        break;
@@ -226,7 +225,10 @@ syntax_err:
   } // end switch opt
 
   if (val) {
-	 printf("lol %s: invalid filesize \'%s\'\n", me, amount);
+     printf("lol %s: invalid filesize \'%s\'\n", me, amount);
+     if (opt == LOL_RS_SIZE)
+	printf("The minimum size must be at least 1 block (%ld bytes)\n",
+                (long)bs);
 	 return -1;
 
   } // end if val

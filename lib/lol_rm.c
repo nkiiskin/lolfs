@@ -26,15 +26,15 @@
 #include <lol_internal.h>
 #endif
 /* ****************************************************************** */
-static const char params[] = "container:/file1 container:/file2 ...";
-static const char    hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char params[] = "<container:/file1> <container:/file2> ...";
+static const char    hlp[] = "       Type: 'lol %s -h' for help.\n";
 static const char*   lst[] =
 {
   "  Example:\n",
   "          lol rm lol.db:/memo.txt",
   "          This deletes the file \'memo.txt\'",
   "          which is inside container file \'lol.db\'\n",
-  "          Type 'man lol' to read the manual.\n",
+  "          Type: 'man lol' to read the manual.\n",
   NULL
 };
 /* ****************************************************************** */

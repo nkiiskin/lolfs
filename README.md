@@ -103,9 +103,17 @@ Manifesto
 
                  lol fs   creates a new container file.
 
-                 Example:
+                 Example 1:
 
-                         Use like: "lol fs 1000 5000 mycontainer"
+                         Use like: "lol fs -s 700M mycontainer"
+
+                         (This example creates a container file
+                          'mycontainer' which has 700 Megabytes
+                           of storage capacity).
+
+                 Example 2:
+
+                         Use like: "lol fs -b 1000 5000 mycontainer"
 
                          (This example creates a container file
                           'mycontainer' which has 5000 data blocks,
@@ -167,24 +175,7 @@ Manifesto
                 "mkfs.lolfs" creates a container file.
 
 
-                It takes 3 parameters:
-                - block size: the number of bytes a "block" has
-                              (this is a number which you can choose
-                               freely. Try to choose it as average file size
-                               to gain best performance).
-
-                - number of blocks: the number of data blocks. This depends
-                                    on how big container you want.
-                                    Try like 50000 first and try it
-
-                - filename: this is just the name which you like to use
-                            as the name of the container file. Ex:
-                            'mycontainer'
-
-                 Use like: "mkfs.lolfs  100  5000  mycontainer"
-
-                           ( This creates a container file 'mycontainer' which
-                             has 1000 * 5000 bytes of storage capacity ).
+                  It works exactly as 'lol fs' command. (See above).
 
 
                  ( In Linux, lolfs may be used directly with removable storage,
@@ -192,7 +183,7 @@ Manifesto
                    So, you may actually insert an SDHC card to your Linux
                    and create a lol storage directly there. In that case the
                    "filename" parameter is just the name of the device,
-                   for example "mkfs.lolfs 512 4000000 /dev/sdb"
+                   for example "mkfs.lolfs -b 512 4000000 /dev/sdb"
                    You MUST know what you are doing then, and of course
                    you must be root to do that - or anything similar.
                    You have been warned! :)
@@ -264,4 +255,4 @@ Questions, Bug reports, etc..
      https://github.com/nkiiskin/lolfs
 
 
-Distribution date: Sat Dec 24 02:46:31 EET 2016
+Distribution date: Sat Dec 24 08:43:04 EET 2016

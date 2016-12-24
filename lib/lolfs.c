@@ -3823,13 +3823,13 @@ int lol_stat(const char *path, struct stat *st) {
   }
 
   if (!(st)) {
-      lol_errno = EINVAL;
+      lol_errno = EFAULT;
       return -1;
   }
 
   clean_private_lol_data(&op);
 
-  if (lol_get_filename(path, &op)) {
+  if ((lol_get_filename(path, &op))) {
       lol_errno = ENOENT;
       return -1;
   }
@@ -3837,7 +3837,7 @@ int lol_stat(const char *path, struct stat *st) {
   raw_size =  lol_get_vdisksize(op.vdisk_name, &sb, NULL, RECUIRE_SB_INFO);
 
   if (raw_size <  LOL_THEOR_MIN_DISKSIZE) {
-      lol_errno = EOVERFLOW;
+      lol_errno = ENOTDIR;
       return -1;
   }
 
@@ -3846,7 +3846,7 @@ int lol_stat(const char *path, struct stat *st) {
       num_files  = (DWORD)sb.num_files;
 
       if (LOL_INVALID_MAGIC) {
-	 lol_errno = EOVERFLOW;
+	 lol_errno = ENOTDIR;
          return -1;
       }
 
@@ -3856,19 +3856,19 @@ int lol_stat(const char *path, struct stat *st) {
       }
 
       if (!(fp = fopen((char *)op.vdisk_name, "r"))) {
-	  lol_errno = errno;
+	  lol_errno = ENOENT;
           return -1;
       }
 
       doff = (long)LOL_DENTRY_OFFSET_EXT(num_blocks, block_size);
 
       if ((fseek(fp, doff, SEEK_SET))) {
-	   lol_errno = errno;
+	   lol_errno = ENOENT;
 	   goto error;
       }
 
       nlen = strlen((char *)op.vdisk_file);
-      if (nlen >= LOL_FILENAME_MAX) {
+      if ((nlen < 1) || (nlen >= LOL_FILENAME_MAX)) {
 	   lol_errno = ENAMETOOLONG;
 	   goto error;
       }
@@ -3876,7 +3876,7 @@ int lol_stat(const char *path, struct stat *st) {
       for (i = 0; i < num_blocks; i++) {
 
 	if ((fread ((char *)&entry, NAME_ENTRY_SIZE, 1, fp)) != 1) {
-	         lol_errno = errno;
+	         lol_errno = EOVERFLOW;
 		 goto error;
         }
 
@@ -4081,35 +4081,82 @@ int lol_garbage_filename(const char *name) {
 
 } // end if lol_garbage_filename
 /* **********************************************************
- * TODO: SHOULD ADD POSSIBILITY TO CREATE A CONTAINER
- *       WITH ONLY SINGLE VALUE: THE SIZE!
  * lol_mkfs: Create a lolfs container.
+ * There are two distinct ways to call this function:
+ * 1: Define the desired container size directly (opt = "-s")
+ *     lol_mkfs("-s", "100M", 0, 0, "lol.db");
+ *
+ * 2: Define the data block size and number of them (opt = "-b")
+ *     lol_mkfs("-b", NULL, 128, 50000, "lol.db");
+ *
  * return value:
- * < 0  : error
- * >= 0 : free space
+ * < 0: error
+ *   0: succes
  ************************************************************ */
-int lol_mkfs (DWORD bs, DWORD nb, const char *path)
+int lol_mkfs (const char *opt, const char *amount,
+              const DWORD bs, const DWORD nb, const char *path)
 {
   struct stat st;
   FILE *fp;
   struct lol_super sb; // This is the first a couple
                        // of bytes in the container file
-  size_t v;
-  int ret = -1;
+  size_t v     =  0;
+  DWORD blocks =  1;
+  DWORD bsize  =  1;
+  int      ret = -1;
 
-  if ((bs < 1) || (nb < 1) || (!(path)))
+  if ((!(path)) || (!(opt)))
       return LOL_ERR_USER;
+
+  if ((!(opt[0])) || (!(path[0])))
+     return LOL_ERR_USER;
+
+  // Does user want to specify size or number of blocks and their size?
+  if ((!(strcmp(opt, "-b"))) || (!(strcmp(opt, "--blocks")))) {
+
+      if ((bs < 1) || (nb < 1))
+	return LOL_ERR_USER;
+
+      blocks = nb;
+      bsize  = bs;
+
+  } // end if add blocks
+  else {
+
+     if ((!(strcmp(opt, "-s"))) || (!(strcmp(opt, "--size")))) {
+       // User wants to define size instead of blocks
+       if (!(amount))
+	  return LOL_ERR_USER;
+       if (!(amount[0]))
+	 return LOL_ERR_USER;
+
+       if ((lol_size_to_blocks(amount, NULL,
+            NULL, NULL, &blocks, LOL_JUST_CALCULATE))) {
+	    return LOL_ERR_INTRN;
+       }
+       else {
+	 // Got the amount of blocks!
+	 bsize = LOL_DEFAULT_BLOCKSIZE;
+       } // end else got it
+     }
+     else {
+       // Neither one, user error...
+       return LOL_ERR_USER;
+     } // end else
+  } // end else blocks
+
+  if ((bsize < 1) || (blocks < 1)) // This should never happen here
+    return LOL_ERR_INTRN;
 
   sb.num_files = 0;
   // We need 2 numbers, block size and the number of blocks
-  sb.block_size = bs;
-  sb.num_blocks = nb;
+  sb.block_size = bsize;
+  sb.num_blocks = blocks;
+  // We set these two bytes to LOL_MAGIC always when creating a container
+  sb.reserved[0] = sb.reserved[1] = LOL_MAGIC;
 
   if (!(fp = fopen(path, "w")))
       return LOL_ERR_IO;
-
-  // We set these two bytes to LOL_MAGIC always when creating a container
-  sb.reserved[0] = sb.reserved[1] = LOL_MAGIC;
 
   // Then we just write the information to the new container metadata/superblock
   // (See the definition of struct lol_super in <lolfs.h> for details).
@@ -4118,9 +4165,9 @@ int lol_mkfs (DWORD bs, DWORD nb, const char *path)
       goto error;
   }
 
-  // After the superblock, come all the datablocks and
-  // we fill them with zeros.
-  v = (size_t)(nb * bs);
+  // After the super block, follow all the data blocks and
+  // we initialize them with zeros.
+  v = (size_t)(blocks * bsize);
   if ((null_fill (v, fp)) != v) {
       ret = LOL_ERR_IO;
       goto error;
@@ -4128,7 +4175,7 @@ int lol_mkfs (DWORD bs, DWORD nb, const char *path)
 
   // After the datablocks comes the (root-)directory entries,
   // which in a new container, we fill all of them with zeros...
-  v = nb * NAME_ENTRY_SIZE;
+  v = blocks * NAME_ENTRY_SIZE;
   if ((null_fill (v, fp)) != v) {
     ret = LOL_ERR_IO;
     goto error;
@@ -4137,7 +4184,7 @@ int lol_mkfs (DWORD bs, DWORD nb, const char *path)
   // Finally after the directory entries comes the data-allocation
   // indexes, which (in a new  container) we set all of them all to
   // FREE_LOL_INDEX value.
-  v = nb * ENTRY_SIZE;
+  v = blocks * ENTRY_SIZE;
   if ((lol_fill_with_value(FREE_LOL_INDEX, v, fp)) != v) {
         ret = LOL_ERR_IO;
         goto error;
@@ -4218,7 +4265,7 @@ int lol_is_integer(const char *str) {
 /* ***************************************************************** */
 int lol_size_to_blocks(const char *size, const char *container,
                        const struct lol_super *sb,
-                       const struct stat *st, DWORD *nb)
+                       const struct stat *st, DWORD *nb, int func)
 {
   char    siz[256];
   long    raw_size = 0;
@@ -4230,25 +4277,35 @@ int lol_size_to_blocks(const char *size, const char *container,
   size_t       len = 0;
   int        plain = 0;
   int    n_letters = 0;
-  char mult;
+  char   mult;
 
-  if ((!(size)) || (!(container)) || (!(sb)) || (!(st)) || (!(nb)))
-    return -1;
+  if ((func != LOL_EXISTING_FILE) && (func != LOL_JUST_CALCULATE))
+      return -1;
 
-  bs     = (long)sb->block_size;
-  num_bl = (long)sb->num_blocks;
-  if ((bs < 1) || (num_bl < 1))
-    return -1;
+  // We must have at least input and output
+  if ((!(size)) || (!(nb)))
+     return -1;
 
-  // Get block device size if we use one
-  if ((S_ISBLK(st->st_mode))) {
-      raw_size = lol_get_rawdevsize((char *)container, NULL, NULL);
-      if (raw_size < LOL_THEOR_MIN_DISKSIZE)
-	return -1;
-  }
+  if (func == LOL_EXISTING_FILE) {
 
-  len = strlen(size);
-  if ((len < 1) || (len > 11))
+    if ((!(container)) || (!(sb)) || (!(st)))
+        return -1;
+
+    bs     = (long)sb->block_size;
+    num_bl = (long)sb->num_blocks;
+    if ((bs < 1) || (num_bl < 1))
+      return -1;
+
+    // Get block device size if we use one
+    if ((S_ISBLK(st->st_mode))) {
+        raw_size = lol_get_rawdevsize((char *)container, NULL, NULL);
+        if (raw_size < LOL_THEOR_MIN_DISKSIZE)
+	   return -1;
+    }
+  } // end if func == LOL_EXISTING_FILE
+
+ len = strlen(size);
+ if ((len < 1) || (len > 12)) // 12 <--> 1 Tb
     return -1;
 
   mult = size[len - 1];
@@ -4311,7 +4368,9 @@ int lol_size_to_blocks(const char *size, const char *container,
       return -1;
 
     // Ok, we got it.
-    ret *= multiplier;
+  ret *= multiplier;
+
+  if (func == LOL_EXISTING_FILE) {
 
     if ((S_ISBLK(st->st_mode))) {
 
@@ -4323,8 +4382,15 @@ int lol_size_to_blocks(const char *size, const char *container,
     }
 
     ret /= bs;
-    if (!(ret))
-      return -1;
+
+  } // end if func == LOL_EXISTING_FILE
+  else {
+
+    ret /= LOL_DEFAULT_BLOCKSIZE;
+  }
+
+  if (!(ret))
+     return -1;
 
     *nb = (DWORD)(ret);
     return 0;

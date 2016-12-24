@@ -30,8 +30,8 @@
 #define LOL_NOT_FOUND "lol %s: %s: No such file or directory\n"
 #define LOL_BUG_FOUND "lol %s: %s: I/O error\n"
 /* ****************************************************************** */
-static const char params[] = "container:/filename";
-static const char    hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char params[] = "<container:/filename>";
+static const char    hlp[] = "       Type: 'lol %s -h' for help.\n";
 static const char*   lst[] =
 {
   "  Example:\n",
@@ -39,7 +39,7 @@ static const char*   lst[] =
   "          This writes the contents of the file \'memo.txt\'",
   "          which is inside a container file \'lol.db\' to",
   "          the standard output.\n",
-  "          Type 'man lol' to read the manual.\n",
+  "          Type: 'man lol' to read the manual.\n",
   NULL
 };
 /* ****************************************************************** */

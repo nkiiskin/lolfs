@@ -33,15 +33,15 @@
 /* ****************************************************************** */
 static const char  cantuse[] = "lol %s: cannot use %s\n";
 static const char cantread[] = "lol %s: cannot read %s\n";
-static const char   params[] = "container";
-static const char      hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char   params[] = "<container>";
+static const char      hlp[] = "       Type: 'lol %s -h' for help.\n";
 static const char*     lst[] =
 {
   "  Example:\n",
   "          lol df lol.db",
-  "          This shows the space usage of container",
-  "          file \'lol.db\'\n",
-  "          Type 'man lol' to read the manual.\n",
+  "          This shows the space usage of",
+  "          container file \'lol.db\'\n",
+  "          Type: 'man lol' to read the manual.\n",
   NULL
 };
 /* ****************************************************************** */

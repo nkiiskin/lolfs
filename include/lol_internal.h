@@ -141,6 +141,9 @@ extern const long LOL_DEFAULT_BLOCKSIZE;
 #define LOL_CHECK_SB    1
 #define LOL_CHECK_FILE  2
 #define LOL_CHECK_BOTH  3
+// Constants for lol_rs
+#define LOL_RS_BLOCKS 1
+#define LOL_RS_SIZE   2
 
 // Private error constants, not to be used also
 #define LOL_OK           (0)
@@ -201,7 +204,8 @@ enum lol_divs {
 #define LOL_SPACE_BYTES   1
 #define LOL_SPACE_BLOCKS  2
 // Constants for lol_size_to_blocks func
-
+#define LOL_EXISTING_FILE  17
+#define LOL_JUST_CALCULATE 71
 // Storage size here is the limit, after which we will
 // allocate memory dynamically.
 // Bigger LOL_STORAGE_SIZE may result in better performance.
@@ -268,7 +272,7 @@ void        lol_align(const char *before, const char *after, const size_t len);
 int         lol_garbage_filename(const char *name);
 int         lol_size_to_blocks(const char *size, const char *container,
                                const struct lol_super *sb,
-                               const struct stat *st, DWORD *nb);
+                               const struct stat *st, DWORD *nb, int func);
 int         lol_is_number(const char ch);
 int         lol_is_integer(const char *str);
 long        lol_get_io_size(const long size);

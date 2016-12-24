@@ -518,8 +518,8 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
 
 } // end copy_from_lolfile_to_disk
 /* ****************************************************************** */
-static const char params[] = "file(s)  destination";
-static const char    hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char params[] = "<file(s)>  <destination>";
+static const char    hlp[] = "       Type: 'lol %s -h' for help.\n";
 static const char*   lst[] =
 {
   "  Example 1:\n",
@@ -533,7 +533,7 @@ static const char*   lst[] =
   "            directory \'src\' to container file",
   "            \'lol.db\' which is in the home",
   "            directory of the current user.\n",
-  "          Type 'man lol' to read the manual.\n",
+  "          Type: 'man lol' to read the manual.\n",
   NULL
 };
 /* ****************************************************************** */

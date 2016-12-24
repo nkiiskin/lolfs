@@ -46,7 +46,7 @@ static const struct lfuncs funcs[] =
 };
 /* ****************************************************************** */
 static const char params[] = "<function> <parameter(s)>";
-static const char    hlp[] = "           Type \'%s -h\' for help.\n";
+static const char    hlp[] = "           Type: \'%s -h\' for help.\n";
 static const char*   lst[] =
 {
   "Possible functions are:\n",
@@ -58,7 +58,7 @@ static const char*   lst[] =
   "           fs   - creates a new container file",
   "           rs   - resizes a container",
   "           cc   - checks container for errors\n",
-  "           Type 'man lol' to read the manual.\n",
+  "           Type: 'man lol' to read the manual.\n",
   NULL
 };
 /* ****************************************************************** */

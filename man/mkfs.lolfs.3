@@ -54,7 +54,10 @@ command is followed by the desired
 in the container
 and the name of the container
 .B \fIfile\fP or \fIdevice\fP
-to be created on.
+to be created on. Or the storage size
+may be set directly using the
+.B \-s
+option.
 .SH "OPTIONS"
 .TP
 .B \-v \-\-version
@@ -64,11 +67,18 @@ Shows mkfs.lolfs program version.
 Shows a short description of usage.
 .SH "EXAMPLES"
 .TP
-mkfs.lolfs 400 50000 my.db
+mkfs.lolfs \-s 150M my.db
 .IP
-Creates a lolfs container 'my.db' which has 50000 data blocks,
-each 400 bytes. In this example, the storage capacity of the
-container is 400 * 50,000 bytes \- which is about 20 Megabytes.
+Creates a lolfs container 'my.db' which has 150 Megabytes
+of storage capacity. You may also fine tune your container
+by choosing the data block size and number of data blocks
+like:
+.TP
+mkfs.lolfs \-b 512 10000 my.db
+.IP
+This creates a container 'my.db' which has 10000 data blocks,
+each 512 bytes. The usage of this program is the same as
+in 'lol fs' command.
 .SH "ENVIRONMENT"
 Not implemented.
 .SH "DIAGNOSTICS"

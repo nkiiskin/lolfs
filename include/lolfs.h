@@ -53,7 +53,7 @@
 // Example in C-language:
 //
 // First create container:
-// shell> lol fs 256 10000 ~/lol.db
+// shell> lol fs -s 10M ~/lol.db
 // ...
 // const char lolfile[] = "~/lol.db:/myfile.txt";
 // const char text[] = "Hello World!\n";
@@ -100,28 +100,47 @@ long      lol_ftell    (lol_FILE *);
 int       lol_unlink   (const char *name);
 int       lol_stat     (const char *path, struct stat *);
 
-//
-// THESE NEXT FUNCTIONS (just one now) ARE PART OF LOLFS API TOO
-// These are lolfs  -specific helper-functions which may or
-// may not have standard C counterpart.
-//
-// lol_mkfs() creates a new lolfs container file
-//
-// params: bs   = block size in bytes    (must be > 0)
-//         nb   = number of these blocks (must be > 0)
-//         path = name of the container-file to be created
-//
-// Return value:
-//               < 0: error
-//               = 0: Success
-//
-// Example in C -pseudo code:
-// if ((lol_mkfs(64, 10000, "/usr/local/test.db") < 0)) {
-//      ..do some error handling here..
-// }
-// else {
-//        ..the container is ready to be used...
-// }
-//
+/*
+ * THESE NEXT FUNCTIONS (just one now) ARE PART OF LOLFS API TOO
+ * These are lolfs  -specific helper-functions which may or
+ * may not have standard C counterpart.
+ *
+ * lol_mkfs() creates a new lolfs container file
+ * There are two distinct ways to call this function:
+ *
+ * 1: Define the desired container size directly (opt = "-s")
+ *     lol_mkfs("-s", "100M", 0, 0, "lol.db");
+ *
+ * 2: Define the data block size and number of them (opt = "-b")
+ *     lol_mkfs("-b", NULL, 128, 50000, "lol.db");
+ *
+ * params:
+ *         opt    = either "-s" or "-b"
+ *         amount = size of the container: Ex. "500k", "350M",...
+ *                  (has effect only if opt "-s" is selected).
+ *         bs     = block size in bytes    (must be > 0)
+ *         nb     = number of these blocks (must be > 0)
+ *                  (bs and nb have effect only if opt = "-b").
+ *         path   = name of the container-file to be created.
+ *
+ * Return value:
+ *               < 0: error
+ *               = 0: Success
+ *
+ * Example using "-b" option in C -pseudo code:
+ * if ((lol_mkfs("-b", NULL, 64, 10000, "~/test.db") < 0)) {
+ *      ..do some error handling here..
+ * }
+ * else {
+ *        ..the container is ready to be used...
+ * }
+ *
+ * Example using "-s" option in C -pseudo code:
+ * if ((lol_mkfs("-s", "10G", 0, 0, "~/test.db") < 0)) {
+ *      ..do some error handling here..
+ * } ...
+ *
+ */
 
-int   lol_mkfs (const DWORD bs, const DWORD nb, const char *path);
+int lol_mkfs (const char *opt, const char *amount,
+              const DWORD bs, const DWORD nb, const char *path);

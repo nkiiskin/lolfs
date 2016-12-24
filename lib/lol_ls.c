@@ -47,15 +47,15 @@ void strip_time(char* t) {
   }
 }
 /* ****************************************************************** */
-static const char params[] = "container";
-static const char    hlp[] = "       Type 'lol %s -h' for help.\n";
+static const char params[] = "<container>";
+static const char    hlp[] = "       Type: 'lol %s -h' for help.\n";
 static const char*   lst[] =
 {
   "  Example:\n",
   "          lol ls lol.db",
   "          This lists the files which are inside",
   "          container file \'lol.db\'\n",
-  "          Type 'man lol' to read the manual.\n",
+  "          Type: 'man lol' to read the manual.\n",
   NULL
 };
 /* ****************************************************************** */

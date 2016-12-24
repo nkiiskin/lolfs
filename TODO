@@ -21,7 +21,5 @@
 - Thread safety: NOT thread safe as of v0.13.
   Should add file lock
 
-- Manual(s)
-
 - sub-directories?
   Maybe later

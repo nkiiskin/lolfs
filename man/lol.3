@@ -115,11 +115,17 @@ lol cc \-\-help
 .IP
 Shows information about the 'lol cc' command.
 .TP
-lol fs 400 50000 my.db
+lol fs \-s 150M my.db
 .IP
-Creates a lolfs container 'my.db' which has 50000
-data blocks, each 400 bytes. So, this container can
-store 400 * 50,000 bytes (which is about 20 Megabytes) of data.
+Creates a lolfs container 'my.db' which has 150 Megabytes
+of storage capacity. You may also fine tune your container
+by choosing the data block size and number of data blocks
+like:
+.TP
+lol fs \-b 512 10000 my.db
+.IP
+This creates a container 'my.db' which has 10000 data blocks,
+each 512 bytes.
 .TP
 lol ls my.db
 .IP
