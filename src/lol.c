@@ -33,14 +33,15 @@ struct lfuncs
 /* ****************************************************************** */
 static const struct lfuncs funcs[] =
 {
+  // Sorted by assumed popularity..
   {"ls",   lol_ls},
-  {"rm",   lol_rm},
-  {"rs",   lol_rs},
-  {"cc",   lol_cc},
   {"cp",   lol_cp},
+  {"rm",   lol_rm},
   {"df",   lol_df},
   {"cat",  lol_cat},
   {"fs",   lol_fs},
+  {"rs",   lol_rs},
+  {"cc",   lol_cc},
   {NULL,   NULL},
 };
 /* ****************************************************************** */
@@ -49,14 +50,14 @@ static const char    hlp[] = "           Type \'%s -h\' for help.\n";
 static const char*   lst[] =
 {
   "Possible functions are:\n",
-  "           cat  (Outputs a file inside a container)",
-  "           cc   (Checks container for errors)",
-  "           cp   (Copies files to and from a container)",
-  "           df   (Prints space usage of a container)",
-  "           fs   (Creates a new container file)",
-  "           ls   (Lists contents of a given container)",
-  "           rm   (Removes a file(s) from a container)",
-  "           rs   (Resizes a container)\n",
+  "           ls   - lists files inside a container",
+  "           cp   - copies  file(s) to and from a container",
+  "           rm   - removes file(s) from a container",
+  "           df   - shows space usage of a container",
+  "           cat  - outputs a file inside a container",
+  "           fs   - creates a new container file",
+  "           rs   - resizes a container",
+  "           cc   - checks container for errors\n",
   "           Type 'man lol' to read the manual.\n",
   NULL
 };
@@ -64,33 +65,35 @@ static const char*   lst[] =
 int main (int argc, char* argv[])
 {
   char **av = NULL;
+  char  *me = NULL;
   char   *p = NULL;
   int     a = argc - 1;
   int     i = 0;
 
+
+  me = argv[0];
   // Process standard --help & --version options.
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
 
         printf ("%s v%s. %s\nUsage: %s %s\n",
-                argv[0], lol_version, lol_copyright,
-                argv[0], params);
-
+                me, lol_version, lol_copyright,
+                me, params);
 
         lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
 
-	printf ("%s v%s %s\n", argv[0],
+	printf ("%s v%s %s\n", me,
                 lol_version, lol_copyright);
 	return 0;
     }
     if (argv[1][0] == '-') {
 
         printf("%s: unrecognized option \'%s\'\n",
-               argv[0], argv[1]);
-        printf (hlp, argv[0]);
+               me, argv[1]);
+        printf (hlp, me);
         return -1;
     }
   } // end if argc == 2
@@ -98,10 +101,10 @@ int main (int argc, char* argv[])
   if (argc == 1) {
 
         printf ("%s v%s. %s\nUsage: %s %s\n",
-                argv[0], lol_version, lol_copyright,
-                argv[0], params);
+                me, lol_version, lol_copyright,
+                me, params);
 
-        printf (hlp, argv[0]);
+        printf (hlp, me);
         return 0;
   }
 
@@ -116,10 +119,8 @@ int main (int argc, char* argv[])
      i++;
   } // end while funcs
 
-  printf("%s: unrecognized function \'%s\'\n",
-          argv[0], p);
-
-  printf (hlp, argv[0]);
+  printf("%s: unrecognized function \'%s\'\n", me, p);
+  printf (hlp, me);
 
   return -1;
 } // end main

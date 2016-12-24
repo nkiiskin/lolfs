@@ -32,7 +32,7 @@
 //
 // lolfs API:
 // First create a lol container
-// using the "mkfs.lolfs" app or lol_mkfs() function.
+// using the "mkfs.lolfs" app or lol_mkfs function.
 // After that, these functions can be used to create
 // and manipulate files inside that container.
 //
@@ -82,9 +82,9 @@ extern int lol_errno;
 lol_FILE* lol_fopen    (const char *path, const char *mode);
 int       lol_fclose   (lol_FILE *);
 size_t    lol_fread    (void *ptr, size_t size, size_t nmemb, lol_FILE *);
-size_t    lol_fwrite   (const void *ptr, size_t size, size_t nmemb, lol_FILE *);
-int       lol_feof     (lol_FILE *);
+size_t    lol_fwrite   (const void *ptr, size_t size, size_t nmemb, lol_FILE*);
 int       lol_fseek    (lol_FILE *, long offset, int whence);
+int       lol_feof     (lol_FILE *);
 void      lol_clearerr (lol_FILE *);
 int       lol_ferror   (lol_FILE *);
 long      lol_ftell    (lol_FILE *);
@@ -94,7 +94,7 @@ int       lol_stat     (const char *path, struct stat *);
 //
 // THESE NEXT FUNCTIONS (just one now) ARE PART OF LOLFS API TOO
 // These are lolfs  -specific helper-functions which may or
-// may not have comparable standard C counterpart.
+// may not have standard C counterpart.
 //
 // lol_mkfs() creates a new lolfs container file
 //

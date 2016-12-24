@@ -1,3 +1,24 @@
+/*
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License version 2 as
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
+/* 
+  $Id: lol_file.h, v0.13 2016/12/23 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $
+ */
+
+
 #ifndef _LOL_FILE_H
 #define _LOL_FILE_H    1
 #endif
@@ -40,12 +61,9 @@ typedef struct lol_name_entry {
   UCHAR  filename[LOL_FILENAME_MAX];
   time_t created;
 
-// My SPARC (Sun Blade 150) box has sizeof(time_t) = 4 !!
-// Must have this unused field here until I find out a better solution
-// (SPARC is also BIG ENDIAN system, which makes lolfs created
-//  in LITTLE ENDIAN systems incompatible there - will fix later, hmm..
-
-#ifdef __SPARC__
+// My SPARC box has sizeof(time_t) = 4, if your system
+// has 32 bit time type, you should define this.
+#ifdef __32BIT_TIME_T__
   int unused;
 #endif
   alloc_entry i_idx;

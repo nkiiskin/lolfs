@@ -1,0 +1,93 @@
+.\" Copyright (c) 2016, Niko Kiiskinen
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.\"     @(#)lol_fread.3 0.13 23/12/16
+.\"
+.\" Modified Fri Dec 23 20:10:53 2016 by Niko <nkiiskin@yahoo.com>
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH "lol_fread" "3" "23 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
+.SH "NAME"
+lol_fread \- read lolfs stream
+.SH SYNOPSIS
+.nf
+.B #include <lolfs.h>
+.sp
+.BI "size_t lol_fread(void *" ptr ", size_t " size ", size_t " nmemb \
+", lol_FILE *" stream );
+.fi
+.SH DESCRIPTION
+The function
+.BR lol_fread
+reads
+.I nmemb
+items of data, each
+.I size
+bytes long, from the stream pointed to by
+.IR stream ,
+storing them at the location given by
+.IR ptr .
+.PP
+.SH RETURN VALUE
+On success,
+.BR lol_fread
+returns the number of items \- each
+.I size
+bytes long \- read from the
+.I stream.
+If an error occurs, or the end of the file is reached,
+the return value is a short item count (or zero).
+.PP
+.BR lol_fread
+does not distinguish between end-of-file and error, and callers must use
+.BR lol_feof (3)
+and
+.BR lol_ferror (3)
+to determine which occurred.
+.SH "AUTHOR"
+Written by
+.MT nkiiskin@\:yahoo.com
+Niko Kiiskinen.
+.ME
+.SH SEE ALSO
+.BR lol_fopen(3),
+.BR lol_fwrite(3),
+.BR lol_feof(3),
+.BR lol_ferror(3)
+.SH "COPYRIGHT"
+Copyright \(co 2015, 2016 Niko Kiiskinen.
+.BR
+.PP
+License GNU GPL version 2 or later.
+.URL https://\:www.gnu.org/\:licenses
+.BR
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "COLOPHON"
+This page is part of release 0.13 of the lolfs project
+man-pages. The website of the project and the latest version,
+can be found at
+.URL https://\:nkiiskin.github.io/\:lolfs

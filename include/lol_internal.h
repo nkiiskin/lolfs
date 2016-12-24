@@ -103,6 +103,7 @@ enum {
                                    (((x)->sb.block_size) + NAME_ENTRY_SIZE))
 #define LOL_CHECK_MAGIC(x)         ((x)->sb.reserved[0] != LOL_MAGIC || \
                                    (x)->sb.reserved[1] != LOL_MAGIC)
+#define LOL_ERRET(x,y)             { lol_errno = (x); return (y); }
 #define LOL_ERR_RETURN(x,y)        { op->err = lol_errno = (x); return (y); }
 #define LOL_ERRSET(x)              { op->err = lol_errno = (x); }
 #define LOL_CHECK_HELP             ((!(strcmp(argv[1], "-h"))) || \

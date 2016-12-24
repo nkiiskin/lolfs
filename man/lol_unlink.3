@@ -1,0 +1,116 @@
+.\" Copyright (c) 2016, Niko Kiiskinen
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.\"     @(#)lol_unlink.3 0.13 23/12/16
+.\"
+.\" Modified Fri Dec 23 23:06:56 2016 by Niko <nkiiskin@yahoo.com>
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH "lol_unlink" "3" "23 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
+.SH "NAME"
+lol_unlink \- delete a file from the container
+.SH SYNOPSIS
+.nf
+.B #include <lolfs.h>
+.sp
+.BI "int lol_unlink(const char *" container:/file );
+.fi
+.SH DESCRIPTION
+The function
+.BR lol_unlink
+deletes a file pointed by
+.IR file
+from the container pointed by
+.IR container .
+If no processes have the file open, the file is deleted
+and the space it was using is made available for reuse.
+.PP
+.SH RETURN VALUE
+On success, zero is returned. On error, \-1 is returned,
+and
+.I lol_errno
+is set to indicate the error.
+.SH ERRORS
+.TP
+.B EACCES
+Write access to the directory containing the
+.I container
+from which the file pointed to by
+.I file
+is to be deleted, is not allowed for the process's
+effective UID.
+.TP
+.BR EBUSY
+The file pointed by
+.I file
+cannot be unlinked because it is being used by the system
+or another process.
+.TP
+.B EFAULT
+The name given by the pointer
+.I container:/file
+points outside accessible address space.
+.TP
+.B EIO
+An I/O error occurred.
+.TP
+.B EISDIR
+.I file
+refers to a directory, instead of a file.
+(This is Linux specific error)
+.TP
+.B ENAMETOOLONG
+The name of the container or file given in the combination
+.IR container:/file " was too long, too short or empty."
+.TP
+.B ENOENT
+A component in
+.I container:/file
+does not exist or is empty.
+.TP
+.B ENOMEM
+Insufficient memory was available.
+.SH "AUTHOR"
+Written by
+.MT nkiiskin@\:yahoo.com
+Niko Kiiskinen.
+.ME
+.SH SEE ALSO
+.BR lol(3)
+.SH "COPYRIGHT"
+Copyright \(co 2015, 2016 Niko Kiiskinen.
+.BR
+.PP
+License GNU GPL version 2 or later.
+.URL https://\:www.gnu.org/\:licenses
+.BR
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "COLOPHON"
+This page is part of release 0.13 of the lolfs project
+man-pages. The website of the project and the latest version,
+can be found at
+.URL https://\:nkiiskin.github.io/\:lolfs

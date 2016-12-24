@@ -1,18 +1,6 @@
 Basic Installation
 ==================
 
-   These are installation instructions for Linux/UN*X.
-
-   IF YOU ALREADY HAVE LOLFS INSTALLED, PLEASE UNINSTALL
-   IT FIRST BEFORE INSTALLING A NEW VERSION.
-   (To do this, type "make uninstall" as root from your install
-    base directory or rm the files).
-   This prevents your new copy of lolfs being accidentally
-   linked against the previous version.
-
-
-
-
 The standard way to install this package is:
 
   1.  Download the lolfs source code and extract it:

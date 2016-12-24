@@ -1,0 +1,163 @@
+.\" Copyright (c) 2016, Niko Kiiskinen
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.\"     @(#)lol_stat.3 0.13 24/12/16
+.\"
+.\" Modified Fri Dec 24 00:18:47 2016 by Niko <nkiiskin@yahoo.com>
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH "lol_stat" "3" "24 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
+.SH "NAME"
+lol_stat \- get file status
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.br
+.B #include <sys/stat.h>
+.br
+.B #include <unistd.h>
+.br
+.B #include <lolfs.h>
+.sp
+.BI "int lol_stat(const char *" container:/file ", struct stat *" buf );
+.fi
+.SH DESCRIPTION
+The function
+.BR lol_stat
+returns information about a file, in the buffer pointed to by
+.IR buf .
+Execute permission is required on all of the directories in the
+.I container
+part of the full path to the
+.IR file .
+.PP
+.BR lol_stat
+fills the
+.BR stat
+structure given by
+.IR buf .
+.PP
+.SH RETURN VALUE
+On success, zero is returned. On error, \-1 is returned,
+and
+.I lol_errno
+is set to indicate the error.
+.SH ERRORS
+.TP
+.B EACCES
+Search permission is denied for one of the directories
+in the container prefix of full
+.IR container:/file .
+.TP
+.BR EBUSY
+The status of the file pointed by
+.I file
+cannot be accessed because system is busy.
+.TP
+.B EFAULT
+The name given by the pointer
+.I container:/file
+points outside accessible address space.
+.TP
+.B EIO
+An I/O error occurred.
+.TP
+.B ENAMETOOLONG
+The name of the container or file or combination of
+both given in
+.IR container:/file " was too long, too short or empty."
+.TP
+.B ENOENT
+A component in
+.I container:/file
+does not exist or is an empty string.
+.TP
+.B ENOMEM
+Insufficient memory was available.
+.SH EXAMPLE
+The following program calls
+.BR lol_stat
+and displays selected fields in the returned
+.I stat
+structure.
+.PP
+.nf
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <lolfs.h>
+.PP
+int main(int argc, char *argv[])
+{
+  struct stat sb;
+  if (argc != 2) {
+     fprintf(stderr,
+             "Usage: %s <container:/file>\\n", argv[0]);
+        return -1;
+  }
+  if (\fBlol_stat\fP(\fIargv[1]\fP, \fI&sb\fP)) {
+      fprintf(stderr,
+              "cannot get status of %s\\n", argv[1]);
+      return -1;
+  }
+  printf("I\-node number:            %ld\\n", (long) sb.st_ino);
+  printf("Mode:                     %lo (octal)\\n",
+          (unsigned long) sb.st_mode);
+  printf("Preferred I/O block size: %ld bytes\\n",
+          (long)sb.st_blksize);
+  printf("File size:                %lld bytes\\n",
+          (long long)sb.st_size);
+  printf("Blocks allocated:         %lld\\n",
+          (long long)sb.st_blocks);
+  printf("Last status change:       %s", ctime(&sb.st_ctime));
+  return 0;
+}
+.fi
+.SH "AUTHOR"
+Written by
+.MT nkiiskin@\:yahoo.com
+Niko Kiiskinen.
+.ME
+.SH SEE ALSO
+.BR lol(3),
+.BR stat(2)
+.SH "COPYRIGHT"
+Copyright \(co 2015, 2016 Niko Kiiskinen.
+.BR
+.PP
+License GNU GPL version 2 or later.
+.URL https://\:www.gnu.org/\:licenses
+.BR
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "COLOPHON"
+This page is part of release 0.13 of the lolfs project
+man-pages. The website of the project and the latest version,
+can be found at
+.URL https://\:nkiiskin.github.io/\:lolfs

@@ -3587,17 +3587,29 @@ int lol_unlink(const char *name) {
 
   struct lol_name_entry entry;
   lol_FILE *fp;
+  size_t len;
   alloc_entry e, last_block;
   int ret = 0;
 
-  if (!(name)) {
-    lol_errno = EFAULT;
-    return LOL_ERR_GENERR;
+  if (!(name))
+    LOL_ERRET(EFAULT, -1);
+
+  if (!(name[0]))
+    LOL_ERRET(ENAMETOOLONG, -1);
+
+  len = strlen(name);
+  if ((len < 4) || (len >= LOL_PATH_MAX))
+    LOL_ERRET(ENAMETOOLONG, -1);
+
+#ifdef HAVE_LINUX_FS_H
+  if (len > 0) {
+      if (name[len-1] == '/')
+         LOL_ERRET(EISDIR, -1);
   }
-  if (lol_index_buffer) {
-    lol_errno = EBUSY;
-    return LOL_ERR_GENERR;
-  }
+#endif
+
+  if ((lol_index_buffer) || (lol_buffer_lock))
+      LOL_ERRET(EBUSY, -1);
 
   if (!(fp = lol_fopen(name, "r+"))) {
     // lol_errno already set
@@ -3619,11 +3631,12 @@ int lol_unlink(const char *name) {
 
   e = fp->nentry.i_idx;
 
-  if ((e > last_block) || (e < 0)) { // VERIFY : Was e == FREE_LOL_INDEX
+  if ((e > last_block) || (e < 0)) {
       lol_errno = EIO;
       goto error;
   }
 
+  clearerr(fp->vdisk);
   if ((ret = lol_delete_chain_from(fp, LOL_UNLINK))) {
 
      switch (ret) {
@@ -3646,21 +3659,31 @@ int lol_unlink(const char *name) {
 	      goto error;
             break;
             default :
-	      lol_errno = EBADF;
+
+	      if (ferror(fp->vdisk))
+		lol_errno = errno;
+              else
+	        lol_errno = EBADF;
+
 	      goto error;
             break;
+
      } // end switch;
 
      goto error;
   } // end if ret
 
+  clearerr(fp->vdisk);
   if ((LOL_GOTO_DENTRY(fp))) {
-      lol_errno = errno;
+      if (ferror(fp->vdisk))
+	  lol_errno = errno;
+      else
+	  lol_errno = EBADF;
       goto error;
   }
 
   memset((char *)&entry, 0, NAME_ENTRY_SIZE);
-
+  clearerr(fp->vdisk);
   if ((fwrite((char *)&entry,
       (size_t)(NAME_ENTRY_SIZE), 1, fp->vdisk)) != 1) {
 
@@ -3685,6 +3708,7 @@ int lol_unlink(const char *name) {
          goto error;
       } // end if fseek
 
+      clearerr(fp->vdisk);
       if ((fwrite((char *)&fp->sb, (size_t)(DISK_HEADER_SIZE),
                    1, fp->vdisk)) != 1)                       {
 
@@ -3754,11 +3778,18 @@ int lol_ferror(lol_FILE *op) {
 long lol_ftell(lol_FILE *s) {
 
   long ret = -1;
+
   if (s) {
-    ret = (long)(s->curr_pos);
+    if (s->vdisk) {
+        ret = (long)(s->curr_pos);
+    }
+    else {
+      s->err = EBADF;
+    }
   }
-  else {
-    lol_errno = EBADF;
+
+  if (ret == -1) {
+      lol_errno = EBADF;
   }
 
   return ret;
@@ -3863,7 +3894,8 @@ int lol_stat(const char *path, struct stat *st) {
 	       continue;
         }
         else {
-                  // Found it !
+
+          // Gotcha !
 
        	  st->st_dev  = LOL_FILE_DEV; // a fake device
           st->st_ino  = (ino_t)(i);
@@ -3876,10 +3908,14 @@ int lol_stat(const char *path, struct stat *st) {
           st->st_rdev    = LOL_FILE_RDEV;
           st->st_size    = (off_t)entry.file_size;
           st->st_blksize = (blksize_t)block_size;
-          st->st_blocks  = (blkcnt_t)(st->st_size >> LOL_DIV_512);
-          if (st->st_size % 512)
-	      st->st_blocks++;
-
+          if (entry.file_size) {
+            st->st_blocks  = (blkcnt_t)(st->st_size / block_size);
+            if (st->st_size % block_size)
+	        st->st_blocks++;
+	  }
+	  else {
+	    st->st_blocks = 1;
+	  }
           st->st_atime = time(NULL);
           st->st_mtime = st->st_ctime = entry.created;
 	  ret = 0;

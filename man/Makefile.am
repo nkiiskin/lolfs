@@ -19,4 +19,9 @@ dist_man3_MANS = \
 	lol_ferror.3 \
 	lol_clearerr.3 \
 	lol_feof.3 \
-	lol_fseek.3
+	lol_fseek.3 \
+	lol_unlink.3 \
+	lol_fwrite.3 \
+	lol_fread.3 \
+	lol_stat.3 \
+	lol_ftell.3
