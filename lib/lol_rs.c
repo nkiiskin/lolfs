@@ -119,9 +119,9 @@ syntax_err:
   } // end if argc == 2
 
   if (argc != 4) {
-        printf (LOL_USAGE_FMT, me,
+        lol_error (LOL_USAGE_FMT, me,
                 lol_version, lol_copyright, me, params);
-        printf (hlp, me);
+        lol_error (hlp, me);
      return -1;
   }
 
@@ -130,7 +130,7 @@ syntax_err:
   container = argv[3];
 
   // Does user want to add bytes or blocks?
-  if ((!(strcmp(option, "-b"))) || (!(strcmp(option, "--blocks")))) {
+  if (LOL_CHECK_BLOCKS) {
 
      opt = LOL_RS_BLOCKS;
      // Check also that amount is a number
@@ -138,8 +138,8 @@ syntax_err:
      // and this may cause confusion
      if ((lol_is_integer((const char *)amount))) {
 
-         printf("lol %s: number of blocks must be integer\n", me);
-           puts("        Please try again");
+         lol_error("lol %s: number of blocks must be integer\n", me);
+         lol_error("        Please try again");
          return -1;
 
      } // end if not integer
@@ -147,7 +147,7 @@ syntax_err:
   } // end if add blocks
   else {
 
-    if ((!(strcmp(option, "-s"))) || (!(strcmp(option, "--size")))) {
+    if (LOL_CHECK_SIZE) {
 
         opt = LOL_RS_SIZE;
 
@@ -155,8 +155,8 @@ syntax_err:
     else{
       // Maybe wrong option?
       if (option[0] == '-') {
-          printf(LOL_WRONG_OPTION, me, option);
-          printf (hlp, me);
+          lol_error(LOL_WRONG_OPTION, me, option);
+          lol_error (hlp, me);
           return -1;
       }
       // Syntax error...
@@ -171,15 +171,15 @@ syntax_err:
 
   if (free_space < LOL_THEOR_MIN_DISKSIZE) {
 
-       printf(cantuse, me, container);
+       lol_error(cantuse, me, container);
        return -1;
   }
 
   if (LOL_INVALID_MAGIC) {
 
-     printf("lol %s: invalid file id [0x%x, 0x%x].\n",
-	   me, (int)sb.reserved[0], (int)sb.reserved[1]);
-      puts(LOL_FSCK_FMT);
+      lol_error("lol %s: invalid file id [0x%x, 0x%x].\n",
+	         me, (int)sb.reserved[0], (int)sb.reserved[1]);
+      lol_error(LOL_FSCK_FMT);
       return -1;
   }
 
@@ -187,7 +187,7 @@ syntax_err:
   bs = sb.block_size;
 
   if ((!(nb)) || (!(bs))) {
-      printf(cantuse, me, container);
+      lol_error(cantuse, me, container);
       return -1;
   }
 
@@ -226,16 +226,16 @@ syntax_err:
       break;
 
     default :
-      printf("lol %s: %s\n", me, LOL_INTERERR_FMT);
+      lol_error("lol %s: %s\n", me, LOL_INTERERR_FMT);
       return -1;
 
   } // end switch opt
 
   if (val) {
 
-      printf("lol %s: invalid filesize \'%s\'\n", me, amount);
+      lol_error("lol %s: invalid filesize \'%s\'\n", me, amount);
       if (opt == LOL_RS_SIZE)
-	printf("The minimum size must be at least 1 block (%ld bytes)\n",
+	lol_error("The minimum size must be at least 1 block (%ld bytes)\n",
                 (long)bs);
 	 return -1;
 
@@ -261,17 +261,20 @@ syntax_err:
    if ((prompt_lol_rs(lol_proceed_prompt))) {
        puts("Aborted.\n");
    } // end if
+#if LOL_TESTING
+   lol_error("new_blocks = %u - calling extendfs\n", new_blocks);
+   lol_error("bs = %u, nb = %u, st.st.size = %ld\n", sb.block_size, sb.num_blocks, (long)(st.st_size));
+   return -1;
+#endif
 
    // We have green light, let's begin expanding
    if ((lol_extendfs(container, new_blocks, &sb, &st))) {
-
-        printf("lol %s: error extending container.\n", me);
+        lol_error("lol %s: error extending container.\n", me);
         return -1;
    } // end if error
-   else {
-     puts("Done");
-   }
 
+  puts("Done");
   return 0;
+
 } // end lol_rs
 

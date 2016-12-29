@@ -101,6 +101,7 @@
 #define LOL_ERRET(x,y)             { lol_errno = (x); return (y); }
 #define LOL_ERR_RETURN(x,y)        { op->err = lol_errno = (x); return (y); }
 #define LOL_ERRSET(x)              { op->err = lol_errno = (x); }
+// TODO: replace argv[1] from the following macros with argv[(x)]
 #define LOL_CHECK_HELP             ((!(strcmp(argv[1], "-h"))) || \
                                    (!(strcmp(argv[1], "--help"))))
 #define LOL_CHECK_VERSION          ((!(strcmp(argv[1], "-v"))) || \
@@ -109,6 +110,10 @@
   	                           (!(strcmp((argv[1]), "--silent"))))
 #define LOL_CHECK_DETAILS          ((!(strcmp((argv[1]), "-d"))) || \
   	                           (!(strcmp((argv[1]), "--details"))))
+#define LOL_CHECK_BLOCKS           ((!(strcmp(argv[1], "-b"))) || \
+                                   (!(strcmp(argv[1], "--blocks"))))
+#define LOL_CHECK_SIZE             ((!(strcmp(argv[1], "-s"))) || \
+                                   (!(strcmp(argv[1], "--size"))))
 #define LOL_CHECK_OPTS(x,y)        ((!(strcmp((argv[1]), (x)))) || \
 				    (!(strcmp((argv[1]), (y)))))
 #define LOL_INVALID_MAGIC          ((sb.reserved[0]  != LOL_MAGIC) || \
@@ -116,7 +121,7 @@
 #define LOL_INVALID_MAGIC_PTR      ((sb->reserved[0] != LOL_MAGIC) || \
 				   (sb->reserved[1]  != LOL_MAGIC))
 #define LOL_DATA_START             (DISK_HEADER_SIZE)
-#define lol_error(x, ...)          fprintf (stderr, x, ##__VA_ARGS__)
+#define lol_error(x, ...)          fprintf(stderr, x, ##__VA_ARGS__)
 #define LOL_WRONG_OPTION           ("lol %s: unrecognized option \'%s\'\n")
 #define LOL_VERSION_FMT            ("lol %s v%s %s\n")
 #define LOL_USAGE_FMT              ("lol %s v%s. %s\nUsage: lol %s %s\n")
@@ -128,9 +133,13 @@
 #define E_OUT_MEM                  ("Out of memory!\n")
 #define E_DISK_IO                  ("I/O error\n")
 #define E_FILE_READ                ("lol %s: error reading file \'%s\'\n")
-#if 0
-#define lol_debug(x)               fprintf (stderr, "%s: file %s, line %d.", \
-                                    (x), __FILE__, __LINE__, ##__VA_ARGS__)
+
+
+#if defined __FILE__               && defined __LINE__
+#define lol_debug(x)               fprintf (stderr, "%s: error file: %s, line %d.", \
+                                    (x), __FILE__, __LINE__)
+#else
+#define lol_debug(x)               fprintf(stderr, "%s: ", (x))
 #endif
 #define       LOL_READ   (0)
 #define       LOL_WRITE  (1)
@@ -210,7 +219,7 @@
 #define LOL_SIGSEGV 3
 #define LOL_NUM_SIGHANDLERS 4
 
-// outputs for some funcs
+// i/o for some funcs
 #define LOL_STDOUT 0
 #define LOL_STDIN  1
 #define LOL_STDERR 2
@@ -226,8 +235,8 @@ extern const char* lol_prefix_list[];
 extern const char* lol_tag_list[];
 // status message alignment
 // We want to fit in terminal,
-// align should be < 80
-#define LOL_STATUS_ALIGN 72
+// align should be max 72
+#define LOL_STATUS_ALIGN 70
 
 #define lol_version   LOLFS_VERSION
 #define lol_copyright LOLFS_COPYRIGHT
@@ -286,6 +295,7 @@ int         lol_index_malloc(const size_t num_entries);
 void        lol_index_free (const size_t amount);
 void*       lol_malloc(const size_t size);
 void        lol_free(const size_t size);
+void        lol_memset_indexbuffer(const alloc_entry val, const size_t x);
 int         lol_valid_sb(const lol_FILE *op);
 int         lol_check_corr(const lol_FILE *op, const int mode);
 size_t      null_fill(const size_t bytes, FILE *);

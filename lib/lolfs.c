@@ -103,9 +103,14 @@ static const int       lol_signals[LOL_NUM_SIGHANDLERS + 1] = {
 };
 /* ********************************************************** */
 void lol_memset_indexbuffer(const alloc_entry value,
-                            const alloc_entry num)   {
+                            const size_t num)   {
 
   alloc_entry i = 0;
+  if (!(lol_index_buffer)) {
+    lol_error("internal error: trace function: [lol_memset_indexfuffer]\n");
+    lol_error("file: lolfs.c\n");
+    exit(-1);
+  }
   for (; i < num; i++) {
        lol_index_buffer[i] = value;
   }
@@ -199,9 +204,8 @@ int lol_setup_sighandlers() {
 /* **********************************************************
  * lol_get_rawdevsize: PRIVATE FUNCTION, USE WITH CAUTION!
  * Return the size (in bytes) of a given raw block device
- * or regular file or symbolic link to a regular file.
- * or -1, if error. Most likely must be run as root if
- * device is a raw block device.
+ * or regular file or link to a regular file or -1, if error.
+ * Most likely must be run as root if it is ablock device.
  *
  *  NOTE:
  *  The function may be called with or without 'sb' and/or 'sta'
@@ -210,7 +214,7 @@ int lol_setup_sighandlers() {
 long lol_get_rawdevsize(char *device, struct lol_super *sb, struct stat *sta) {
 
   long ret = -1;
-  int fd;
+  int  fd;
 #ifdef HAVE_LINUX_FS_H
   long size = 0;
 #endif
@@ -219,15 +223,11 @@ long lol_get_rawdevsize(char *device, struct lol_super *sb, struct stat *sta) {
 
   if (!(device))
     return -1;
-
   if (stat(device, &st))
     return -1;
-
   if (sta)
-    memcpy((char *)sta, (const char *)&st, sizeof(st));
-
+    LOL_MEMCPY(sta, &st, sizeof(st));
   if (!(sb)) { // Return fast if sb info is not recuired
-
       if (S_ISREG(st.st_mode))
           return (long)(st.st_size);
 #ifdef HAVE_LINUX_FS_H
@@ -236,36 +236,30 @@ long lol_get_rawdevsize(char *device, struct lol_super *sb, struct stat *sta) {
 #else
       return -1;
 #endif
-
   } // end if sb info is not needed
 
   fd = open(device, O_RDONLY);
   if (fd < 0)
     return -1;
-
   if (sb) {
-     bytes = read(fd, (char *)sb, (size_t)DISK_HEADER_SIZE);
+     bytes = read(fd, (char *)sb,
+          (size_t)DISK_HEADER_SIZE);
      if (bytes != DISK_HEADER_SIZE)
          goto error;
   }
-
   if (S_ISREG(st.st_mode)) {
        ret = (long)(st.st_size);
        goto error;
   }
-
 #ifdef HAVE_LINUX_FS_H
   if (ioctl(fd, BLKGETSIZE64, &size) < 0)
       goto error;
-
   if (!(S_ISBLK(st.st_mode)))
         goto error;
-
   ret = size;
 #else
   ret = -1;
 #endif
-
 error:
   close(fd);
   return ret;
@@ -332,7 +326,7 @@ long lol_get_vdisksize(char *name, struct lol_super *sb,
     min_size = (long)LOL_DEVSIZE(nb, bs);
 
     if (sta) {
-       memcpy((char *)sta, (const char *)&st, sizeof(st));
+      LOL_MEMCPY(sta, &st, sizeof(st));
     }
     m = st.st_mode;
 
@@ -619,7 +613,6 @@ int lol_index_malloc(const size_t num_entries) {
   bytes  = (size_t)((num_entries + 1) * (ENTRY_SIZE));
 
   if (num_entries > (LOL_STORAGE_SIZE)) {
-
   // If the bytes needed is more than LOL_STORAGE_SIZE,
   // then we allocate memory dynamically. If it's less,
   // then, we use our global buffer.
@@ -629,7 +622,6 @@ int lol_index_malloc(const size_t num_entries) {
       }
       if (!(lol_index_buffer = (alloc_entry *)malloc(bytes)))
             LOL_ERRET(ENOMEM, LOL_ERR_MEM);
-
       // We must set the lock ASAP
       lol_buffer_lock = 1;
   } // end if num_entries
@@ -638,8 +630,15 @@ int lol_index_malloc(const size_t num_entries) {
         lol_index_buffer = lol_storage_buffer;
         lol_buffer_lock  = 1;
   }
+  // This will segfault!
+#if LOL_TESTING
+  printf("lol_index_malloc: calling lol_memset_indexbuffer. bytes = %ld, dynamic = %d\n",
+          (long)bytes, dynamic);
+  return -1;
+#endif
 
-  lol_memset_indexbuffer(LAST_LOL_INDEX, (const alloc_entry)(bytes + 1));
+  lol_memset_indexbuffer(LAST_LOL_INDEX, (num_entries + 1));
+
   if (num_entries > (LOL_STORAGE_SIZE)) { // handlers are only to free
                                           // dynamic memory
     if ((lol_setup_sighandlers())) {
@@ -690,6 +689,10 @@ void* lol_malloc(const size_t size) {
   entries = size / e_size;
   if (frac)
     entries++;
+#if LOL_TESTING
+  printf("lol_malloc: trying to lol_index_malloc(%ld)\n", (long)(entries));
+  return NULL;
+#endif
 
   if ((lol_index_malloc(entries)))
     return NULL;
@@ -1418,7 +1421,7 @@ int lol_get_basename(const char* name, char *new_name, const int mode) {
   }
 
   memset(new_name, 0, LOL_FILENAME_MAX);
-  memcpy(new_name, &name[i], (size_t)(ln));
+  LOL_MEMCPY(new_name, &name[i], ln);
   if (!new_name[0]) { // Should never happen here..
     lol_errno = EBADFD;
     return -1;
@@ -1930,7 +1933,7 @@ int lol_truncate_to_zero(lol_FILE *op) {
        goto error;
    }
 
-   memcpy((char *)&op->nentry, (char *)&entry, NAME_ENTRY_SIZE);
+   LOL_MEMCPY(&op->nentry, &entry, NAME_ENTRY_SIZE);
    fsetpos(op->vdisk, &pos);
    return 0;
  error:
@@ -4366,11 +4369,11 @@ int lol_status_msg(const char *me, const char* txt, const int type) {
 } // end lol_status_msg
 /* ***************************************************************** */
 int lol_is_number(const char ch) {
-  const char numbers[] = "1234567890";
+  const char n[] = "1234567890";
   int i;
 
   for (i = 0; i < 10; i++) {
-    if (ch == numbers[i])
+    if (ch == n[i])
       return 0;
   }
   return -1;
@@ -4384,9 +4387,10 @@ int lol_is_integer(const char *str) {
     return -1;
   if(!(str[0]))
     return -1;
-  if (str[0] == '0')
-    return -1;
   len = (int)strlen(str);
+  // Don't accept integers like 0123
+  if ((str[0] == '0') && (len > 1))
+    return -1;
   // Check all characters
   for (i = 0; i < len; i++) {
     if ((lol_is_number((const char)str[i]))) {
@@ -4456,6 +4460,7 @@ int lol_size_to_blocks(const char *size, const char *container,
       plain = 1;
   }
   else {
+
      switch (mult) {
 
        case 'B' :
@@ -4463,18 +4468,22 @@ int lol_size_to_blocks(const char *size, const char *container,
          break;
        case 'K' :
        case 'k' :
-         multiplier = 1024;
+         multiplier = LOL_KILOBYTE;
         break;
-       case 'M':
-       case 'm':
-         multiplier = 1048576;
+       case 'M' :
+       case 'm' :
+         multiplier = LOL_MEGABYTE;
         break;
-      case 'G':
-      case 'g':
-        multiplier = 1073741824;
+      case 'G' :
+      case 'g' :
+         multiplier = LOL_GIGABYTE;
+       break;
+     case 'T' :
+     case 't' :
+         multiplier = LOL_TERABYTE;
        break;
       default:
-        multiplier = 0;
+         multiplier = 0;
        break;
 
     } // end switch
@@ -4626,7 +4635,7 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
      io     = 4096;
   }
   else {
-    alloc = 1;
+      alloc = 1;
   }
   // First we relocate the index entries
   // Let's calculate their total size
@@ -4639,7 +4648,6 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
   old_offset += data_size;
   new_offset += data_size;
    table_end  = new_offset;
-
   times = data_size / io;
   frac  = (size_t)(data_size % io);
 
@@ -4682,7 +4690,6 @@ do_relocate:
   } // end for i
 
   pass++;
-
   // Next we add the new indexes or new name entries
   if (pass == 1) {
       frac = (size_t)((size_t)(new_blocks) * (size_t)(ENTRY_SIZE));
@@ -4736,7 +4743,7 @@ err:
  fclose(fp);
 ret:
  if (alloc) {
-   lol_free((size_t)(io));
+    lol_free((size_t)(io));
  }
  return -1;
 } // end lol_extendfs
