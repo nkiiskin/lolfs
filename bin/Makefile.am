@@ -11,10 +11,14 @@
 #
 AUTOMAKE_OPTIONS = foreign
 DEFAULT_INCLUDES = -I$(top_builddir)/include
-AM_CFLAGS = -Wall -I$(top_builddir)/include @AM_CFLAGS@
+
+#AC_C_TRY_FLAG([-Wall])
+#AC_C_TRY_FLAG([-O2])
+AM_CFLAGS = -O2 -Wall -I$(top_builddir)/include @AM_CFLAGS@
 AM_LDFLAGS = -L$(top_builddir)/lib
 
 proj_heads = \
+	$(top_builddir)/include/lol_config.h \
 	$(top_builddir)/include/lolfs.h \
 	$(top_builddir)/include/lol_file.h \
 	$(top_builddir)/include/lol_internal.h

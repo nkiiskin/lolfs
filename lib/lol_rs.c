@@ -14,13 +14,17 @@
 
 */
 /*
- $Id: lol_rs.c, v0.13 2016/11/02 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+ $Id: lol_rs.c, v0.20 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************
  * lol_rs: resize a container file.
  * Does not shrink, only adds more space.
  * ********************************************************************** */
+#include "../config.h"
 #include <errno.h>
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -204,29 +208,33 @@ syntax_err:
 
     case LOL_RS_BLOCKS :
 
-      // errno = 0;
       ret = strtol(amount, NULL, 10);
       if (errno)
         val = -1;
-      //      if ((ret == LONG_MIN) || (ret == LONG_MAX))
-      //   val = -1;
-      if (ret < 1)
-        val = -1;
+#ifdef HAVE_LIMITS_H
+#if defined LONG_MIN && defined LONG_MAX
+       if ((ret == LONG_MIN) || (ret == LONG_MAX))
+           val = -1;
+#endif
+#endif
 
+      if (ret < 1)
+          val = -1;
       if (!(val))
-	new_blocks = (DWORD)(ret);
+	  new_blocks = (DWORD)(ret);
 
       break;
 
     default :
-       printf("lol %s: %s\n", me, LOL_INTERERR_FMT);
-     return -1;
+      printf("lol %s: %s\n", me, LOL_INTERERR_FMT);
+      return -1;
 
   } // end switch opt
 
   if (val) {
-     printf("lol %s: invalid filesize \'%s\'\n", me, amount);
-     if (opt == LOL_RS_SIZE)
+
+      printf("lol %s: invalid filesize \'%s\'\n", me, amount);
+      if (opt == LOL_RS_SIZE)
 	printf("The minimum size must be at least 1 block (%ld bytes)\n",
                 (long)bs);
 	 return -1;

@@ -6,21 +6,46 @@ The standard way to install this package is:
   1.  Download the lolfs source code and extract it:
       tar -zxvf lolfs-VERSION.tar.gz
 
-  2. `cd' to the directory containing the package's source code and type
-     `./configure'
+  2. `cd' to the directory containing the package's source code
+      and type: `./configure'
+
       The "configure" script inspects your system and creates
-      a "Makefile" which you may then run by typing:
-     `make' to compile the package for your system.
+      a "Makefile" which you may then run (next step).
 
-  3. Type `sudo make install' or `make install' as root to install
-     the programs, headers and the library "liblolfs".
+  3. Type: `make' to compile the package for your system.
 
-  4. You can remove the program binaries and object files from the
+  4. Optionally you may also check the compiled package
+     by typing: `make check'
+     This will execute a testsuite, which is a couple of
+     test programs to verify if the build was succesful.
+
+  5. Type `sudo make install' (or as root user `make install')
+     to install the final product: the programs, header files
+      and the library 'liblolfs'.
+
+  6. You can remove the program binaries and object files from the
      source code directories by typing `make clean'.
 
-  5. To remove lolfs completely from the system after 'make install',
-     type `sudo make uninstall' or `make uninstall' as root.
-     (That would be sad though :(
+  7. To remove lolfs completely from the system after 'make install',
+     type `sudo make uninstall' (or `make uninstall' as root).
+
+  8. What to do next?
+     	  - Try creating your first container by typing:
+	    'lol fs -s 10M test.db'
+	    (This creates a 10 Mb container).
+
+	  - Verify the space of the container, by typing:
+	    'lol df test.db'
+
+	  - Copy some files into the container using command:
+	    'lol cp file.jpg test.db' 
+	    (Just replace the 'file.jpg' with some actual file
+	    you have)
+
+	  - Check that the file is inside the container, type:
+	    'lol ls test.db'
+
+	  - etc..
 
 
 
@@ -38,6 +63,13 @@ Compiling For Multiple Architectures
         and perhaps Mac OS X
 
 
+
+   I hope you find some use for this little app :)
+
+
    Have fun with lolfs!
    - Niko
+
+     lolfs.bugs@gmail.com
+     https://nkiiskin.github.io/lolfs
 

@@ -21,15 +21,15 @@
 .\" <http://www.gnu.org/licenses/>.
 .\" %%%LICENSE_END
 .\"
-.\"     @(#)lol.3 0.13 16/12/16
+.\"     @(#)lol.3 0.20 16/12/16
 .\"
-.\" Modified, niko, 2016-12-17
+.\" Modified, niko, 2016-12-28
 .\"
 .de URL
 \\$2 \(laURL: \\$1 \(ra\\$3
 ..
 .if \n[.g] .mso www.tmac
-.TH lol 3 "16 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
+.TH lol 3 "16 December 2016" "LOLFS v0.20" "Lolfs Package Manual"
 .SH "NAME"
 lol \- execute lolfs commands
 .SH "SYNOPSIS"
@@ -42,7 +42,7 @@ lol \- execute lolfs commands
 .\" [\fIFUNCTION\fR] [\fIARGUMENTS\fR]...
 .SH "DESCRIPTION"
 .B lol
-command is an \fIinterface\fP to create and access lolfs containers.
+command is an interface to create and access lolfs containers.
 The
 .B lol
 command is followed by a \fIfunction\fP and it's \fIarguments\fP.
@@ -168,7 +168,7 @@ program and all of it's functions return 0 after
 succesful execution. Otherwise return value is < 0.
 .SH "AUTHOR"
 Written by
-.MT nkiiskin@\:yahoo.com
+.MT lolfs.bugs@\:gmail.com
 Niko Kiiskinen.
 .ME
 .SH "SEE ALSO"
@@ -193,7 +193,7 @@ License GNU GPL version 2 or later.
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 .SH "COLOPHON"
-This page is part of release 0.13 of the lolfs project
+This page is part of release 0.20 of the lolfs project
 man-pages. The website of the project and the latest version,
 can be found at Github:
 .URL https://\:nkiiskin.github.io/\:lolfs

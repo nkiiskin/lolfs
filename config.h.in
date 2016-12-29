@@ -15,6 +15,12 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `ioctl' function. */
+#undef HAVE_IOCTL
+
+/* Need this for LONG_MAX and LONG_MIN */
+#undef HAVE_LIMITS_H
+
 /* Building with raw device support */
 #undef HAVE_LINUX_FS_H
 
@@ -63,6 +69,9 @@
 /* Define to 1 if you have the `strtol' function. */
 #undef HAVE_STRTOL
 
+/* ioctl support? */
+#undef HAVE_SYS_IOCTL_H
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
@@ -72,7 +81,7 @@
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
 
-/* Define to 1 if you have the <unistd.h> header file. */
+/* do we have unistd.h? */
 #undef HAVE_UNISTD_H
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
@@ -99,6 +108,33 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* The number of bytes in type char */
+#undef SIZEOF_CHAR
+
+/* The number of bytes in type int */
+#undef SIZEOF_INT
+
+/* The number of bytes in type long */
+#undef SIZEOF_LONG
+
+/* The number of bytes in type off_t */
+#undef SIZEOF_OFF_T
+
+/* The number of bytes in type short */
+#undef SIZEOF_SHORT
+
+/* The number of bytes in type size_t */
+#undef SIZEOF_SIZE_T
+
+/* The number of bytes in type ssize_t */
+#undef SIZEOF_SSIZE_T
+
+/* The number of bytes in type unsigned char * */
+#undef SIZEOF_UNSIGNED_CHAR_P
+
+/* The number of bytes in type void * */
+#undef SIZEOF_VOID_P
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

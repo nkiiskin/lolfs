@@ -14,7 +14,7 @@
 
 */
 /*
- $Id: lol_ls.c, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+ $Id: lol_ls.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 
 #include <sys/types.h>
@@ -64,7 +64,6 @@ int lol_ls(int argc, char* argv[])
   struct lol_super sb;
   struct lol_name_entry entry;
   char tmp[128];
-  // mode_t st_mode;
   FILE *vdisk;
   DWORD i, nf, num_blocks;
   long bs, doff;
@@ -87,14 +86,14 @@ int lol_ls(int argc, char* argv[])
     }
     if (LOL_CHECK_VERSION) {
 
-	printf (LOL_VERSION_FMT, argv[0],
+	printf(LOL_VERSION_FMT, argv[0],
                 lol_version, lol_copyright);
 	return 0;
     }
     if (argv[1][0] == '-') {
 
-          printf(LOL_WRONG_OPTION, argv[0], argv[1]);
-          printf (hlp, argv[0]);
+          lol_error(LOL_WRONG_OPTION, argv[0], argv[1]);
+          lol_error(hlp, argv[0]);
           return -1;
     }
   } // end if argc == 2
@@ -109,7 +108,7 @@ int lol_ls(int argc, char* argv[])
   }
 
     if (!(lol_is_validfile(argv[1]))) {
-	  printf("lol %s: %s is not a valid container.\n",
+	  lol_error("lol %s: %s is not a valid container.\n",
                   argv[0], argv[1]);
           return -1;
 
@@ -120,18 +119,18 @@ int lol_ls(int argc, char* argv[])
         (sb.num_files > sb.num_blocks))
     {
 
-      printf("lol %s: container \'%s\' has errors.\n", argv[0], argv[1]);
-      puts(LOL_FSCK_FMT);
+      lol_error("lol %s: container \'%s\' has errors.\n", argv[0], argv[1]);
+      lol_error(LOL_FSCK_FMT);
       return -1;
     }
 
     if (LOL_INVALID_MAGIC)
     {
 
-       printf("lol %s: corrupted file id [0x%x, 0x%x].\n",
+       lol_error("lol %s: corrupted file id [0x%x, 0x%x].\n",
 	       argv[0], (unsigned int)sb.reserved[0],
                (unsigned int)sb.reserved[1]);
-       puts(LOL_FSCK_FMT);
+       lol_error(LOL_FSCK_FMT);
        return -1;
     }
 
@@ -143,7 +142,7 @@ int lol_ls(int argc, char* argv[])
 
       if (!(vdisk = fopen(argv[1], "r"))) {
 
-	   printf("lol %s: cannot read container \'%s\'.\n",
+	   lol_error("lol %s: cannot read container \'%s\'.\n",
                    argv[0], argv[1]);
 
 	   return -1;
@@ -153,7 +152,7 @@ int lol_ls(int argc, char* argv[])
 
       if (fseek (vdisk, doff, SEEK_SET)) {
 	   fclose(vdisk);
-	   printf("lol %s: cannot read container \'%s\'.\n",
+	   lol_error("lol %s: cannot read container \'%s\'.\n",
                    argv[0], argv[1]);
 	   return -1;
       }
@@ -164,7 +163,7 @@ int lol_ls(int argc, char* argv[])
 
       if ((fread ((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, vdisk)) != 1)
       {
-	  printf("lol %s: cannot read file number %u\n", argv[0], i);
+	  lol_error("lol %s: cannot read file number %u\n", argv[0], i);
 
 	  if (++fails > 3) {
 	      break;
@@ -224,9 +223,9 @@ int lol_ls(int argc, char* argv[])
 
     if ((nf != files) || (fails) || (corr)) {
 
-       printf("lol %s: container \'%s\' has errors.\n",
+       lol_error("lol %s: container \'%s\' has errors.\n",
                argv[0], argv[1]);
-       puts(LOL_FSCK_FMT);
+       lol_error(LOL_FSCK_FMT);
     }
     else {
       printf("total %ld\n", files);

@@ -2,7 +2,7 @@
 # All Rights Reserved.
 # This file is distributed under the GPLv2 License.
 #
-## $Id: Makefile.am library 0.13 2016-11-07 01:28:49Z niko $
+## $Id: Makefile.am library 0.20 2016-11-07 01:28:49Z niko $
 #
 # Author: Niko Kiiskinen 2016-11-07
 #
@@ -11,14 +11,17 @@
 #
 AUTOMAKE_OPTIONS = foreign
 DEFAULT_INCLUDES = -I$(top_builddir)/include
-AM_CFLAGS = -fPIC -Wall -I$(top_builddir)/include @AM_CFLAGS@
+#AC_C_TRY_FLAG([-Wall])
+#AC_C_TRY_FLAG([-O2])
+AM_CFLAGS = -O2 -Wall -fPIC -I$(top_builddir)/include @AM_CFLAGS@
 ##AM_LDFLAGS = -lm
 
 
 mandh = \
 	$(top_builddir)/include/lolfs.h \
 	$(top_builddir)/include/lol_file.h
-addh  = $(top_builddir)/include/lol_internal.h
+addh  = $(top_builddir)/include/lol_config.h \
+	$(top_builddir)/include/lol_internal.h
 
 funcs = lol_ls.c  \
 	lol_cp.c  \

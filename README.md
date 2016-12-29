@@ -21,22 +21,24 @@ Manifesto
      in your computer somewhere) which has other files inside it.
 
      Once you create a lol container file (using the included
-     'mkfs.lolfs' utility or 'lol fs' command or lol_mkfs API
-     function), you can then use the lolfs API, which is explained
-     in <lolfs.h> to create, modify and delete files in this container.
+     'mkfs.lolfs' utility or 'lol fs' command, you can then
+     store content (any files basically) into it using the
+     icluded 'lol' program.
 
-     The installation package contains a program called 'lol',
-     which serves as a wrapper app to do common file operations.
-     See below for details.
+     The 'lol' program is an interface app to execute common file
+     operations, like copying files to and from the container,
+     listing files, space usage etc.. See below for details.
 
 
     lol program:
     ============
+
                 The 'lol' program is the main user interface to create
-                and access files of a lolfs container.
-                The 'lol' app has several built-in functions which
-                can be used to do some common file operations.
-                These functions are currently (in v 0.13) :
+                and access files inside a lolfs container.
+
+                'lol' has several built-in functions which
+                can be used to execute some common file operations.
+                These functions are currently (in v 0.20) :
 
                 - cat
                 - cc
@@ -251,8 +253,8 @@ lolfs API:
 Questions, Bug reports, etc..
 
      Niko Kiiskinen
-     nkiiskin {at} yahoo com
-     https://github.com/nkiiskin/lolfs
+     lolfs.bugs@gmail.com
+     https://nkiiskin.github.io/lolfs
 
 
-Distribution date: Sat Dec 24 08:43:04 EET 2016
+Distribution date: Thu Dec 29 05:02:47 EET 2016

@@ -1,0 +1,47 @@
+AT_INIT
+AT_BANNER([LOLFS Testsuite 1])
+m4_define([AT_PACKAGE_STRING], [LOLFS Testsuite 1])
+AT_COPYRIGHT([Copyright (C) 2016 Niko Kiiskinen])
+AT_TESTED([foo])
+AT_SETUP([Creating a test container])
+# AT_CAPTURE_FILE([file])
+# AT_XFAIL_IF(shell condition)
+# AT_DATA (file, contents)
+# AT_KEYWORDS([gcc])
+#cat $abs_srcdir/gsm0408/gsm0408_test.ok > expout
+AT_CHECK([$abs_top_builddir/tests/foo], [0], [stdout], [stderr],
+         [$abs_top_builddir/tests/fail.sh], [$abs_top_builddir/tests/success.sh])
+AT_CLEANUP
+
+#AT_SETUP([loading and saving ttyrecs to memory (.gz)])
+#AT_SKIP_IF([! grep -q "^#define \\(HAVE_ZLIB_H\\|SHIPPED_LIBZ\\) 1" $abs_top_builddir/config.h])
+#AT_CHECK([rec test.ttyrec.gz && loadsave test.ttyrec.gz out.ttyrec.gz && cmp test.ttyrec.gz out.ttyrec.gz])
+#AT_CLEANUP
+
+
+#AT_SETUP([vt100 sequences])
+#for x in "$top_srcdir/tests/vt.in/"*
+#  do
+#    if echo "$x"|grep -vq '/[[a-zA-Z0-9_-]]*$'; then continue; fi
+#    unescape <"$x" >stdin
+#    y="$(echo "$x"|sed 's/vt\.in/vt.out/')"
+#    cat "$y" >expout
+#    AT_CHECK([vt -d <stdin],,[expout])
+#  done
+#AT_CLEANUP
+#AT_SETUP([vt-on-vt])
+#for x in "$top_srcdir/tests/vt.in/"*
+#  do
+#    if echo "$x"|grep -vq '/[[a-zA-Z0-9_-]]*$'; then continue; fi
+#    [if LC_ALL=C grep -q '[^[:cntrl:] -~]' "$x"]
+#      then
+#        echo "Skipping $x"
+#        dnl # skip Unicode tests, LC_ALL=C breaks that and there is nothing not
+#        dnl # already tested by the "vt100 sequences" series of tests
+#      else
+#        echo "Checking $x"
+#        unescape <"$x" >stdin
+#        AT_CHECK([vtmir <stdin])
+#    fi
+#  done
+#AT_CLEANUP

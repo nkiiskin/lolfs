@@ -14,7 +14,7 @@
 
 */
 /*
- $Id: lol_fs.c, v0.13 2016/11/02 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+ $Id: lol_fs.c, v0.20 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 
 #include <stdio.h>
@@ -85,22 +85,23 @@ int lol_fs (int argc, char* argv[])
   char *amount =  0;
   ULONG   size =  0;
   int     ret  = -1;
+  int    small =  0;
   int    val   =  0;
   int file_i   =  3;
   char  *self  =  0;
 
   if ((!(argc)) || (!(argv))) {
-     puts(lol_inter_err);
+     lol_error(lol_inter_err);
      return -1;
   }
   if (!(argv[0])) {
-      puts(lol_inter_err);
+      lol_error(lol_inter_err);
       return -1;
   }
 
   self = argv[0];
   if (!(self[0])) {
-     puts(lol_inter_err);
+     lol_error(lol_inter_err);
      return -1;
   }
 
@@ -122,7 +123,6 @@ int lol_fs (int argc, char* argv[])
 
          printf ("%s v%s. %s\n", name,
                  lol_version, lol_copyright);
-	 //printf(params, name, name);
 	 lol_fs_help(name);
          return 0;
 
@@ -134,10 +134,10 @@ int lol_fs (int argc, char* argv[])
 	return 0;
     }
 
-     printf("%s: unrecognized option \'%s\'\n",
+     lol_error("%s: unrecognized option \'%s\'\n",
             name, argv[1]);
 
-     printf (hlp, name);
+     lol_error(hlp, name);
      return -1;
 
   } // end if argc == 2
@@ -179,8 +179,17 @@ int lol_fs (int argc, char* argv[])
        if (!(amount[0]))
 	   goto error;
 
-       if ((lol_size_to_blocks(amount, NULL,
-            NULL, NULL, &nb, LOL_JUST_CALCULATE))) {
+       small = lol_size_to_blocks(amount, NULL,
+	       NULL, NULL, &nb, LOL_JUST_CALCULATE);
+       if (small == LOL_FS_TOOSMALL) {
+	 lol_error("%s: sorry, the size is too small.\n", name);
+	 lol_error("        you may create tiny container\n");
+	 lol_error("        using option \'-b\' and specifying\n");
+	 lol_error("        the block size and number of them.\n");
+	 return -1;
+       } // end if too small
+
+       if (small) {
 	    goto error;
        }
        else {
@@ -223,7 +232,7 @@ int lol_fs (int argc, char* argv[])
 
       } // end if regular file
       else {
-	printf("%s: cannot use \'%s\'\n", name, file);
+	lol_error("%s: cannot use \'%s\'\n", name, file);
 	return -1;
       }
 
@@ -235,9 +244,9 @@ int lol_fs (int argc, char* argv[])
 
   if ((lol_mkfs("-b", NULL, bs, nb, file))) {
 
-          printf("%s: cannot create container \'%s\'\n",
+          lol_error("%s: cannot create container \'%s\'\n",
                  name, file);
-          puts("        Please check if the directory is write protected");
+          lol_error("        Please check if the directory is write protected");
           return -1;
       }
   else {
@@ -252,11 +261,11 @@ int lol_fs (int argc, char* argv[])
 
 error:
 
-         printf ("%s v%s. %s\n", name,
+         lol_error("%s v%s. %s\n", name,
                  lol_version, lol_copyright);
-	 printf(params, name, name);
+	 lol_error(params, name, name);
 
-     printf (hlp, name);
+     lol_error(hlp, name);
      return -1;
 
 } // end lol_fs

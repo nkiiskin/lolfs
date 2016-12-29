@@ -14,7 +14,7 @@
 
 */
 /*
- $Id: lol_cat.c, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+ $Id: lol_cat.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 
 #include <stdio.h>
@@ -47,57 +47,62 @@ int lol_cat (int argc, char *argv[]) {
 
   struct stat st;
   char ptr[4096];
-  lol_FILE *fp;
+  lol_FILE   *fp;
+  char       *me;
+  char    *lfile;
   FILE     *dest;
   size_t i, r, t;
   size_t v, size;
   int ret = -1;
 
+  me = argv[0];
   // Process standard --help & --version options.
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
 
-        printf (LOL_USAGE_FMT, argv[0], lol_version,
-                lol_copyright, argv[0], params);
+        printf (LOL_USAGE_FMT, me, lol_version,
+                lol_copyright, me, params);
 
         lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
 
-	printf (LOL_VERSION_FMT, argv[0],
+	printf (LOL_VERSION_FMT, me,
                 lol_version, lol_copyright);
 	return 0;
     }
     if (argv[1][0] == '-') {
 
-          printf(LOL_WRONG_OPTION, argv[0], argv[1]);
-          printf (hlp, argv[0]);
+          printf(LOL_WRONG_OPTION, me, argv[1]);
+          printf (hlp, me);
           return -1;
     }
   } // end if argc == 2
 
   if (argc != 2) {
 
-        printf (LOL_USAGE_FMT, argv[0], lol_version,
-                lol_copyright, argv[0], params);
+        printf (LOL_USAGE_FMT, me, lol_version,
+                lol_copyright, me, params);
 
-        printf (hlp, argv[0]);
+        printf (hlp, me);
         return 0;
   }
-  if ((lol_stat(argv[1], &st))) {
-      printf(LOL_NOT_FOUND, argv[0], argv[1]);
+
+  lfile = argv[1];
+  if ((lol_stat(lfile, &st))) {
+      printf(LOL_NOT_FOUND, me, lfile);
       return -1;
   }
   if (!(st.st_size))
      return 0;
-  if (!(fp = lol_fopen(argv[1], "r"))) {
-      printf(LOL_NOT_FOUND, argv[0], argv[1]);
+  if (!(fp = lol_fopen(lfile, "r"))) {
+      printf(LOL_NOT_FOUND, me, lfile);
       return -1;
   }
   size = (size_t)fp->nentry.file_size;
   if (size != st.st_size) {
-      printf(LOL_BUG_FOUND, argv[0], argv[1]);
+      printf(LOL_BUG_FOUND, me, lfile);
       goto errlol;
   }
   if (!(dest = fopen("/dev/stdout", "w")))
@@ -110,9 +115,11 @@ int lol_cat (int argc, char *argv[]) {
 
      v = lol_fread((char *)ptr, 4096, 1, fp);
      if ((lol_ferror(fp)) || (v != 1)) {
+        printf(E_FILE_READ, me, lfile);
         goto error; 
      }
      if (lol_fio((char *)ptr, 4096, dest, LOL_WRITE) != 4096) {
+        printf(E_FILE_READ, me, lfile);
         goto error;
      }
   } // end for i
@@ -121,9 +128,11 @@ int lol_cat (int argc, char *argv[]) {
 
      v = lol_fread((char *)ptr, r, 1, fp);
      if ((lol_ferror(fp)) || (v != 1)) {
+        printf(E_FILE_READ, me, lfile);
         goto error; 
      }
      if (lol_fio((char *)ptr, r, dest, LOL_WRITE) != r) {
+         printf(E_FILE_READ, me, lfile);
   	 goto error;
      }
 
@@ -136,6 +145,10 @@ error:
   fclose(dest);
 
 errlol:
+#if LOL_TESTING
+  if (lol_errno)
+    printf("lol_errno = %d\n", lol_errno);
+#endif
 
   lol_fclose(fp);
   return ret;

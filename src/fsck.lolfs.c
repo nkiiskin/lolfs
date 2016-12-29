@@ -14,7 +14,7 @@
 
 */
 /*
- $Id: fsck.lolfs.c, v0.13 2016/12/08 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+ $Id: fsck.lolfs.c, v0.20 2016/12/08 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************ */
 #include <lolfs.h>

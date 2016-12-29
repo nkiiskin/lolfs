@@ -13,7 +13,7 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lol_internal.h, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+ * $Id: lol_internal.h, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
  *
  *
  */
@@ -51,37 +51,32 @@
 #ifndef _STRING_H
 #include <string.h>
 #endif
+#ifndef _LOL_CONFIG_H
+#include <lol_config.h>
+#endif
 
 
-
-enum {
-
-  LOL_RDONLY,           // "r"
-  LOL_RDWR,             // "r+"
-  LOL_WR_CREAT_TRUNC,   // "w"
-  LOL_RDWR_CREAT_TRUNC, // "w+"
-  LOL_APPEND_CREAT,     // "a"
-  LOL_RD_APPEND_CREAT,  // "a+"
-
-};
-
-/* TODO: Move all the defining macros to a separate .h -file
-         so that parameters (such as size of index buffer, size of
-         alloc_entry etc..) may be changed just by editing one file.
-*/
-
-
-#define LOL_FILE_SIZE (sizeof(struct _lol_FILE))
 #define DISK_HEADER_SIZE (sizeof(struct lol_super))
-#define ENTRY_SIZE (sizeof(alloc_entry))
+#define NAME_ENTRY_SIZE  (sizeof(struct lol_name_entry))
+#define LOL_FILE_SIZE    (sizeof(struct _lol_FILE))
+#define ENTRY_SIZE       (sizeof(alloc_entry))
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define LOL_ENDIAN 1
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define LOL_ENDIAN 0
+#else
+#error "Cannot figure out machine byte order!"
+#endif
+// LOL_MAGIC number is actually 0x7b7b,
+// so we only need one definition
+#define LOL_MAGIC     (0x7b)
 #define LOL_FILE_DEV  (0xf64affc8)
 #define LOL_FILE_RDEV (0)
-// LOL_MAGIC number is actually 0x1414, so we only need one definition
-#define LOL_MAGIC 0x14
-#define LOL_FALSE 0xFEFFFFDF
-#define NAME_ENTRY_SIZE (sizeof(struct lol_name_entry))
-
+#define LOL_FALSE     (0xFEFFFFDF)
+#define LOL_PATH_MAX  (LOL_DEVICE_MAX + LOL_FILENAME_MAX + 2)
+#define LOL_FILENAME_MAXLEN (LOL_FILENAME_MAX - 1)
 // Some macros for common expressions/tasks
+#define LOL_MEMCPY(x,y,z)          memcpy((char *)(x), (const char *)(y), ((size_t)(z)))
 #define LOL_DEVSIZE(x,y)           (DISK_HEADER_SIZE + ((ULONG)(x)) * \
                                    (((ULONG)(y)) + ENTRY_SIZE + \
                                    NAME_ENTRY_SIZE))
@@ -102,49 +97,58 @@ enum {
 #define LOL_TABLE_START(x)         (DISK_HEADER_SIZE + ((x)->sb.num_blocks) * \
                                    (((x)->sb.block_size) + NAME_ENTRY_SIZE))
 #define LOL_CHECK_MAGIC(x)         ((x)->sb.reserved[0] != LOL_MAGIC || \
-                                   (x)->sb.reserved[1] != LOL_MAGIC)
+                                   (x)->sb.reserved[1]  != LOL_MAGIC)
 #define LOL_ERRET(x,y)             { lol_errno = (x); return (y); }
 #define LOL_ERR_RETURN(x,y)        { op->err = lol_errno = (x); return (y); }
 #define LOL_ERRSET(x)              { op->err = lol_errno = (x); }
 #define LOL_CHECK_HELP             ((!(strcmp(argv[1], "-h"))) || \
-                                    (!(strcmp(argv[1], "--help"))))
+                                   (!(strcmp(argv[1], "--help"))))
 #define LOL_CHECK_VERSION          ((!(strcmp(argv[1], "-v"))) || \
-                                    (!(strcmp(argv[1], "--version"))))
-#define LOL_INVALID_MAGIC          ((sb.reserved[0] != LOL_MAGIC) ||	\
-				    (sb.reserved[1] != LOL_MAGIC))
+                                   (!(strcmp(argv[1], "--version"))))
+#define LOL_CHECK_SILENT           ((!(strcmp((argv[1]), "-s"))) || \
+  	                           (!(strcmp((argv[1]), "--silent"))))
+#define LOL_CHECK_DETAILS          ((!(strcmp((argv[1]), "-d"))) || \
+  	                           (!(strcmp((argv[1]), "--details"))))
+#define LOL_CHECK_OPTS(x,y)        ((!(strcmp((argv[1]), (x)))) || \
+				    (!(strcmp((argv[1]), (y)))))
+#define LOL_INVALID_MAGIC          ((sb.reserved[0]  != LOL_MAGIC) || \
+				   (sb.reserved[1]   != LOL_MAGIC))
+#define LOL_INVALID_MAGIC_PTR      ((sb->reserved[0] != LOL_MAGIC) || \
+				   (sb->reserved[1]  != LOL_MAGIC))
 #define LOL_DATA_START             (DISK_HEADER_SIZE)
+#define lol_error(x, ...)          fprintf (stderr, x, ##__VA_ARGS__)
 #define LOL_WRONG_OPTION           ("lol %s: unrecognized option \'%s\'\n")
 #define LOL_VERSION_FMT            ("lol %s v%s %s\n")
 #define LOL_USAGE_FMT              ("lol %s v%s. %s\nUsage: lol %s %s\n")
-#define LOL_FSCK_FMT               ("        fsck.lolfs recommended")
-#define LOL_INTERERR_FMT           ("Internal error. Sorry!")
-#define LOL_TESTING    0
-// #define LOL_THEOR_MIN_DISKSIZE (DISK_HEADER_SIZE + NAME_ENTRY_SIZE + ENTRY_SIZE + 2)
-extern const long LOL_THEOR_MIN_DISKSIZE;
-extern const long LOL_DEFAULT_BLOCKSIZE;
-#define LOL_READ  0
-#define LOL_WRITE 1
-
-#define E_DISK_FULL "Not enough space in disk\n"
-#define E_OUT_MEM "Out of memory!\n"
-#define E_DISK_IO "I/O error\n"
-
+#define LOL_MISSING_ARG_FMT        ("lol %s: missing argument: \'%s\'\n")
+#define LOL_FSCK_FMT               ("        fsck.lolfs recommended\n")
+#define LOL_INTERERR_FMT           ("Internal error. Sorry!\n")
+#define LOLFS_INTERNAL_ERR         LOL_INTERERR_FMT
+#define E_DISK_FULL                ("Not enough space in disk\n")
+#define E_OUT_MEM                  ("Out of memory!\n")
+#define E_DISK_IO                  ("I/O error\n")
+#define E_FILE_READ                ("lol %s: error reading file \'%s\'\n")
+#if 0
+#define lol_debug(x)               fprintf (stderr, "%s: file %s, line %d.", \
+                                    (x), __FILE__, __LINE__, ##__VA_ARGS__)
+#endif
+#define       LOL_READ   (0)
+#define       LOL_WRITE  (1)
 // Some internal use flags
-#define LOL_NO_SUCH_FILE 0
-#define LOL_FILE_EXISTS  1
+#define LOL_NO_SUCH_FILE (0)
+#define LOL_FILE_EXISTS  (1)
 
-// Private constants, not to use in the interface!
-#define LAST_LOL_INDEX  -1
-#define FREE_LOL_INDEX  -2
-
+// Private constants, not to used
+//  in the interface!
+#define LAST_LOL_INDEX  (-1)
+#define FREE_LOL_INDEX  (-2)
 // Constants for lol_check_corr
-#define LOL_CHECK_SB    1
-#define LOL_CHECK_FILE  2
-#define LOL_CHECK_BOTH  3
+#define LOL_CHECK_SB     (1)
+#define LOL_CHECK_FILE   (2)
+#define LOL_CHECK_BOTH   (3)
 // Constants for lol_rs
-#define LOL_RS_BLOCKS 1
-#define LOL_RS_SIZE   2
-
+#define LOL_RS_BLOCKS    (1)
+#define LOL_RS_SIZE      (2)
 // Private error constants, not to be used also
 #define LOL_OK           (0)
 #define LOL_ERR_EOF      (0)
@@ -163,79 +167,121 @@ extern const long LOL_DEFAULT_BLOCKSIZE;
 #define LOL_ERR_SIG     (-13)
 #define LOL_ERR_BADFD   (-14)
 
+#define MAX_LOL_OPEN_MODES    (6)
+// Constants for lol_get_vdisksize
+#define RECUIRE_SB_INFO       (1)
+#define USE_SB_INFO           (2)
+// Constants for lol_supermod func
+#define LOL_INCREASE          (0)
+#define LOL_DECREASE          (1)
+// Constants for lol_free_space func
+#define LOL_SPACE_BYTES       (1)
+#define LOL_SPACE_BLOCKS      (2)
+// Constants for lol_size_to_blocks func
+#define LOL_EXISTING_FILE    (17)
+#define LOL_JUST_CALCULATE   (71)
+// Flags to lol_delete_chain_from:
+#define LOL_UNLINK            (0)
+#define LOL_SAVE_FIRST_BLOCK  (1)
+// uhh..
+#define LOL_FORMAT_TO_REGULAR (1)
+#define LOL_LOCAL_TRUNCATE    (2)
+// Flags to lol_get_free_index
+#define LOL_MARK_USED         (1)
 
-#define LOL_KILOBYTE (1024)
-#define LOL_MEGABYTE (1048576)
-#define LOL_GIGABYTE (1073741824)
-// Signal handlers (internal use only. Do NOT change these!)
+#define LOL_FS_TOOSMALL      (-2)
+// Some integers
+#define LOL_KILOBYTE    (1024)
+#define LOL_04KILOBYTES (4096)
+#define LOL_08KILOBYTES (8192)
+#define LOL_MEGABYTE    (1048576)
+#define LOL_GIGABYTE    (1073741824)
+#define LOL_02GIGABYTES (2147483648)
+#define LOL_04GIGABYTES (4294967296)
+#define LOL_08GIGABYTES (8589934592)
+#define LOL_16GIGABYTES (17179869184)
+#define LOL_TERABYTE    (1099511627780)
+
+// Signal handlers
+// (Do NOT change these!)
 #define LOL_SIGHUP  0
 #define LOL_SIGINT  1
 #define LOL_SIGTERM 2
 #define LOL_SIGSEGV 3
 #define LOL_NUM_SIGHANDLERS 4
 
-enum lol_divs {
-              LOL_DIV_1,
-              LOL_DIV_2,
-              LOL_DIV_4,
-              LOL_DIV_8,
-              LOL_DIV_16,
-              LOL_DIV_32,
-              LOL_DIV_64,
-              LOL_DIV_128,
-              LOL_DIV_256,
-              LOL_DIV_512,
-              LOL_DIV_1024,
-              LOL_DIV_2048,
-              LOL_DIV_4096
+// outputs for some funcs
+#define LOL_STDOUT 0
+#define LOL_STDIN  1
+#define LOL_STDERR 2
+
+// types for lol_status_msg
+#define LOL_FSCK_OK      0
+#define LOL_FSCK_INFO   (1)
+#define LOL_FSCK_WARN   (2)
+#define LOL_FSCK_ERROR  (3)
+#define LOL_FSCK_FATAL  (4)
+#define LOL_FSCK_INTRN  (5)
+extern const char* lol_prefix_list[];
+extern const char* lol_tag_list[];
+// status message alignment
+// We want to fit in terminal,
+// align should be < 80
+#define LOL_STATUS_ALIGN 72
+
+#define lol_version   LOLFS_VERSION
+#define lol_copyright LOLFS_COPYRIGHT
+#define lol_inter_err LOLFS_INTERNAL_ERR
+// lol_divs
+enum
+{
+  LOL_DIV_1,
+  LOL_DIV_2,
+  LOL_DIV_4,
+  LOL_DIV_8,
+  LOL_DIV_16,
+  LOL_DIV_32,
+  LOL_DIV_64,
+  LOL_DIV_128,
+  LOL_DIV_256,
+  LOL_DIV_512,
+  LOL_DIV_1024,
+  LOL_DIV_2048,
+  LOL_DIV_4096
 };
+enum {
 
-#define MAX_LOL_OPEN_MODES 6
+  LOL_RDONLY,           // "r"
+  LOL_RDWR,             // "r+"
+  LOL_WR_CREAT_TRUNC,   // "w"
+  LOL_RDWR_CREAT_TRUNC, // "w+"
+  LOL_APPEND_CREAT,     // "a"
+  LOL_RD_APPEND_CREAT,  // "a+"
 
-// Constants for lol_get_vdisksize func
-#define RECUIRE_SB_INFO 1
-#define USE_SB_INFO     2
-
-// Constants for lol_supermod func
-#define LOL_INCREASE 0
-#define LOL_DECREASE 1
-
-// Constants for lol_free_space func
-#define LOL_SPACE_BYTES   1
-#define LOL_SPACE_BLOCKS  2
-// Constants for lol_size_to_blocks func
-#define LOL_EXISTING_FILE  17
-#define LOL_JUST_CALCULATE 71
-// Storage size here is the limit, after which we will
-// allocate memory dynamically.
-// Bigger LOL_STORAGE_SIZE may result in better performance.
-#define LOL_STORAGE_SIZE 16383
-#define LOL_STORAGE_ALL  ((size_t)(LOL_STORAGE_SIZE + 1))
-
-// Flags to lol_delete_chain_from:
-#define LOL_UNLINK           0
-#define LOL_SAVE_FIRST_BLOCK 1
-// uhh..
-#define LOL_FORMAT_TO_REGULAR 1
-#define LOL_LOCAL_TRUNCATE    2
-
-// Flags to lol_get_free_index:
-#define LOL_MARK_USED        1
+};
+// Some ANSI codes
+#define LOL_TEXT_BOLD      "\x1b[1m"
+#define LOL_TEXT_UNDERLINE "\x1b[4m"
+#define LOL_COLOR_RED      "\x1b[31m"
+#define LOL_COLOR_GREEN    "\x1b[32m"
+#define LOL_COLOR_YELLOW   "\x1b[33m"
+#define LOL_COLOR_BLUE     "\x1b[34m"
+#define LOL_COLOR_MAGENTA  "\x1b[35m"
+#define LOL_COLOR_CYAN     "\x1b[36m"
+#define LOL_COLOR_RESET    "\x1b[0m"
 
 struct lol_loop {
   // private:
-   size_t num_blocks;
+   size_t  num_blocks;
    size_t start_bytes;
-   size_t full_loops;
-   size_t end_bytes;
-
+   size_t  full_loops;
+   size_t   end_bytes;
 };
-
+#define LOL_STORAGE_ALL ((size_t)(LOL_STORAGE_SIZE + 1))
 typedef size_t (*lol_io_func)(void *, size_t, size_t, FILE *);
 
 // Miscallaneous helper-functions,
 // not to be used in the interface
-
 int         lol_index_malloc(const size_t num_entries);
 void        lol_index_free (const size_t amount);
 void*       lol_malloc(const size_t size);
@@ -268,7 +314,7 @@ int         lol_count_file_blocks (FILE *vdisk, const struct lol_super *sb,
                                    const alloc_entry first_index, const long dsize,
                                    long *count, const int terminate);
 long        lol_free_space (char *container, const int mode);
-void        lol_align(const char *before, const char *after, const size_t len);
+void        lol_align(const char *before, const char *after, const size_t len, int out);
 int         lol_garbage_filename(const char *name);
 int         lol_size_to_blocks(const char *size, const char *container,
                                const struct lol_super *sb,
@@ -278,6 +324,8 @@ int         lol_is_integer(const char *str);
 long        lol_get_io_size(const long size);
 int         lol_extendfs(const char *container, const DWORD new_blocks,
 			 struct lol_super *sb, const struct stat *st);
+int         lol_status_msg(const char *me, const char* txt, const int type);
+
 
 // N_LOLFUNCS must match the number of functions below it
 #define N_LOLFUNCS 8

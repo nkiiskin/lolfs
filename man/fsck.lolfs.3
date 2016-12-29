@@ -21,7 +21,7 @@
 .\" <http://www.gnu.org/licenses/>.
 .\" %%%LICENSE_END
 .\"
-.\"     @(#)fsck.lolfs.3 0.13 2016/12/17
+.\"     @(#)fsck.lolfs.3 0.20 2016/12/17
 .\"
 .\" Modified, niko, 2016-12-17
 .\"
@@ -29,12 +29,12 @@
 \\$2 \(laURL: \\$1 \(ra\\$3
 ..
 .if \n[.g] .mso www.tmac
-.TH "fsck.lolfs" "3" "16 December 2016" "LOLFS v0.13" "Lolfs Package Manual"
+.TH "fsck.lolfs" "3" "16 December 2016" "LOLFS v0.20" "Lolfs Package Manual"
 .SH "NAME"
 fsck.lolfs \- check lolfs container for errors
 .SH "SYNOPSIS"
 .SY fsck.lolfs
-.OP \-hv
+.OP \-hvd
 .RI [ file
 .IR .\|.\|. ]
 .YS
@@ -56,11 +56,19 @@ Shows fsck.lolfs program version.
 .TP
 .B \-h \-\-help
 Shows a short description of usage.
+.TP
+.B \-d \-\-details
+Show more information about the container.
 .SH "EXAMPLES"
 .TP
 fsck.lolfs my.db
 .IP
 Checks the lolfs container 'my.db' for errors.
+.TP
+fsck.lolfs -d my.db
+.IP
+Checks the container 'my.db' for errors and output
+detailed information.
 .SH "ENVIRONMENT"
 Not implemented.
 .SH "DIAGNOSTICS"
@@ -70,7 +78,7 @@ program returns 0 after succesful execution.
 Otherwise the return value is < 0.
 .SH "AUTHOR"
 Written by
-.MT nkiiskin@\:yahoo.com
+.MT lolfs.bugs@\:gmail.com
 Niko Kiiskinen.
 .ME
 .SH "SEE ALSO"
@@ -95,7 +103,7 @@ License GNU GPL version 2 or later.
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 .SH "COLOPHON"
-This page is part of release 0.13 of the lolfs project
+This page is part of release 0.20 of the lolfs project
 man-pages. The website of the project and the latest version,
 can be found at Github:
 .URL https://\:nkiiskin.github.io/\:lolfs

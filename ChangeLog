@@ -26,3 +26,5 @@
 	  choose the container size directly instead of tampering
 	  with option '-b' (block size and number of blocks).
 	
+0.20	+ Many changes and bug fixes.
+	

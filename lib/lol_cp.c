@@ -14,7 +14,7 @@
 
 */
 /*
- $Id: lol_cp.c, v0.13 2016/04/19 Niko Kiiskinen <nkiiskin@yahoo.com> Exp $"
+ $Id: lol_cp.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 
 */
 /* ************************************************************************** */
@@ -126,7 +126,7 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
   len       = strlen (vdisk);
 
   if (stat (vdisk, &sta)) {
-	printf("lol %s: error in container %s\n", argv[0], vdisk);
+	printf("lol %s: cannot find \'%s\'\n", argv[0], vdisk);
         return -1;
   }
 
@@ -155,10 +155,10 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
     if (!(S_ISREG(st.st_mode))) { // We copy only regular files
                                   // into container
       if ((S_ISDIR(st.st_mode))) {
-	   printf("lol %s: cannot copy directory %s\n", argv[0], argv[i]);
+	// printf("lol %s: cannot copy directory %s\n", argv[0], argv[i]);
       }
       else {
-	   printf("lol %s: %s is not a regular file\n", argv[0], argv[i]);
+	   printf("lol %s: skipping \'%s\' (not a regular file)\n", argv[0], argv[i]);
       }
       continue;
     }
@@ -378,12 +378,12 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
   if (num_files > 2) {
 
       if (i) {
-	  printf("lol %s: cannot find directory %s\n", argv[0], dir);
+	  printf("lol %s: cannot find directory \'%s\'\n", argv[0], dir);
           return -1;
       }
 
       if (!(S_ISDIR(st.st_mode))) {
-	  printf("lol %s: syntax error\n", argv[0]);
+	  printf("lol %s: cannot copy to \'%s\'\n", argv[0], dir);
           return -1;
       }
       else {
