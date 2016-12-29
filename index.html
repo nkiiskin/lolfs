@@ -162,7 +162,7 @@
 
 
                  lol cc function:
-                 -----------------
+                 ----------------
 
 
                  lol cc     checks if a container has errors.
@@ -173,7 +173,6 @@
 
                  Example 2:
                              "lol -d test.db" (shows more details)
-
 
 
 
@@ -209,7 +208,7 @@
 
 
               lol df function:
-                 ----------------
+              ----------------
 
 
                     lol df  Shows how much space is used in container file.
@@ -332,7 +331,9 @@ lolfs API:
        a container file, you must separate the filesystem path from the
        file inside a container with a ':'
 
-     Example: Create a file "test.txt" inside container called 'mycontainer'.
+     Example: Create a file "test.txt" inside container called 'my.db'.
+
+              lol fs -s 20k my.db
 
 </code></pre>
 
@@ -340,14 +341,14 @@ lolfs API:
 
 
 <p>int main() </p>
-
+/* test.c - a lolfs API test */
 <pre><code>
 {
 
          lol_FILE *fp;
          char text[] = "Hello World!\n";
 
-         fp = lol_fopen("mycontainer:/test.txt", "w");
+         fp = lol_fopen("my.db:/test.txt", "w");
 
          if (!(fp)) {
             printf("cannot create the file\n");
@@ -363,14 +364,32 @@ lolfs API:
 
 <!-- p>}</p   -->
 
-<p>How to compile and link a lolfs enabled program:</p>
+<p>How to compile and link a lolfs C program:</p>
 
-<p>gcc program.c -o program -llolfs</p>
+<p>gcc test.c -o test -llolfs</p>
 
 <p>(You may need to include compiler option -L/path/to/librarydir
    if the linker does not find lolfs library)</p>
 
-<p>gcc program.c -o program -L/usr/local/lib64 -llolfs -I/usr/local/include</p>
+<p>gcc test.c -o test -L/usr/local/lib64 -llolfs -I/usr/local/include</p>
+
+Run the test:
+
+shell&gt; ./test
+
+List the files inside my.db
+
+shell&gt; lol ls my.db
+
+Thu Dec 29 19:56:18 2016      13              hello.txt
+total 1
+
+See the contents of hello.txt
+
+shell&gt; lol cat my.db:/hello.txt
+
+Hello World!
+
 
 <p>Questions, Bug reports, etc..</p>
 
