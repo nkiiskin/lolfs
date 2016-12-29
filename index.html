@@ -351,6 +351,7 @@ lolfs API:
 
          if (!(fp)) {
             printf("cannot create the file\n");
+            return -1;
          }
 
          lol_fwrite((char *)text, strlen(text), 1, fp);
