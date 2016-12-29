@@ -78,9 +78,24 @@
      listing files, space usage etc.. See below for details.
 
 
+     But wait.. Why would anybody store files into this container
+     thing - why not just create a new directory and put those
+     files there?
+
+     I don't see a good reason, this is just a toy project for me
+     and I like to play with it. Maybe I will add something
+     interesting into future releases, something that might actually
+     make this project useful - like automatic encryption of files...
+
+     And there is one more thing. Maybe someone can make use of it
+     as part of a bigger project that needs a container, after all,
+     many projects have several data files and it might be handy
+     to store them all inside one "master" file..
 
 
- <b>lol program</b>
+
+
+    lol program
     ============
 
                 The 'lol' program is the main user interface to create
@@ -102,7 +117,7 @@
 
 
 
-                <b> lol fs function:</b>
+                 lol fs function:
                  ----------------
 
 
@@ -128,7 +143,7 @@
 
 
 
-                <b> lol cat function:</b>
+                 lol cat function:
                  -----------------
 
 
@@ -137,16 +152,16 @@
 
 
                  Example 1:
-                             "lol cat test.db<b>:/</b>readme.txt"
+                             "lol cat test.db:/readme.txt"
 
                  Example 2:
-                             "lol cat test.db<b>:/</b>pic.jpg > backup.jpg"
+                             "lol cat test.db:/pic.jpg > backup.jpg"
 
 
 
 
 
-                <b> lol cc function:</b>
+                 lol cc function:
                  -----------------
 
 
@@ -163,7 +178,7 @@
 
 
 
-                <b> lol cp function:</b>
+                 lol cp function:
                  ----------------
 
                  lol cp copies files to (and from) your container file.
@@ -185,15 +200,15 @@
                      back to your host filesystem, use:
 
                  Example 3:
-                             "lol cp test.db<b>:/</b>readme.txt /some/directory"
+                             "lol cp test.db:/readme.txt /some/directory"
 
                    NOTE: When accessing files inside your container, you must
-                         separate the path with '<b>:</b>' like in above example.
+                         separate the path with ':' like in above example.
 
 
 
 
-              <b>lol df function:</b>
+              lol df function:
                  ----------------
 
 
@@ -206,7 +221,7 @@
 
 
 
-              <b>lol ls function:</b>
+              lol ls function:
                  ----------------
 
 
@@ -222,7 +237,7 @@
 
 
 
-               <b>lol rm function:</b>
+               lol rm function:
                  ----------------
 
 
@@ -230,16 +245,16 @@
 
 
                  Example:
-                           "lol rm test.db<b>:/</b>readme.txt"
+                           "lol rm test.db:/readme.txt"
 
 
                  NOTE:   Note also here (this is common feature when accessing
                          files inside a container), that you must separate
-                         the file with a '<b>:</b>' from it's container.
+                         the file with a ':' from it's container.
 
 
 
-              <b>lol rs function:</b>
+              lol rs function:
                  ----------------
 
 
@@ -265,7 +280,7 @@
 
 
 
- <b>mkfs.lolfs program</b>
+    mkfs.lolfs program
     ===================
 
 
@@ -287,7 +302,7 @@
 
 
 
- <b>fsck.lolfs program</b>
+    fsck.lolfs program
     ===================
 
 
@@ -302,7 +317,7 @@
 <a id="lolfs-api" class="anchor" href="#lolfs-api" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>lolfs API:</h1>
 
 <pre><code>
-<b>lolfs API:</b>
+lolfs API:
 ==========
 
      The API functions are explained in &lt;lolfs.h&gt;
@@ -324,9 +339,12 @@
 <p>#include &lt;stdio.h&gt;<br>#include &lt;string.h&gt;<br>#include &lt;lolfs.h&gt;</p>
 
 
-<p>int main() {</p>
+<p>int main() </p>
 
-<pre><code>         lol_FILE *fp;
+<pre><code>
+{
+
+         lol_FILE *fp;
          char text[] = "Hello World!\n";
 
          fp = lol_fopen("mycontainer:/test.txt", "w");
@@ -338,9 +356,11 @@
          lol_fwrite((char *)text, strlen(text), 1, fp);
          lol_fclose(fp);
          return 0;
+
+} // end main
 </code></pre>
 
-<p>}</p>
+<!-- p>}</p   -->
 
 <p>How to compile and link a lolfs enabled program:</p>
 
