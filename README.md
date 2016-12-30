@@ -1,7 +1,7 @@
 
 
 
-	LOLFS - Little Object List (LOL) FileSystem - by Niko Kiiskinen
+   LOLFS - Little Object List (LOL) FileSystem - by Niko Kiiskinen
                                       
 
         Please see file 'INSTALL' for detailed installation instructions
@@ -14,58 +14,117 @@
 
 
 
-Manifesto
+  Manifesto:
 
-
-     LolFS is a container file. It means that it is a file (stored
-     in your computer somewhere) which has other files inside it.
+     LolFS is a container file. It means that it is a file
+     which has other files inside it.
 
      Once you create a lol container file (using the included
      'mkfs.lolfs' utility or 'lol fs' command, you can then
-     store content (any files basically) into it using the
-     icluded 'lol' program.
+     store content (any files basically) into it.
 
-     The 'lol' program is an interface app to execute common file
+     The 'lol' program is an 'interface' app to execute common file
      operations, like copying files to and from the container,
      listing files, space usage etc.. See below for details.
 
+     But wait.. Why would anybody store files into this
+     container thing - why not just create a new directory and put
+     those files there?
 
-    lol program:
+     I don't see a good reason, this is just a toy project for me
+     and I like to play with it! - I am very aware of the double
+     meaning of the name of this project :D
+
+     Maybe I will add something interesting into future releases,
+     something that might actually make this project useful -
+     like automatic encryption of files..
+
+     And there is one more thing. Maybe someone can make use of it
+     as part of a bigger project that needs a container, after all,
+     many projects have several data files around and it might
+     become handy to store them all inside one "master" file.
+     Lolfs has very simple C API to put those things together,
+     see bottom of this file.
+
+
+    lol program
     ============
 
                 The 'lol' program is the main user interface to create
                 and access files inside a lolfs container.
 
                 'lol' has several built-in functions which
-                can be used to execute some common file operations.
+                may be used to execute some common file operations.
                 These functions are currently (in v 0.20) :
 
+                - fs
                 - cat
                 - cc
                 - cp
                 - df
-                - fs
                 - ls
                 - rm
                 - rs
 
 
+
+
+                 lol fs function:
+                 ----------------
+
+
+                 lol fs   creates a new container file.
+
+
+                 Example 1:
+                             "lol fs -s 700M test.db"
+
+                         This example creates a container file
+                         'test.db' which has 700 Megabytes
+                         of storage capacity.
+
+                 Example 2:
+                             "lol fs -b 1000 5000 lol.db"
+
+
+                         This example creates a container file
+                         'lol.db' which has 5000 data blocks,
+                         each 1000 bytes. So the storage capacity
+                         for this example is 1000 * 5000 bytes.
+
+
+
+
                  lol cat function:
                  -----------------
 
+
                  lol cat  Prints the contents of a file (inside a container)
                           to standard output.
-                          Use like: 'lol cat container:/readme.txt'.
-                          Or like: 'lol cat container:/somefile > file.bak'.
+
+
+                 Example 1:
+                             "lol cat test.db:/readme.txt"
+
+                 Example 2:
+                             "lol cat test.db:/pic.jpg > backup.jpg"
+
+
 
 
 
                  lol cc function:
-                 -----------------
+                 ----------------
+
 
                  lol cc     checks if a container has errors.
 
-                            Use like: "lol cc mycontainer".
+
+                 Example 1:
+                             "lol cc test.db"
+
+                 Example 2:
+                             "lol cc -d test.db" (shows more details)
 
 
 
@@ -73,74 +132,72 @@ Manifesto
                  lol cp function:
                  ----------------
 
-                 lol cp copies files to (and from) your container file.
+                 lol cp copies files to (and from) a container.
 
-                  If you want to copy a file /home/you/readme.txt to your
-                  container file 'mycontainer', use:
-                  lol cp /home/you/readme.txt mycontainer
-
-
-                  You can copy multiple files like: 'lol cp *.jpg container'
-
-                  If you want to copy a file which is inside the container
-                  back to your normal filesystem, use:
-
-                  lol cp mycontainer:/readme.txt /some/directory
-
-                  NOTE: When accessing files inside your container, you must
-                        separate the path with ':' like in above example.
-
-
-
-                 lol df function:
-                 ----------------
-
-                 lol df  Shows how much space is used in container file.
-                         Use like: "lol df mycontainer"
-
-
-
-                 lol fs function:
-                 ----------------
-
-                 lol fs   creates a new container file.
+                     If you want to copy a file readme.txt to your
+                     container file 'test.db', use:
 
                  Example 1:
+                             "lol cp readme.txt test.db"
 
-                         Use like: "lol fs -s 700M mycontainer"
 
-                         (This example creates a container file
-                          'mycontainer' which has 700 Megabytes
-                           of storage capacity).
+                     You can copy multiple files like:
 
                  Example 2:
-
-                         Use like: "lol fs -b 1000 5000 mycontainer"
-
-                         (This example creates a container file
-                          'mycontainer' which has 5000 data blocks,
-                          each 1000 bytes. So the storage capacity
-                          for this example is 1000 * 5000 bytes).
+                             "lol cp *.jpg test.db"
 
 
-                 lol ls function:
+                     If you want to copy a file which is inside the container
+                     back to your host filesystem, use:
+
+                 Example 3:
+                             "lol cp test.db:/readme.txt /some/directory"
+
+                   NOTE: When accessing files inside your container, you must
+                         separate the path with ':' like in above example.
+
+
+
+
+              lol df function:
+              ----------------
+
+
+                    lol df  Shows how much space is used in container file.
+
+                 Example:
+                           "lol df my.db"
+
+
+
+
+
+              lol ls function:
                  ----------------
+
 
                  lol ls   lists the files inside a container.
 
-                          For example, if you want to list all the files
-                          inside a container file "mycontainer", type:
+ 
+                         For example, if you want to list all the files
+                         inside a container file "lol.db", type:
 
-                          lol ls mycontainer
+                 Example:
+                           "lol ls lol.db"
 
 
 
 
-                 lol rm function:
+               lol rm function:
                  ----------------
 
+
                  lol rm   deletes a file from your container file.
-                          Use like: "lol rm mycontainer:/readme.txt"
+
+
+                 Example:
+                           "lol rm test.db:/mother_in_law.jpg"
+
 
                  NOTE:   Note also here (this is common feature when accessing
                          files inside a container), that you must separate
@@ -148,33 +205,37 @@ Manifesto
 
 
 
-                 lol rs function:
+              lol rs function:
                  ----------------
 
+
                  lol rs    extends a container file by adding more
-                           empty space into it.
+                           storage space into it. Use this function
+                           if the container is full or is becoming full.
+
 
                  Example 1:
 
-                         Use like: "lol rs -b 1000 mycontainer"
+                            "lol rs -s 200M lol.db"
 
-                         (This adds 1000 new data blocks to
-                          container 'mycontainer')
+                             This adds 200 Megabytes new space to
+                             container 'lol.db'.
+
 
                  Example 2:
 
-                         "lol rs -s 20M mycontainer"
+                            "lol rs -b 1000 my.db"
 
-                         (This adds 20 Megabytes new space to
-                          container 'mycontainer').
+                            This adds 1000 new data blocks to
+                            container 'my.db'
 
 
 
-    mkfs.lolfs program:
+    mkfs.lolfs program
     ===================
 
 
-                "mkfs.lolfs" creates a container file.
+                "mkfs.lolfs" creates a new container file.
 
 
                   It works exactly as 'lol fs' command. (See above).
@@ -182,29 +243,27 @@ Manifesto
 
                  ( In Linux, lolfs may be used directly with removable storage,
                    without warranty of course!
-                   So, you may actually insert an SDHC card to your Linux
-                   and create a lol storage directly there. In that case the
-                   "filename" parameter is just the name of the device,
-                   for example "mkfs.lolfs -b 512 4000000 /dev/sdb"
+                   So, you may actually insert a SDHC card or USB stick to
+                   your Linux and create a lol storage directly there.
+                   In that case the "filename" parameter is just the name of
+                   the device,
+                   for example "mkfs.lolfs -b 512 4000000 /dev/sdc1"
                    You MUST know what you are doing then, and of course
                    you must be root to do that - or anything similar.
                    You have been warned! :)
 
 
 
-    fsck.lolfs program:
+    fsck.lolfs program
     ===================
 
 
                 "fsck.lolfs" checks a lol container for errors.
 
-                It takes one parameter:
-                - the name of the container
+                It works exactly as 'lol cc' command. (See above).
 
 
-                 Use like: "fsck.lolfs mycontainer"
-
-
+lolfs API:
 
 
 lolfs API:
@@ -222,39 +281,82 @@ lolfs API:
        a container file, you must separate the filesystem path from the
        file inside a container with a ':'
 
-     Example: Create a file "test.txt" inside container called 'mycontainer'.
+     Example: Create a file "test.txt" inside container called 'my.db'.
+
+              lol fs -s 20k my.db
+
+     Then test the C API:
 
 
-  #include  <string.h>
-  #include  <lolfs.h>
+#include <stdio.h>
+#include <string.h>
+#include <lolfs.h>
 
-  int main() {
-
-      lol_FILE *fp;
-      char text[] = "Hello World!\n";
-
-      fp = lol_fopen("mycontainer:/test.txt", "w");
-      lol_fwrite((char *)text, strlen(text), 1, fp);
-      lol_fclose(fp);
-
-      return 0;
-  }
-      
+int main()
+/* test.c - a lolfs API test */
 
 
-  HOW TO compile and link a lolfs enabled program:
+{
+    lol_FILE *fp;
+    char text[] = "Hello World!\n";
 
-  gcc program.c -o program -L/path/to/liblolfs -llolfs
+    fp = lol_fopen("my.db:/test.txt", "w");
 
-  Usually '/path/to/liblolfs' is /usr/local/lib or /usr/local/lib64
-  depending on how you configured the installation.
+    if (!(fp)) {
+        printf("cannot create the file\n");
+        return -1;
+    }
 
-  
+    if ((lol_fwrite((char *)text, strlen(text), 1, fp)) != 1)
+    {
+        printf("Dang! Could not write the file!\n");
+        lol_fclose(fp);
+        return -1;
+    }
+
+    // YES! The file is there!
+
+    lol_fclose(fp);
+    return 0;
+
+} // end main
+
+
+How to compile and link a lolfs C program:
+
+gcc test.c -o test -llolfs
+
+(You may need to include compiler option -L/path/to/librarydir
+ if the linker does not find lolfs library)
+
+gcc test.c -o test -L/usr/local/lib64 -llolfs -I/usr/local/include
+
+If the build does not fail, run the test:
+
+
+shell> ./test
+
+(There is no ouput, it just writes a file into the container).
+Then check the list of files inside. It should show something
+like this:
+
+shell> lol ls my.db
+Thu Dec 29 19:56:18 2016 13 hello.txt
+total 1
+
+
+Then see the contents of hello.txt
+
+
+shell> lol cat my.db:/hello.txt
+Hello World!
+
+
+
+
 Questions, Bug reports, etc..
 
-     Niko Kiiskinen
-     lolfs.bugs@gmail.com
-     https://nkiiskin.github.io/lolfs
+ Niko Kiiskinen
+ lolfs.bugs@gmail.com
+ https://github.com/nkiiskin/lolfs
 
-
-Distribution date: Fri Dec 30 01:11:33 EET 2016
