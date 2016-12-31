@@ -18,11 +18,21 @@
 
 */
 /* ****************************************************************** */
+#ifndef _STDIO_H
 #include <stdio.h>
+#endif
+#ifndef _STDLIB_H
 #include <stdlib.h>
+#endif
+#ifndef _STRING_H
 #include <string.h>
+#endif
+#ifndef _LOLFS_H
 #include <lolfs.h>
+#endif
+#ifndef _LOL_INTERNAL_H
 #include <lol_internal.h>
+#endif
 /* ****************************************************************** */
 typedef int (*lol_func)(int, char**);
 struct lfuncs

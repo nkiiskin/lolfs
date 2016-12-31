@@ -20,6 +20,7 @@ AM_CFLAGS = -O2 -Wall -fPIC -I$(top_builddir)/include @AM_CFLAGS@
 mandh = \
 	$(top_builddir)/include/lolfs.h \
 	$(top_builddir)/include/lol_file.h
+
 addh  = $(top_builddir)/include/lol_config.h \
 	$(top_builddir)/include/lol_internal.h
 
@@ -29,16 +30,19 @@ funcs = lol_ls.c  \
 	lol_df.c  \
 	lol_cat.c \
 	lol_fs.c  \
-	lol_cc.c \
+	lol_cc.c  \
 	lol_rs.c
 
+interface = lol_lib.c
 
 lib_LTLIBRARIES = liblolfs.la
+
 ##lib_LIBRARIES = liblolfs.a
 ##liblolfs_la_HEADERS = $(mandh)
 
 liblolfs_la_SOURCES = \
 	lolfs.c  \
+	$(interface) \
 	$(funcs) \
 	$(mandh) \
 	$(addh)
@@ -49,4 +53,3 @@ liblolfs_la_LDFLAGS = -lc -shared -Wl,-soname,liblolfs.so $(LT_LDFLAGS)
 
 include_HEADERS = $(mandh)
 noinst_HEADERS  = $(addh)
-

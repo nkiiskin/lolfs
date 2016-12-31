@@ -68,7 +68,6 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	  echo 'm4_define([AT_TESTS], [$(TESTSUITE_AT)])'; \
 	} >$(srcdir)/package.m4
 
-
 TESTSUITE = $(srcdir)/testsuite
 check-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) $(TESTSUITE)

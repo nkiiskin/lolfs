@@ -20,16 +20,30 @@
  * lol_rs: resize a container file.
  * Does not shrink, only adds more space.
  * ********************************************************************** */
+#ifndef HAVE_CONFIG_H
 #include "../config.h"
+#endif
+#ifndef _ERRNO_H
 #include <errno.h>
+#endif
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
+#ifndef _STDIO_H
 #include <stdio.h>
+#endif
+#ifndef _STDLIB_H
 #include <stdlib.h>
+#endif
+#ifndef _STRING_H
 #include <string.h>
+#endif
+#ifndef _LOLFS_H
 #include <lolfs.h>
+#endif
+#ifndef _LOL_INTERNAL_H
 #include <lol_internal.h>
+#endif
 /* ********************************************************************** */
 static const char params[] =
           "-b <blocks> <container>\n       lol rs -s <size> <container>";
@@ -91,29 +105,40 @@ int lol_rs (int argc, char* argv[])
 
   // Process standard --help & --version options.
   if (argc == 2) {
-
     if (LOL_CHECK_HELP) {
-
          printf (LOL_USAGE_FMT, me,
                  lol_version, lol_copyright, me, params);
-
 	 lol_help(lst);
          return 0;
 
     }
     if (LOL_CHECK_VERSION) {
-
 	printf (LOL_VERSION_FMT, me,
                 lol_version, lol_copyright);
 	return 0;
     }
+    if (LOL_CHECK_SIZE) {
+        lol_error(LOL_MISSING_ARG_FMT, me, "<size> <container>");
+        return -1;
+    }
+    if (LOL_CHECK_BLOCKS) {
+        lol_error(LOL_MISSING_ARG_FMT, me, "<blocks> <container>");
+        return -1;
+    }
+
 
     if (argv[1][0] == '-') {
+
+        if ((stat(argv[1], &st))) {
+            lol_error(LOL_WRONG_OPTION, me, argv[1]);
+	    lol_error(hlp, me);
+            return -1;
+        }
 syntax_err:
-         printf (LOL_USAGE_FMT, me,
-                 lol_version, lol_copyright, me, params);
-          printf (hlp, me);
-          return -1;
+        printf (LOL_USAGE_FMT, me,
+                lol_version, lol_copyright, me, params);
+        printf (hlp, me);
+        return -1;
     }
 
   } // end if argc == 2
@@ -168,15 +193,12 @@ syntax_err:
 
   // Does the container exist?
   free_space = lol_get_vdisksize(container, &sb, &st, RECUIRE_SB_INFO);
-
   if (free_space < LOL_THEOR_MIN_DISKSIZE) {
-
-       lol_error(cantuse, me, container);
-       return -1;
+      lol_error(cantuse, me, container);
+      return -1;
   }
 
   if (LOL_INVALID_MAGIC) {
-
       lol_error("lol %s: invalid file id [0x%x, 0x%x].\n",
 	         me, (int)sb.reserved[0], (int)sb.reserved[1]);
       lol_error(LOL_FSCK_FMT);
@@ -199,9 +221,9 @@ syntax_err:
   switch (opt) {
 
      case LOL_RS_SIZE :
+
        if ((lol_size_to_blocks(amount, container,
             &sb, &st, &new_blocks, LOL_EXISTING_FILE))) {
-
 	   val = -1;
        }
        break;

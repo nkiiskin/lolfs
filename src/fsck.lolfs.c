@@ -17,8 +17,12 @@
  $Id: fsck.lolfs.c, v0.20 2016/12/08 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************ */
+#ifndef _LOLFS_H
 #include <lolfs.h>
+#endif
+#ifndef _LOL_INTERNAL_H
 #include <lol_internal.h>
+#endif
 /* ************************************************************************ */
 /* Wrapper app for lol_cc function                                          */
 /* ************************************************************************ */

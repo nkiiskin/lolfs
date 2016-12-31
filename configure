@@ -2872,6 +2872,9 @@ else
 fi
 AM_BACKSLASH='\'
 
+
+$as_echo "#define HAVE_CONFIG_H 1" >>confdefs.h
+
 case `pwd` in
   *\ * | *\	*)
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Libtool does not cope well with whitespace in \`pwd\`" >&5

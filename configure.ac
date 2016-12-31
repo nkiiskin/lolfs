@@ -18,6 +18,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([tests])
 # Use kernel-like CC instead of the usual verbose insanity.
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+AC_DEFINE([HAVE_CONFIG_H], [1], [Define that we have a config])
 AC_PROG_LIBTOOL
 AC_PROG_CC
 AC_PROG_SED

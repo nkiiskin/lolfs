@@ -32,6 +32,9 @@
 #ifndef _LOL_INTERNAL_H
 #define _LOL_INTERNAL_H  1
 #endif
+#ifndef HAVE_CONFIG_H
+#include "../config.h"
+#endif
 #ifndef _SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -54,8 +57,6 @@
 #ifndef _LOL_CONFIG_H
 #include <lol_config.h>
 #endif
-
-
 #define DISK_HEADER_SIZE (sizeof(struct lol_super))
 #define NAME_ENTRY_SIZE  (sizeof(struct lol_name_entry))
 #define LOL_FILE_SIZE    (sizeof(struct _lol_FILE))
@@ -121,11 +122,13 @@
 #define LOL_INVALID_MAGIC_PTR      ((sb->reserved[0] != LOL_MAGIC) || \
 				   (sb->reserved[1]  != LOL_MAGIC))
 #define LOL_DATA_START             (DISK_HEADER_SIZE)
+#define delete_return_NULL(x)      { delete_lol_FILE((x)); return NULL; }
+#define close_return_NULL(x)       { lol_fclose((x)); return NULL; }
 #define lol_error(x, ...)          fprintf(stderr, x, ##__VA_ARGS__)
 #define LOL_WRONG_OPTION           ("lol %s: unrecognized option \'%s\'\n")
 #define LOL_VERSION_FMT            ("lol %s v%s %s\n")
 #define LOL_USAGE_FMT              ("lol %s v%s. %s\nUsage: lol %s %s\n")
-#define LOL_MISSING_ARG_FMT        ("lol %s: missing argument: \'%s\'\n")
+#define LOL_MISSING_ARG_FMT        ("lol %s: missing argument(s): \'%s\'\n")
 #define LOL_FSCK_FMT               ("        fsck.lolfs recommended\n")
 #define LOL_INTERERR_FMT           ("Internal error. Sorry!\n")
 #define LOLFS_INTERNAL_ERR         LOL_INTERERR_FMT
@@ -233,6 +236,10 @@
 #define LOL_FSCK_INTRN  (5)
 extern const char* lol_prefix_list[];
 extern const char* lol_tag_list[];
+extern char lol_mode_combinations[MAX_LOL_OPEN_MODES][14][5];
+extern alloc_entry* lol_index_buffer;
+extern int lol_buffer_lock;
+extern const struct lol_open_mode lol_open_modes[];
 // status message alignment
 // We want to fit in terminal,
 // align should be max 72
@@ -295,12 +302,28 @@ int         lol_index_malloc(const size_t num_entries);
 void        lol_index_free (const size_t amount);
 void*       lol_malloc(const size_t size);
 void        lol_free(const size_t size);
+lol_FILE    *new_lol_FILE(void);
+void        delete_lol_FILE(lol_FILE *fp);
+int         lol_getmode(const char *m);
+int         lol_get_filename(const char *path, lol_FILE *op);
+int         lol_touch_file(lol_FILE *op);
+int         lol_truncate_file(lol_FILE *op);
+int         lol_read_ichain(lol_FILE *op, const size_t blocks);
+int         lol_is_writable(const lol_FILE *op);
+long        lol_new_indexes(lol_FILE *op, const long bytes,
+                            long *olds, long *mids, long *news,
+                            long *new_filesize);
+int         lol_new_ichain(lol_FILE *op, const long olds, const long news,
+                           alloc_entry *last_old);
+int         lol_update_ichain(lol_FILE *op, const long olds,
+                              const long news, const alloc_entry last_old);
+int         lol_update_nentry(lol_FILE *op);
+void        lol_clean_fp(lol_FILE *fp);
 void        lol_memset_indexbuffer(const alloc_entry val, const size_t x);
 int         lol_valid_sb(const lol_FILE *op);
 int         lol_check_corr(const lol_FILE *op, const int mode);
 size_t      null_fill(const size_t bytes, FILE *);
 void        lol_help(const char* lst[]);
-int         lol_size_to_str(const unsigned long size, char *s);
 size_t      lol_fio(char *ptr, const size_t bytes, FILE *s, const int func);
 int         lol_delete_chain_from(lol_FILE *, int);
 int         lol_read_nentry(lol_FILE *);
@@ -326,6 +349,7 @@ int         lol_count_file_blocks (FILE *vdisk, const struct lol_super *sb,
 long        lol_free_space (char *container, const int mode);
 void        lol_align(const char *before, const char *after, const size_t len, int out);
 int         lol_garbage_filename(const char *name);
+int         lol_size_to_str(const unsigned long size, char *s);
 int         lol_size_to_blocks(const char *size, const char *container,
                                const struct lol_super *sb,
                                const struct stat *st, DWORD *nb, int func);

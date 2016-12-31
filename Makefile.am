@@ -17,7 +17,6 @@ DIST_SUBDIRS = lib bin src include man tests
 SUBDIRS = lib bin src include man tests
 EXTRA_DIST = README.md gpl3.txt
 DEFS = @DEFS@
-SED = sed
 
 ##CHANGELOG_START = 0.20^
 #CHANGELOG_START = 633f37efc5743504fa094fc91f18de0f2df7f3b9
@@ -45,7 +44,6 @@ dist-hook:
 
 install-data-local:
 	@mkdir -p ${datarootdir}/man/man3
-
 
 install-exec-local:
 	@cd $(DESTDIR)$(includedir) && \
