@@ -71,8 +71,12 @@
 // LOL_MAGIC number is actually 0x7b7b,
 // so we only need one definition
 #define LOL_MAGIC     (0x7b)
-#define LOL_FILE_DEV  (0xf64affc8)
+// major and minor for struct stat st_dev field
+#define LOL_DEV_MAJOR  (8)
+#define LOL_DEV_MINOR  (2)
+// struct stat st_rdev field
 #define LOL_FILE_RDEV (0)
+
 #define LOL_FALSE     (0xFEFFFFDF)
 #define LOL_PATH_MAX  (LOL_DEVICE_MAX + LOL_FILENAME_MAX + 2)
 #define LOL_FILENAME_MAXLEN (LOL_FILENAME_MAX - 1)
@@ -320,6 +324,8 @@ int         lol_update_ichain(lol_FILE *op, const long olds,
 int         lol_update_nentry(lol_FILE *op);
 void        lol_clean_fp(lol_FILE *fp);
 void        lol_memset_indexbuffer(const alloc_entry val, const size_t x);
+int         lol_try_fgetpos(FILE *, fpos_t *);
+int         lol_try_fsetpos(FILE *, const fpos_t *);
 int         lol_valid_sb(const lol_FILE *op);
 int         lol_check_corr(const lol_FILE *op, const int mode);
 size_t      null_fill(const size_t bytes, FILE *);

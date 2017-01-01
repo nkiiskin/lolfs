@@ -74,9 +74,11 @@ int lol_cat (int argc, char *argv[]) {
     }
     if (argv[1][0] == '-') {
 
-          printf(LOL_WRONG_OPTION, me, argv[1]);
-          printf (hlp, me);
+      if ((stat(argv[1], &st))) {
+          lol_error(LOL_WRONG_OPTION, me, argv[1]);
+	  lol_error(hlp, me);
           return -1;
+      }
     }
   } // end if argc == 2
 
@@ -91,18 +93,18 @@ int lol_cat (int argc, char *argv[]) {
 
   lfile = argv[1];
   if ((lol_stat(lfile, &st))) {
-      printf(LOL_NOT_FOUND, me, lfile);
+      lol_error(LOL_NOT_FOUND, me, lfile);
       return -1;
   }
   if (!(st.st_size))
      return 0;
   if (!(fp = lol_fopen(lfile, "r"))) {
-      printf(LOL_NOT_FOUND, me, lfile);
+      lol_error(LOL_NOT_FOUND, me, lfile);
       return -1;
   }
   size = (size_t)fp->nentry.file_size;
   if (size != st.st_size) {
-      printf(LOL_BUG_FOUND, me, lfile);
+      lol_error(LOL_BUG_FOUND, me, lfile);
       goto errlol;
   }
   if (!(dest = fopen("/dev/stdout", "w")))
@@ -115,11 +117,11 @@ int lol_cat (int argc, char *argv[]) {
 
      v = lol_fread((char *)ptr, 4096, 1, fp);
      if ((lol_ferror(fp)) || (v != 1)) {
-        printf(E_FILE_READ, me, lfile);
+        lol_error(E_FILE_READ, me, lfile);
         goto error; 
      }
      if (lol_fio((char *)ptr, 4096, dest, LOL_WRITE) != 4096) {
-        printf(E_FILE_READ, me, lfile);
+        lol_error(E_FILE_READ, me, lfile);
         goto error;
      }
   } // end for i
@@ -128,11 +130,11 @@ int lol_cat (int argc, char *argv[]) {
 
      v = lol_fread((char *)ptr, r, 1, fp);
      if ((lol_ferror(fp)) || (v != 1)) {
-        printf(E_FILE_READ, me, lfile);
+        lol_error(E_FILE_READ, me, lfile);
         goto error; 
      }
      if (lol_fio((char *)ptr, r, dest, LOL_WRITE) != r) {
-         printf(E_FILE_READ, me, lfile);
+         lol_error(E_FILE_READ, me, lfile);
   	 goto error;
      }
 
@@ -147,7 +149,7 @@ error:
 errlol:
 #if LOL_TESTING
   if (lol_errno)
-    printf("lol_errno = %d\n", lol_errno);
+    lol_error("lol_errno = %d\n", lol_errno);
 #endif
 
   lol_fclose(fp);

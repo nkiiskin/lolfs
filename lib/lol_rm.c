@@ -62,8 +62,8 @@ int lol_rm (int argc, char* argv[])
     }
     if (argv[1][0] == '-') {
 
-          printf(LOL_WRONG_OPTION, argv[0], argv[1]);
-          printf (hlp, argv[0]);
+          lol_error(LOL_WRONG_OPTION, argv[0], argv[1]);
+          lol_error (hlp, argv[0]);
           return -1;
     }
   } // end if argc == 2
@@ -80,7 +80,7 @@ int lol_rm (int argc, char* argv[])
   while (i < argc)
   {
      if (lol_unlink(argv[i])) {
-         printf("lol %s: cannot delete '%s'\n",
+         lol_error("lol %s: cannot delete '%s'\n",
                 argv[0], argv[i]);
      }
      else {
