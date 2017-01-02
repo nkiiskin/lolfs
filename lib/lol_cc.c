@@ -1090,9 +1090,6 @@ action:
     i++;
   } // end while funcs
 
-  // error:
-
   fclose(fp);
   return ret;
-
 } // end lol_cc

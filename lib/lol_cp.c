@@ -142,7 +142,7 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
   for (i = 1; i < num_files; i++) {
 
     if (stat (argv[i], &st)) {
-	printf("lol %s: cannot copy to file \'%s\'\n", argv[0], argv[i]);
+	printf("lol %s: cannot find \'%s\'\n", argv[0], argv[i]);
         continue;
     }
 
@@ -226,8 +226,6 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 #endif
 
     answer = 'n';
-
-    //lol_errno = 0;
 
     if (!(lol_stat(name, &sta))) {
       // Exixting file !
@@ -317,19 +315,9 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
 	    printf("lol %s: cannot read file \'%s\'\n", argv[0], argv[i]);
 	    break;
         }
-#if LOL_TESTING
-	printf("DEBUG: Trying to write %ld bytes to container\n", (long)last_bytes);
-#endif
-
         if ((lol_fwrite((char *)temp, last_bytes, 1, dest)) != 1)
         {
 	  printf("lol %s: cannot copy to file \'%s\'\n", argv[0], name);
-
-#if LOL_TESTING
-	  printf("DEBUG: lol_errno = %d\n", lol_errno);
-	  printf("DEBUG: = lol_ferror = %d\n", (lol_ferror(dest)));
-#endif
-
         }
       } // end if last_bytes
     } while (0);

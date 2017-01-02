@@ -323,7 +323,7 @@ int         lol_update_ichain(lol_FILE *op, const long olds,
                               const long news, const alloc_entry last_old);
 int         lol_update_nentry(lol_FILE *op);
 void        lol_clean_fp(lol_FILE *fp);
-void        lol_memset_indexbuffer(const alloc_entry val, const size_t x);
+int         lol_memset_indexbuffer(const alloc_entry val, const size_t x);
 int         lol_try_fgetpos(FILE *, fpos_t *);
 int         lol_try_fsetpos(FILE *, const fpos_t *);
 int         lol_valid_sb(const lol_FILE *op);

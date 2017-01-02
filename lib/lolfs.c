@@ -14,43 +14,64 @@
 
 */
 /* $Id: lolfs.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $" */
+
 #ifdef HAVE_CONFIG_H
 #include "../config.h"
 #endif
 #ifdef HAVE_LIMITS_H
+#ifndef _LIMITS_H
 #include <limits.h>
 #endif
+#endif
+#ifdef HAVE_ERRNO_H
 #ifndef _ERRNO_H
 #include <errno.h>
 #endif
+#endif
+#ifdef HAVE_SYS_TYPES_H
 #ifndef _SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#endif
+#ifdef HAVE_SYS_STAT_H
 #ifndef _SYS_STAT_H
 #include <sys/stat.h>
+#endif
 #endif
 #ifdef HAVE_UNISTD_H
 #ifndef _UNISTD_H
 #include <unistd.h>
 #endif
 #endif
+#ifdef HAVE_TIME_H
 #ifndef _TIME_H
 #include <time.h>
 #endif
+#endif
+#ifdef HAVE_STDIO_H
 #ifndef _STDIO_H
 #include <stdio.h>
 #endif
+#endif
+#ifdef HAVE_STDLIB_H
 #ifndef _STDLIB_H
 #include <stdlib.h>
 #endif
+#endif
+#ifdef HAVE_STRING_H
 #ifndef _STRING_H
 #include <string.h>
 #endif
+#endif
+#ifdef HAVE_FCNTL_H
 #ifndef _FCNTL_H
 #include <fcntl.h>
 #endif
+#endif
+#ifdef HAVE_SIGNAL_H
 #ifndef _SIGNAL_H
 #include <signal.h>
+#endif
 #endif
 #ifdef HAVE_SYS_IOCTL_H
 #ifndef _SYS_IOCTL_H
@@ -99,7 +120,7 @@ static const int       lol_signals[LOL_NUM_SIGHANDLERS + 1] = {
                        SIGHUP, SIGINT, SIGTERM, SIGSEGV, 0
 };
 /* ********************************************************** */
-void lol_memset_indexbuffer(const alloc_entry value,
+int lol_memset_indexbuffer(const alloc_entry value,
                             const size_t num)   {
 
   alloc_entry i = 0;
@@ -108,11 +129,12 @@ void lol_memset_indexbuffer(const alloc_entry value,
     lol_error("internal error in lol_memset_indexfuffer\n");
     lol_debug("buffer is NULL");
 #endif
-    exit(-1);
+     return -1;
   }
   for (; i < num; i++) {
        lol_index_buffer[i] = value;
   }
+  return 0;
 } // end lol_memset_indexbuffer
 /* ********************************************************** */
 void lol_restore_sighandlers() {
@@ -489,10 +511,11 @@ int lol_remove_nentry(FILE *f, const DWORD nb, const DWORD bs,
     if (fread((char *)&p, NAME_ENTRY_SIZE, 1, f) != 1)
       goto error;
 
-      idx = p.i_idx;
-      if ((idx < 0) || (idx >= nb))
-	goto error;
-
+    idx = p.i_idx;
+    if ((idx < 0) || (idx >= nb)) {
+      // invalid index, we remove only the name
+	goto skip_index;
+    }
     offset = (long)LOL_INDEX_OFFSET(nb, bs, idx);
     if (fseek(f, offset, SEEK_SET))
         goto error;
@@ -500,6 +523,7 @@ int lol_remove_nentry(FILE *f, const DWORD nb, const DWORD bs,
     if (fwrite((char *)&v, ENTRY_SIZE, 1, f) != 1)
         goto error;
 
+  skip_index:
     if (lol_try_fsetpos(f, &tmp))
         goto error;
   } // end if delete index too
@@ -605,12 +629,10 @@ int lol_index_malloc(const size_t num_entries) {
 
   if (lol_buffer_lock)
      LOL_ERRET(EBUSY, LOL_ERR_BUSY);
-
   if (!(num_entries))
      LOL_ERRET(EINVAL, LOL_ERR_PARAM);
 
   bytes  = (size_t)((num_entries + 1) * (ENTRY_SIZE));
-
   if (num_entries > (LOL_STORAGE_SIZE)) {
   // If the bytes needed is more than LOL_STORAGE_SIZE,
   // then we allocate memory dynamically. If it's less,
@@ -640,7 +662,19 @@ int lol_index_malloc(const size_t num_entries) {
   //  return -1;
 #endif
 
-  lol_memset_indexbuffer(LAST_LOL_INDEX, (num_entries + 1));
+  if (lol_memset_indexbuffer(LAST_LOL_INDEX, (num_entries + 1))) {
+     // Should not happen, we just allocated it!
+     if (num_entries > (LOL_STORAGE_SIZE)) {
+        if (lol_index_buffer) {
+            free(lol_index_buffer);
+        }
+     }
+     lol_index_buffer = 0;
+     lol_buffer_lock = 0;
+     LOL_ERRET(EBUSY, LOL_ERR_BUSY);
+  } // end if memset failed
+
+
 
   if (num_entries > (LOL_STORAGE_SIZE)) { // handlers are only to free
                                           // dynamic memory
@@ -693,7 +727,8 @@ void* lol_malloc(const size_t size) {
   if (frac)
     entries++;
 #if LOL_TESTING
-  printf("lol_malloc: trying to lol_index_malloc(%ld)\n", (long)(entries));
+  printf("lol_malloc: trying to lol_index_malloc(%ld)\n",
+         (long)(entries));
   return NULL;
 #endif
 
@@ -746,7 +781,6 @@ size_t lol_fill_with_value(const alloc_entry value,
 
          ret += 4096;
   }
-
   if (last) {
       if (fwrite(buf, last, 1, s) != 1)
            return ret;
@@ -770,22 +804,17 @@ size_t null_fill(const size_t bytes, FILE *s)
 
   last  = bytes % 4096;
   times = bytes >> LOL_DIV_4096;
-
   memset(buf, 0, 4096);
-
   for (i = 0; i < times; i++) {
-
       if (fwrite(buf, 4096, 1, s) != 1) {
                return ret;
       }
       ret += 4096;
   }
-
   if (last) {
 
        if (fwrite(buf, last, 1, s) != 1) {
            return ret;
-
        }
        ret += last;
   }
@@ -808,26 +837,22 @@ size_t lol_fio(char *ptr, const size_t bytes,
     return 0;
 
   switch (func) {
-          case LOL_READ:
-	          io = &fread;
-		  break;
-
-          case LOL_WRITE:
-	          io = (lol_io_func)&fwrite;
-		  break;
+       case LOL_READ:
+            io = &fread;
+	    break;
+       case LOL_WRITE:
+	    io = (lol_io_func)&fwrite;
+	    break;
           default:
-                  return 0;
+            return 0;
   } // end switch
-
-    last  = bytes % 4096;
-    times = bytes >> LOL_DIV_4096;
-
+  last  = bytes % 4096;
+  times = bytes >> LOL_DIV_4096;
   for (i = 0; i < times; i++) {
         if (io((char *)&ptr[t], 4096, 1, s) != 1)
              return t;
         t += 4096;
   }
-
   if (last) {
     if ((io((char *)&ptr[t], last, 1, s)) != 1)
           return t;
@@ -933,10 +958,8 @@ int lol_count_file_blocks(FILE *vdisk, const struct lol_super *sb,
 
   if ((!(num_blocks)) || (!(block_size)))
       return -1;
-
   if ((current_index < 0) || (current_index >= num_blocks))
       return 1;
-
   if (dsize < LOL_THEOR_MIN_DISKSIZE)
       return -1;
 
@@ -958,25 +981,20 @@ int lol_count_file_blocks(FILE *vdisk, const struct lol_super *sb,
 	   *count = i + 1;
             goto error;
         }
-
 	if ((fread((char *)&current_index,
 		   (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
 	   *count = i + 1;
             goto error;
         }
-
         if (current_index == LAST_LOL_INDEX) {
 	    *count = i + 1;
 	    ret    = 0;
 	    goto error;
         }
-
         if ((current_index >= num_blocks) || (current_index < 0)) {
 
 	  if (terminate) {
-
 	         *count = i + 1;
-
                  if ((fseek(vdisk, -(ENTRY_SIZE), SEEK_CUR))) {
                       goto error;
                  }
@@ -986,7 +1004,7 @@ int lol_count_file_blocks(FILE *vdisk, const struct lol_super *sb,
 
                       goto error;
                  }
-		 ret = 0;
+	 	 ret = 0;
 		 goto error;
 
 	  } // end if terminate
@@ -1001,7 +1019,6 @@ int lol_count_file_blocks(FILE *vdisk, const struct lol_super *sb,
 	  if (terminate) {
 
 	         *count = i;
-
                  if ((fseek(vdisk, -(ENTRY_SIZE), SEEK_CUR))) {
                       goto error;
                  }
@@ -1010,7 +1027,6 @@ int lol_count_file_blocks(FILE *vdisk, const struct lol_super *sb,
 			     (size_t)(ENTRY_SIZE), 1, vdisk)) != 1) {
                       goto error;
                  }
-
 		 ret = 0;
 		 goto error;
 
@@ -1055,23 +1071,17 @@ int lol_supermod(FILE *vdisk, struct lol_super *sb, const int func) {
   switch (func) {
 
     case  LOL_INCREASE:
-
       if (files == num_blocks)
 	return -1;
-
       if (files > num_blocks)
 	fix = 1;
-
       break;
 
     case  LOL_DECREASE:
-
       if (!(files))
 	return -1;
-
       if (files < 0)
 	fix = 1;
-
       break;
 
     default:
@@ -1080,13 +1090,14 @@ int lol_supermod(FILE *vdisk, struct lol_super *sb, const int func) {
   } // end switch
 
   if (lol_try_fgetpos(vdisk, &pos))
-    return -1;
+      return -1;
   if (fseek(vdisk, 0, SEEK_SET))
-    goto error;
-  if ((fread((char *)&s, (size_t)(DISK_HEADER_SIZE), 1, vdisk)) != 1)
+      goto error;
+  if ((fread((char *)&s, (size_t)(DISK_HEADER_SIZE),
+       1, vdisk)) != 1)
       goto error;
   if (fseek(vdisk, 0, SEEK_SET))
-    goto error;
+      goto error;
 
   if (func == LOL_INCREASE) {
       if (fix)
@@ -1103,7 +1114,7 @@ int lol_supermod(FILE *vdisk, struct lol_super *sb, const int func) {
   } // end else
 
   if ((fwrite((const char *)&s,
-	      (size_t)(DISK_HEADER_SIZE), 1, vdisk)) != 1)
+       (size_t)(DISK_HEADER_SIZE), 1, vdisk)) != 1)
        goto error;
 
   if (fix)
@@ -1112,10 +1123,8 @@ int lol_supermod(FILE *vdisk, struct lol_super *sb, const int func) {
     ret = 0;
 
  error:
-
   lol_try_fsetpos(vdisk, &pos);
   return ret;
-
 } // end lol_supermod
 /* **********************************************************
  * lol_inc_files: PRIVATE FUNCTION!
@@ -1291,7 +1300,7 @@ int lol_delete_chain_from(lol_FILE *op, const int flags) {
   } // end while
 
     return LOL_ERR_INTRN;
-}
+} // end lol_delete_chain_from
 /* **********************************************************
  * lol_read_nentry: // PRIVATE function. Checks if file
  * (given by name in op->vdisk_file) exists.
@@ -1316,7 +1325,7 @@ int lol_read_nentry(lol_FILE *op) {
 
   struct lol_name_entry *entry;
 
-  // CANNOT use lol_check_corr here
+
   if (!(op))
     return -1;
 
@@ -1327,15 +1336,12 @@ int lol_read_nentry(lol_FILE *op) {
 
   if ((!(vdisk)) || (!(name)))
     return -1;
-
   if ((!(name[0])) || (!(num_blocks)))
     return -1;
-
   if (lol_try_fgetpos (vdisk, &pos))
      return -1;
 
   doff = (long)LOL_DENTRY_OFFSET(op);
-
   if (fseek (vdisk, doff, SEEK_SET)) {
       lol_errno = errno;
       goto error;
@@ -1357,16 +1363,18 @@ int lol_read_nentry(lol_FILE *op) {
     }
 
     if (!(entry->filename[0]))
-	  continue;
+	continue;
 
     len = strlen((char *)entry->filename);
     if ((len >= LOL_FILENAME_MAX) || (len != nlen))
 	continue;
 
-    if (!(strncmp((const char *)name, (const char*)entry->filename, len))) {
-                  lol_try_fsetpos (vdisk, &pos);
-	          op->nentry_index = i;
-                  return 1;
+    if (!(strncmp((const char *)name,
+         (const char*)entry->filename, len)))
+    {
+         lol_try_fsetpos (vdisk, &pos);
+	 op->nentry_index = i;
+         return 1;
     }
 
   } // end for i
@@ -1374,10 +1382,8 @@ int lol_read_nentry(lol_FILE *op) {
   ret = 0;
 
 error:
-
   lol_try_fsetpos (vdisk, &pos);
   return ret;
-
 } // end lol_read_nentry
 /* **********************************************************
  * lol_get_basename:
@@ -1514,6 +1520,8 @@ void lol_clean_fp(lol_FILE *fp) {
   if (!(fp))
     return;
 
+#if 0
+
   memset((char *)fp->vdisk_file, 0, LOL_FILENAME_MAX);
   memset((char *)fp->vdisk_name, 0, LOL_DEVICE_MAX);
   memset((char *)&fp->sb, 0, DISK_HEADER_SIZE);
@@ -1528,25 +1536,24 @@ void lol_clean_fp(lol_FILE *fp) {
   fp->curr_pos      = 0;
   fp->err = fp->eof = 0;
 
+#endif
   memset((char *)fp, 0, LOL_FILE_SIZE);
 } // end lol_clean_fp
 /* ********************************************************** */
 lol_FILE *new_lol_FILE() {
 
   lol_FILE *fp = (lol_FILE *)malloc((sizeof(struct _lol_FILE)));
-  if (!fp)
+  if (!(fp))
     return NULL;
-
   lol_clean_fp(fp);
   fp->open_mode.mode_num = -1;
-
   return fp;
-}
+} // end new_lol_FILE
 /* ********************************************************** */
 void delete_lol_FILE(lol_FILE *fp) {
   if (fp) {
-    free(fp);
-    fp = NULL;
+     free(fp);
+     fp = NULL;
   }
 } // end delete lol_FILE
 /* **********************************************************
@@ -1597,11 +1604,9 @@ int lol_get_filename(const char *path, lol_FILE *op)
      LOL_ERRET(ENAMETOOLONG, -1);
   // Copy first part to op->vdisk_name
   memset((char *)op->vdisk_name, 0, LOL_DEVICE_MAX);
-
   for (; s >= 0 ; s--) {
     op->vdisk_name[s] = path[s];
   } // end for s
-
   if (!(op->vdisk_name[0])) // Should never happen here..
       LOL_ERRET(EINVAL, -1);
 
@@ -1610,30 +1615,27 @@ int lol_get_filename(const char *path, lol_FILE *op)
 /* ********************************************************** */
 int lol_is_writable(const lol_FILE *op) {
 
-  int   mode;
-  DWORD num_blocks;
-  DWORD block_size;
-  ULONG shouldbe;
-  UCHAR file_exists;
+  int    m;
+  DWORD nb;
+  DWORD bs;
+  ULONG ds;
+  UCHAR fe;
 
-  // Can't use lol_check_corr here
   if (!(op))
     return -1;
 
-  num_blocks  = op->sb.num_blocks;
-  block_size  = op->sb.block_size;
-  file_exists = op->vdisk_file[0];
-  mode        = op->open_mode.mode_num;
+  nb   = op->sb.num_blocks;
+  bs   = op->sb.block_size;
+  fe   = op->vdisk_file[0];
+  m    = op->open_mode.mode_num;
 
-  if ((!(num_blocks)) || (!(block_size)) || (!(file_exists)))
+  if ((!(nb)) || (!(bs)) || (!(fe)))
     return -2;
 
-  if (mode < 1) // Opened "r"?                                                  
-    return -3;
-
-  shouldbe = (ULONG)LOL_DEVSIZE(num_blocks, block_size);
-
-  if (op->vdisk_size != shouldbe)
+  if (m < 1) // Opened "r"?
+     return -3;
+  ds = (ULONG)LOL_DEVSIZE(nb, bs);
+  if (op->vdisk_size != ds)
      return -4;
 
   return 0;
@@ -1805,17 +1807,13 @@ int lol_get_free_index(lol_FILE *op, alloc_entry *idx, int mark_used)
   fp = op->vdisk;
   if (lol_try_fgetpos(fp, &pos))
      goto err;
-
   if ((fseek(fp, offset, SEEK_SET)))
        goto error;
-
   n_idx = io / idx_s;
-
   if ((io % idx_s) || (frac % idx_s)) {
     lol_debug("internal error, sorry!");
     goto error;
   }
-
   for (i = 0; i < times; i++) {
       if ((lol_fio((char *)buf, io, fp, LOL_READ)) != io)
          goto error;
@@ -1849,15 +1847,12 @@ int lol_get_free_index(lol_FILE *op, alloc_entry *idx, int mark_used)
       n_idx = frac / idx_s;
       if ((lol_fio((char *)buf, frac, fp, LOL_READ)) != frac)
           goto error;
-
       doing_blk = 0;
       goto check_loop;
-
   } // end if frac
 
  error:
   lol_try_fsetpos(fp, &pos);
-
  err:
   if (alloc) {
      lol_index_free((size_t)(io));
@@ -1902,19 +1897,16 @@ int lol_touch_file(lol_FILE *op) {
     lol_errno = EIO;
     return -2;
   }
-
   if (mode < 2) { /* Opened "r" or "r+"? */
     lol_errno = EPERM;
     return -3;
   }
-
   if(!(name[0])) {
       lol_errno = EIO;
       return -4;
   }
 
   len = strlen(name);
-
   if (len >= LOL_FILENAME_MAX) {
       len = LOL_FILENAME_MAX - 1;
       name[len] = '\0';
@@ -1922,43 +1914,39 @@ int lol_touch_file(lol_FILE *op) {
   }
 
   shouldbe = (ULONG)LOL_DEVSIZE(num_blocks, block_size);
-
   if (op->vdisk_size != shouldbe) {
      lol_errno = EIO;
      return -5;
   }
-
   if (files >= num_blocks) {
       op->err = lol_errno = ENOSPC;
       return -6;
   }
-
   if (lol_try_fgetpos(op->vdisk, &pos)) {
      lol_errno = errno;
      return -7;
   }
 
   doff = LOL_DENTRY_OFFSET(op);
-
   if (fseek(op->vdisk, doff, SEEK_SET))
     { ret = -8; lol_errno = errno; goto error; }
 
   for (i = 0; i < num_blocks; i++) {
 
-      bytes = fread((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk);
+      bytes = fread((char *)&entry,
+              (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk);
       if (bytes != 1)
 	    { ret = -9; lol_errno = errno; goto error; }
 
       if (!(entry.filename[0])) {
-
 	  // We create and write op->nentry here
 	  if (!(lol_get_free_index(op, &idx, LOL_MARK_USED))) {
 	        op->nentry.i_idx = idx;
 	  }
 	  else {
-                 ret = -10;
-		 op->err = lol_errno = ENOSPC;
-                 goto error;
+             ret = -10;
+	     op->err = lol_errno = ENOSPC;
+             goto error;
           }
 
 	  if (fseek(op->vdisk, -(NAME_ENTRY_SIZE), SEEK_CUR))
@@ -1970,15 +1958,15 @@ int lol_touch_file(lol_FILE *op) {
 	  op->nentry.file_size = 0;
 
           bytes = fwrite((const char *)&op->nentry,
-                         (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk);
+                  (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk);
 
-           if (bytes != 1) {
+          if (bytes != 1) {
 	        // Free the index, since we failed to write name entry
 	     lol_set_index_value(op->vdisk, num_blocks,
                                  block_size, idx, FREE_LOL_INDEX);
                 ret = -12; lol_errno = errno;
                 goto error;
-           }
+          }
 
 	   if (lol_inc_files(op)) {
 	     // Try to rollback...
@@ -1993,12 +1981,11 @@ int lol_touch_file(lol_FILE *op) {
 #endif
 	       ret = -13; lol_errno = EIO;
                goto error;
-	   }
+	   } // end if lol_inc_files
 
            op->curr_pos = 0;
            if (lol_try_fsetpos(op->vdisk, &pos))
 	       goto error;
-
 	   op->nentry_index = i;
            return 0;
 
@@ -2020,48 +2007,40 @@ int lol_truncate_file(lol_FILE *op) {
   char *name;
   int ret = -13;
 
-  if (!(op))
-    return -1;
+   if (!(op))
+      return -1;
+   if (lol_is_writable(op)) {
+      return -2;
+   }
 
-  if (lol_is_writable(op)) {
-    return -2;
-  }
+   size = op->nentry.file_size;
+   mode = op->open_mode.mode_num;
+   name = op->vdisk_file;
 
-  size = op->nentry.file_size;
-  mode = op->open_mode.mode_num;
-  name = op->vdisk_file;
-
-  if (mode < 1) // Opened "r"?
-    return -3;
-
-  if(!(name[0]))
-    return -4;
-
-  if (!(size)) {
-    return 0;
-  }
-
-  // So, the file is >= 1 bytes, --> truncate to zero
-
-  if (lol_try_fgetpos(op->vdisk, &pos))
-    return -6;
-
-  if (LOL_GOTO_DENTRY(op)) {
-    ret = -7;
-    goto error;
-  }
-  // Read the timestamp to entry. FIX this. We already READ THIS!
-
-  if ((fread((char *)&entry, (size_t)(NAME_ENTRY_SIZE),
+   if (mode < 1) // Opened "r"?
+      return -3;
+   if(!(name[0]))
+      return -4;
+   if (!(size)) {
+      return 0;
+   }
+   // So, the file is >= 1 bytes, --> truncate to zero
+   if (lol_try_fgetpos(op->vdisk, &pos))
+      return -6;
+   if (LOL_GOTO_DENTRY(op)) {
+      ret = -7;
+      goto error;
+   }
+  // Read the timestamp to entry
+   if ((fread((char *)&entry, (size_t)(NAME_ENTRY_SIZE),
              1, op->vdisk)) != 1) {
        ret = -8;
        goto error;
-  }
-
-  if (!(entry.filename[0])) {
-    ret = -9;
+   }
+   if (!(entry.filename[0])) {
+       ret = -9;
        goto error;
-  }
+   }
    // Got it. Truncate
    if (fseek(op->vdisk, -(NAME_ENTRY_SIZE), SEEK_CUR)) {
        ret = -10;
@@ -2069,20 +2048,17 @@ int lol_truncate_file(lol_FILE *op) {
    }
 
    entry.file_size = 0;
-
    // Write new entry
-   if ((fwrite((const char *)&entry, (size_t)(NAME_ENTRY_SIZE),
-               1, op->vdisk)) != 1) {
+   if ((fwrite((const char *)&entry,
+       (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk)) != 1) {
        ret = -11;
        goto error;
    }
-
    // Truncate chain.
    if ((lol_delete_chain_from(op, LOL_SAVE_FIRST_BLOCK))) {
         ret = -12;
         goto error;
    }
-
    LOL_MEMCPY(&op->nentry, &entry, NAME_ENTRY_SIZE);
    lol_try_fsetpos(op->vdisk, &pos);
    return 0;
@@ -2099,14 +2075,12 @@ int lol_truncate_file(lol_FILE *op) {
  *
  * ********************************************************** */
 int lol_getmode(const char *mode) {
-
   int i, j;
 
   if (!(mode))
-    return -1;
+     return -1;
   if (!(mode[0]))
-    return -1;
-
+     return -1;
   for (i = 0; i < MAX_LOL_OPEN_MODES; i++) {
        for (j = 0; lol_mode_combinations[i][j][0]; j++) {
 	 if (!(strcmp(mode, lol_mode_combinations[i][j]))) {
@@ -2114,7 +2088,6 @@ int lol_getmode(const char *mode) {
 	 }
        } // end for j
   } // end for i
-
   return -1;
 } // end lol_getmode
 /* ********************************************************** */
@@ -2127,7 +2100,6 @@ int lol_update_nentry(lol_FILE *op) {
 
   if (!(op))
     return -1;
-
   if ((lol_is_writable(op))) {
     return -2;
   }
@@ -2137,43 +2109,35 @@ int lol_update_nentry(lol_FILE *op) {
 
   if (mode < 1) // Opened "r"?
     return -3;
-
   if(!(name[0]))
     return -4;
-
   if (lol_try_fgetpos(op->vdisk, &pos))
      return -6;
-
   if (LOL_GOTO_DENTRY(op))
     goto error;
-
   if ((fread((char *)&entry, (size_t)(NAME_ENTRY_SIZE),
 	     1, op->vdisk)) != 1) {
         // Read the timestamp to entry.
 	goto error;
   }
-
-    if (!(entry.filename[0]))
-	goto error;
-
-	if (fseek(op->vdisk, -(NAME_ENTRY_SIZE), SEEK_CUR)) {
-	    goto error;
-        }
+  if (!(entry.filename[0]))
+       goto error;
+  if (fseek(op->vdisk, -(NAME_ENTRY_SIZE), SEEK_CUR)) {
+      goto error;
+  }
       
-        entry.file_size = op->nentry.file_size;
-        entry.i_idx     = op->nentry.i_idx;
-        entry.created   = time(NULL);
+  entry.file_size = op->nentry.file_size;
+  entry.i_idx     = op->nentry.i_idx;
+  entry.created   = time(NULL);
 
-        // Write new entry
-        if ((fwrite((const char *)&entry,
-                   (size_t)(NAME_ENTRY_SIZE),
-                    1, op->vdisk)) != 1)      {
+  // Write new entry
+  if ((fwrite((const char *)&entry,
+       (size_t)(NAME_ENTRY_SIZE), 1, op->vdisk)) != 1) {
+       goto error;
+  }
 
-	    goto error;
-        }
-
-        lol_try_fsetpos(op->vdisk, &pos);
-        return 0;
+  lol_try_fsetpos(op->vdisk, &pos);
+  return 0;
 
  error:
   lol_try_fsetpos(op->vdisk, &pos);
@@ -2192,16 +2156,12 @@ int lol_update_ichain(lol_FILE *op, const long olds,
 
   if (!(op))
     return -1;
-
   if (!(lol_index_buffer))
     return -2;
-
   if (last_old < 0)
     return -3;
-
   if (!(news))
     return 0;
-
   if (lol_is_writable(op)) {
       return -4;
   }
@@ -2212,7 +2172,6 @@ int lol_update_ichain(lol_FILE *op, const long olds,
 
   if (mode < 1) // Opened "r"?
     return -5;
-
   if(!(name[0]))
     return -6;
 
@@ -2220,7 +2179,6 @@ int lol_update_ichain(lol_FILE *op, const long olds,
   i = olds;
 
   // Join old and new chains first
-
   if (i) {
     // Take last index of old chain
     // and make it point to first index of the new chain
@@ -2267,21 +2225,17 @@ int lol_update_ichain(lol_FILE *op, const long olds,
 
        current_new_index = lol_index_buffer[i];
        offset = fat_start + current_new_index * ENTRY_SIZE;
+       if (fseek(op->vdisk, offset, SEEK_SET)) {
+           return -9;
+       }
+       bytes = fwrite((const char *)&lol_index_buffer[i+1],
+                      (size_t)(ENTRY_SIZE), 1, op->vdisk);
 
-	if (fseek(op->vdisk, offset, SEEK_SET)) {
-	    return -9;
-        }
-
-        bytes = fwrite((const char *)&lol_index_buffer[i+1],
-                       (size_t)(ENTRY_SIZE), 1, op->vdisk);
-
-        if (bytes != 1) {
-	    return -10;
-	}
-
-        i++;
-
-  } // end while
+       if (bytes != 1) {
+	   return -10;
+       }
+       i++;
+ } // end while
 
   return 0;
 } // end lol_update_ichain
@@ -2304,7 +2258,6 @@ long lol_new_indexes(lol_FILE *op, const long bytes,
   long pos, block_size, num_blocks;
   long file_size, blocks_needed;
   long data_left_in_file;
-
   long write_blocks;
   long file_offset;
   long last_block_extra_data = 0;
@@ -2323,34 +2276,26 @@ long lol_new_indexes(lol_FILE *op, const long bytes,
 
   if (first_index == LAST_LOL_INDEX)
     return LOL_ERR_CORR;
-
   if (first_index == FREE_LOL_INDEX)
      return LOL_ERR_CORR;
-
   if (first_index < 0)
      return LOL_ERR_CORR;
-
   if (first_index >= num_blocks)
     return LOL_ERR_CORR;
-
   if (bytes < 0)
     return LOL_ERR_USER;
 
   *olds = *news = *mids = 0;
-
   if (!(bytes)) {
-
       *new_file_size = file_size;
       return 0;
   }
 
   write_blocks = (long)lol_num_blocks(op, (size_t)bytes, NULL);
-
   if (!(file_size)) {  // Size = 0, EASY Case
 
       // In this case we need new blocks for
       // the whole write request, except the first one.
-
       if (write_blocks) { // we may not need to check this??
 
 	  *olds = 1;
@@ -2358,19 +2303,15 @@ long lol_new_indexes(lol_FILE *op, const long bytes,
 	  *new_file_size = pos + bytes;
 
        }
-
        return write_blocks;
-
    } // end if zero size file
 
    // Ok, we know it is a regular file, size > 0
    // and we write > 0 bytes.
-
    if (!(write_blocks)) // We must have at least one block!
        return LOL_ERR_USER;
 
   // Check first if we need new blocks at all.
-
   file_offset = file_size % block_size;
 
   if (file_offset)
@@ -2379,12 +2320,10 @@ long lol_new_indexes(lol_FILE *op, const long bytes,
    data_left_in_file = file_size - pos; // may be <= 0 also
 
   // Do we have ALSO room in the last data block of the file?
-
   data_left_in_file += last_block_extra_data;  // add is >= 0
 
   if (data_left_in_file >= bytes) {
      // We don't need new area, the old blocks are enough
-
       *news = 0; *olds = write_blocks;
 
       if (file_size < (pos + bytes))
@@ -2397,65 +2336,51 @@ long lol_new_indexes(lol_FILE *op, const long bytes,
   } // end if
 
   // So, we need new blocks. How many?
-
   new_area = bytes - data_left_in_file; // >0. This is the
   //  amount of bytes we need in NEW blocks!
   // This area begins on a block boundary but
   // does not necessarily end there.
 
   blocks_needed = new_area / block_size;
-
   if (new_area % block_size)
       blocks_needed++; // This is the amount of NEW blocks >0
                        // (Does NOT overlap with old data area)
-
   if (!(blocks_needed)) { // Really should not be here
       return LOL_ERR_INTRN;
   }
 
   // We know the number of NEW blocks (blocks_needed).
   // How many old blocks are there?
-
   if (pos >= file_size) { // In this case we don't need olds
                           // at all unless pos is inside the
                           // last block
 
-      if (pos < (file_size + last_block_extra_data)) {
+    if (pos < (file_size + last_block_extra_data)) {
+        *olds = 1;
+        *news = blocks_needed;
+    }
+    else {
+        *olds = 0;
+         delta = pos - file_size - last_block_extra_data;
 
-	  *olds = 1;
-          *news = blocks_needed;
+	if (delta >= block_size) {
+	    *mids = delta / block_size;
+        }
+       *news = blocks_needed;
 
-      }
-      else {
-
-          *olds = 0;
-           delta = pos - file_size - last_block_extra_data;
-
-	   if (delta >= block_size) {
-	       *mids = delta / block_size;
-
-           }
-
-           *news = blocks_needed;
-
-      } // end else
+    } // end else
 
   } // end if pos
   else {
 
-       *olds = data_left_in_file / block_size;
-
-       if (data_left_in_file % block_size)
-	  (*olds)++;
-
-       *news = blocks_needed;
-
-  } // end else
+      *olds = data_left_in_file / block_size;
+      if (data_left_in_file % block_size)
+	 (*olds)++;
+      *news = blocks_needed;
+ } // end else
 
   *new_file_size = file_size + last_block_extra_data + new_area;
-
   return ((*olds) + (*news));
-
 } // lol_new_indexes
 /* **********************************************************
  *
@@ -2468,7 +2393,6 @@ long lol_new_indexes(lol_FILE *op, const long bytes,
  * ********************************************************** */
 int lol_read_ichain(lol_FILE *op, const size_t read_blocks)
 {
-
   DWORD block_size;
   DWORD num_blocks;
   ULONG file_size;
@@ -2482,7 +2406,6 @@ int lol_read_ichain(lol_FILE *op, const size_t read_blocks)
   int i = 0;
   int count = 0;
   FILE *vdisk;
-  //int err = -1;
 
   if ((!(op))) {
     lol_errno = EINVAL;
@@ -2502,13 +2425,10 @@ int lol_read_ichain(lol_FILE *op, const size_t read_blocks)
 
   if ((!(read_blocks)) || (read_blocks > num_blocks))
      LOL_ERR_RETURN(EIO, LOL_ERR_USER);
-
   if (!(file_size))
     LOL_ERR_RETURN(EIO, LOL_ERR_USER);
-
   if ((!(block_size)) || (!(num_blocks)))
       LOL_ERR_RETURN(EIO, LOL_ERR_CORR);
-
   if ((first_index > last_index) || (first_index < 0)) {
     op->eof = 1; // Does not exctly mean end-of-file, but we set eof because
                  // the chain seems corrupted and thus, it is not a good idea
@@ -2529,65 +2449,50 @@ int lol_read_ichain(lol_FILE *op, const size_t read_blocks)
 
    if (file_size % block_size)
      blocks_in_file++;
-
    if (blocks_in_file > num_blocks)
       LOL_ERR_RETURN(EFBIG, LOL_ERR_CORR);
-
-  if (read_blocks > blocks_in_file)
+   if (read_blocks > blocks_in_file)
       LOL_ERR_RETURN(EFBIG, LOL_ERR_CORR);
 
    skip   = LOL_TABLE_START(op);
    offset = skip + first_index * ENTRY_SIZE;
-
    if (fseek (vdisk, offset, SEEK_SET))
       LOL_ERR_RETURN(EIO, LOL_ERR_IO);
 
    current_index = first_index;
-
    for (i = 0; i < blocks_in_file; i++)  {
 
      if (i >= bb) {
-
        if (current_index < 0)
           LOL_ERR_RETURN(EIO, LOL_ERR_CORR);
-
        if (current_index >= num_blocks)
           LOL_ERR_RETURN(EIO, LOL_ERR_CORR);
 
-
-                    lol_index_buffer[count] = current_index;
-                    if (++count >= read_blocks) {
-                        break;
-		    }
-
+       lol_index_buffer[count] = current_index;
+       if (++count >= read_blocks) {
+           break;
+       }
      } // end if i >= bb
 
-
-     if (fread ((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk) != 1)
-         LOL_ERR_RETURN(EIO, LOL_ERR_IO);
-
+     if (fread ((char *)&current_index,
+         (size_t)(ENTRY_SIZE), 1, vdisk) != 1)
+         LOL_ERR_RETURN(EIO, LOL_ERR_IO)
      if (current_index == LAST_LOL_INDEX) {
          break;
      }
-
      if ((current_index > last_index) || (current_index < 0))
-         LOL_ERR_RETURN(EIO, LOL_ERR_CORR);
+         LOL_ERR_RETURN(EIO, LOL_ERR_CORR)
 
-        offset = skip + current_index * ENTRY_SIZE;   // Next offset
-        if (fseek (vdisk, offset, SEEK_SET))
-            LOL_ERR_RETURN(EIO, LOL_ERR_IO);
+     offset = skip + current_index * ENTRY_SIZE;   // Next offset
+     if (fseek (vdisk, offset, SEEK_SET))
+         LOL_ERR_RETURN(EIO, LOL_ERR_IO);
 
   } // end for i
 
-   // err = count;
+  if (!(count))
+      LOL_ERR_RETURN(EIO, LOL_ERR_CORR)
 
-   if (!(count))
-       LOL_ERR_RETURN(EIO, LOL_ERR_CORR);
-
-   //error:
-   //return err;
-   return count;
-
+  return count;
 } // end lol_read_ichain
 /* **********************************************************
  *
@@ -2621,7 +2526,6 @@ int lol_new_ichain(lol_FILE *op, const long olds,
 
   block_size   = op->sb.block_size;
   num_blocks   = op->sb.num_blocks;
-
   if ((!(block_size)) || (!(num_blocks)) || (olds > num_blocks)) {
       return LOL_ERR_CORR;
   }
@@ -2650,22 +2554,21 @@ int lol_new_ichain(lol_FILE *op, const long olds,
                   return LOL_ERR_IO;
 
 	    // vdisk points now to the first fat index.
-	    // We must skip some indexes (skip_indexes) to reach the file position.
+	    // We must skip some indexes (skip_indexes)
+	    // to reach the file position.
 
 	    while (i < skip_indexes) {
                    *last_old = current_index;
-                    bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
+                    bytes = fread((char *)&current_index,
+                    (size_t)(ENTRY_SIZE), 1, vdisk);
 
-                    if (bytes != 1)
-                        return LOL_ERR_IO;
+                   if (bytes != 1)
+                       return LOL_ERR_IO;
 
-                    offset = skip + current_index * ENTRY_SIZE;
-
-                    if (fseek(vdisk, offset, SEEK_SET))
-                        return LOL_ERR_IO;
-
-                i++;
-
+                   offset = skip + current_index * ENTRY_SIZE;
+                   if (fseek(vdisk, offset, SEEK_SET))
+                       return LOL_ERR_IO;
+                  i++;
 	    } // end while i
 
      // Do we have olds?
@@ -2673,29 +2576,22 @@ int lol_new_ichain(lol_FILE *op, const long olds,
 
 	  if (current_index < 0)
 	      return LOL_ERR_CORR;
-
           lol_index_buffer[i] = current_index;
          *last_old = current_index;
-
-          bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
-
+          bytes = fread((char *)&current_index,
+                  (size_t)(ENTRY_SIZE), 1, vdisk);
           if (bytes != 1)
               return LOL_ERR_IO;
-
 	  if (current_index >= 0) {
-
              offset = skip + current_index * ENTRY_SIZE;
 	     whence = SEEK_SET;
-
 	  }
 	  else {
             offset = ENTRY_SIZE;
             whence = SEEK_CUR;
 	  }
-
           if (fseek (vdisk, offset, whence))
               return LOL_ERR_IO;
-
      } // end for olds
 
 
@@ -2711,16 +2607,13 @@ int lol_new_ichain(lol_FILE *op, const long olds,
     while (whence) {
 
 	 if (j >= num_blocks) {
-
 	    op->err = lol_errno = ENOSPC;
 	    return LOL_ERR_SPACE;
 	 }
-
-         bytes = fread((char *)&current_index, (size_t)(ENTRY_SIZE), 1, vdisk);
-
+         bytes = fread((char *)&current_index,
+                 (size_t)(ENTRY_SIZE), 1, vdisk);
          if (bytes != 1)
              return LOL_ERR_IO;
-
 	 if (current_index == FREE_LOL_INDEX) {
 
              // Save the index and continue
@@ -2728,14 +2621,10 @@ int lol_new_ichain(lol_FILE *op, const long olds,
              whence--;
 
 	 } // end if found free block
-
          j++;
-
     } // end while
 
-    //error:
-    return err;
-
+   return err;
 } // end lol_new_ichain
 /* **********************************************************
  * lol_num_blocks:
@@ -2759,9 +2648,7 @@ size_t lol_num_blocks(lol_FILE *op, const size_t amount, struct lol_loop *q) {
 
   if ((!(op)) || (!(amount)))
      return 0;
-
   block_size  = (size_t)op->sb.block_size;
-
   if (!(block_size)) {
       return 0;
   }
@@ -2795,9 +2682,7 @@ size_t lol_num_blocks(lol_FILE *op, const size_t amount, struct lol_loop *q) {
        else { // amount >= block_size
 
            // We do BLOCKS and optionally START
-
             block_loops = amount / block_size;
-
                 if (amount % block_size) {
                    
                         start_bytes = delta_offset;
@@ -2823,43 +2708,38 @@ size_t lol_num_blocks(lol_FILE *op, const size_t amount, struct lol_loop *q) {
               end_bytes = amount;
 
        blocks_after  = (op->curr_pos + amount) / block_size;
-
        if (amount < block_size) {  // We do END and optionally START
 
-                if (blocks_after > blocks_behind) { // We do START too
-
-                    start_bytes = delta_offset;
-	        }
+           if (blocks_after > blocks_behind) { // We do START too
+               start_bytes = delta_offset;
+	   }
        }
        else {  // amount >= block_size
 
-              if (amount == block_size) {
+           if (amount == block_size) {
 
-		// Here we know, that we read both END and START but NOT BLOCKS!
+	    // Here we know, that we read both END and START but NOT BLOCKS!
+              start_bytes = block_offset;
 
-                    start_bytes = block_offset;
+	   }
+           else {  // So, amount > block_size
 
-	      }
-              else {  // So, amount > block_size
+              block_loops = blocks_after - blocks_behind - 1;
+              if (block_loops) {  // So, we do END and BLOCKS but shall we do START?
 
-                    block_loops = blocks_after - blocks_behind - 1;
+	          // WE do ALL
+                  start_bytes = delta_offset;
 
-                    if (block_loops) {  // So, we do END and BLOCKS but shall we do START?
+	      } // end if we do BLOCKS
+              else { // So, don't do BLOCKS but we do START
 
-		      // WE do ALL
+                 start_bytes = amount - end_bytes;
 
-                           start_bytes = delta_offset;
+              } // end else
 
-		     } // end if we do BLOCKS
-                     else { // So, don't do BLOCKS but we do START
+          } // end else amount > block_size
 
-                          start_bytes = amount - end_bytes;
-
-                     } // end else
-
-             } // end else amount > block_size
-
-       } // end else amount >= block_size
+      } // end else amount >= block_size
 
   } // end else not on boundary
 
@@ -2870,21 +2750,16 @@ size_t lol_num_blocks(lol_FILE *op, const size_t amount, struct lol_loop *q) {
 	       q->num_blocks++;
 	   if (end_bytes)
 	       q->num_blocks++;
-
            q->start_bytes = start_bytes;
            q->end_bytes   = end_bytes;
            q->full_loops  = block_loops;
-
   }
-
   if (start_bytes)
          block_loops++;
-
   if (end_bytes)
        block_loops++;
 
     return block_loops;
-
 } // end lol_num_blocks
 /* **********************************************************
  * lol_io_dblock:
@@ -2911,10 +2786,8 @@ long lol_io_dblock(lol_FILE *op, const size_t block_number,
 
   if (!(op))
      return -1;
-
   if ((!(bytes)) || (op->eof))
        return 0;
-
   if ((!(ptr)) || (block_number < 0) || (bytes < 0))
       LOL_ERR_RETURN(EFAULT, -2);
 
@@ -2928,26 +2801,18 @@ long lol_io_dblock(lol_FILE *op, const size_t block_number,
 
     if (block_number >= num_blocks)
         LOL_ERR_RETURN(ENFILE, -4);
-
     if (bytes > block_size)
         LOL_ERR_RETURN(EFAULT, -5);
-
     if (op->nentry.i_idx < 0)
         LOL_ERR_RETURN(ENFILE, -6);
-
     left = (size_t)op->nentry.file_size;
-
     if ((func == LOL_READ) && (op->curr_pos > left)) {
-         op->eof = 1;
-         return 0;
+         op->eof = 1; return 0;
     }
-
     left -= op->curr_pos;
-
     if ((bytes <= left) || (func == LOL_WRITE)) {
 	 left = bytes;
     }
-
     if (lol_try_fgetpos (op->vdisk, &pos))
 	LOL_ERR_RETURN(EBUSY, -7);
 
@@ -2960,16 +2825,13 @@ long lol_io_dblock(lol_FILE *op, const size_t block_number,
     off = op->curr_pos % block_size;
     // We MUST stay inside block boundary!
     items = block_size - off;
-
     if (left > items)
 	left = items;
 
     block += off;
-
     if (fseek(fp, block, SEEK_SET)) {
 
 	ret = ferror(fp);
-
 	if (ret)
 	    op->err = lol_errno = ret;
 	else
@@ -2981,11 +2843,9 @@ long lol_io_dblock(lol_FILE *op, const size_t block_number,
      } // end if seek error
 
      items = lol_fio(ptr, left, fp, func);
-
      if (!(items)) {
 
 	 ret = ferror(fp);
-
 	 if (ret)
 	     op->err = lol_errno = ret;
 	 else
@@ -3009,7 +2869,6 @@ long lol_io_dblock(lol_FILE *op, const size_t block_number,
 
    lol_try_fsetpos(fp, &pos);
    return (long)items;
-
 } // end lol_io_dblock
 /* **********************************************************
  * lol_free_space: Calculate free space in a container.
@@ -3053,11 +2912,9 @@ long lol_free_space (char *disk, const int mode)
   } // end switch mode
 
   free_space = lol_get_vdisksize(disk, &sb, NULL, RECUIRE_SB_INFO);
-
   if (free_space < LOL_THEOR_MIN_DISKSIZE) {
        return LOL_ERR_CORR;
   }
-
   if (LOL_INVALID_MAGIC) {
       return LOL_ERR_CORR;
   }
@@ -3068,18 +2925,15 @@ long lol_free_space (char *disk, const int mode)
 
   if (nf > num_blocks)
     return LOL_ERR_CORR;
-
   if (!(vdisk = fopen(disk, "r"))) {
        return LOL_ERR_IO;
   }
 
   doff = (long)LOL_DENTRY_OFFSET_EXT(num_blocks, block_size);
-
   if ((fseek (vdisk, doff, SEEK_SET))) {
        fclose(vdisk);
        return LOL_ERR_IO;
   }
-
   // Read the name entries
   for (i = 0; i < num_blocks; i++) {
 
@@ -3087,7 +2941,6 @@ long lol_free_space (char *disk, const int mode)
        fclose(vdisk);
        return LOL_ERR_IO;
     } // end if cannot read
-
     if (name_e.filename[0]) { // Should check more but this will do now
       files++;
       used_space += name_e.file_size;
@@ -3102,7 +2955,6 @@ long lol_free_space (char *disk, const int mode)
        fclose(vdisk);
        return LOL_ERR_IO;
     } // end if cannot read
-
     if (entry != FREE_LOL_INDEX)
       used_blocks++;
 
@@ -3161,7 +3013,6 @@ int lol_garbage_filename(const char *name) {
      return errs;
 
   return 0;
-
 } // end if lol_garbage_filename
 /* ***************************************************************** */
 void lol_align(const char *before, const char *after,
@@ -3361,11 +3212,9 @@ int lol_size_to_blocks(const char *size, const char *container,
   if ((n_letters < 0) || (n_letters > 1)) {
      return -1;
   }
-
   if ((n_letters) && (!(lol_is_number(mult)))) {
      return -1;
   }
-
   if (!(n_letters)) {
       plain = 1;
   }
@@ -3524,12 +3373,6 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
   data_size  = (long)NAME_ENTRY_SIZE;
   data_size *= (long)(nb);
   io = lol_get_io_size(data_size);
-
-#if 0
-  if (io < 4096)
-      io = 4096;
-#endif
-
 
   if (!(buffer = (char *)lol_malloc((size_t)(io)))) {
      buffer = temp;

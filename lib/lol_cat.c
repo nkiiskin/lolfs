@@ -53,6 +53,7 @@ int lol_cat (int argc, char *argv[]) {
   FILE     *dest;
   size_t i, r, t;
   size_t v, size;
+  int do_loops = 1;
   int ret = -1;
 
   me = argv[0];
@@ -62,7 +63,6 @@ int lol_cat (int argc, char *argv[]) {
 
         printf (LOL_USAGE_FMT, me, lol_version,
                 lol_copyright, me, params);
-
         lol_help(lst);
         return 0;
     }
@@ -72,21 +72,17 @@ int lol_cat (int argc, char *argv[]) {
                 lol_version, lol_copyright);
 	return 0;
     }
-    if (argv[1][0] == '-') {
+    if ((argv[1][0] == '-') && (argv[1][1] == '-')) {
 
-      if ((stat(argv[1], &st))) {
           lol_error(LOL_WRONG_OPTION, me, argv[1]);
 	  lol_error(hlp, me);
           return -1;
-      }
     }
   } // end if argc == 2
-
   if (argc != 2) {
 
         printf (LOL_USAGE_FMT, me, lol_version,
                 lol_copyright, me, params);
-
         printf (hlp, me);
         return 0;
   }
@@ -112,40 +108,30 @@ int lol_cat (int argc, char *argv[]) {
 
   t = size / 4096;
   r = size % 4096;
+  size = 4096;
 
+read_loop:
   for (i = 0; i < t; i ++) {
 
-     v = lol_fread((char *)ptr, 4096, 1, fp);
+     v = lol_fread((char *)ptr, size, 1, fp);
      if ((lol_ferror(fp)) || (v != 1)) {
         lol_error(E_FILE_READ, me, lfile);
         goto error; 
      }
-     if (lol_fio((char *)ptr, 4096, dest, LOL_WRITE) != 4096) {
+     if (lol_fio((char *)ptr, size, dest, LOL_WRITE) != size) {
         lol_error(E_FILE_READ, me, lfile);
         goto error;
      }
   } // end for i
-
-  if (r) {
-
-     v = lol_fread((char *)ptr, r, 1, fp);
-     if ((lol_ferror(fp)) || (v != 1)) {
-        lol_error(E_FILE_READ, me, lfile);
-        goto error; 
-     }
-     if (lol_fio((char *)ptr, r, dest, LOL_WRITE) != r) {
-         lol_error(E_FILE_READ, me, lfile);
-  	 goto error;
-     }
-
-  } // end if r
+  if ((r) && (do_loops)) {
+      do_loops = 0; t = 1;
+      size = r;
+      goto read_loop;
+  }
 
   ret = 0;
-
 error:
-
   fclose(dest);
-
 errlol:
 #if LOL_TESTING
   if (lol_errno)

@@ -19,6 +19,11 @@
 #ifndef _LOL_FILE_H
 #define _LOL_FILE_H    1
 #endif
+#ifdef HAVE_SYS_STAT_H
+#ifndef _SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#endif
 #ifndef _LOL_CONFIG_H
 #include <lol_config.h>
 #endif
@@ -105,6 +110,7 @@ struct _lol_FILE
   ULONG vdisk_size;
   FILE  *vdisk;
   struct lol_open_mode open_mode;
+  struct stat cinfo;
   alloc_entry nentry_index;
   // TODO Make curr_pos ULONG
   // Because file_size is ULONG too !!

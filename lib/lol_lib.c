@@ -58,7 +58,6 @@
  * ********************************************************** */
 lol_FILE *lol_fopen(const char *path, const char *mode)
 {
-  struct stat st;
   lol_FILE *op       = 0;
   int       r        = 0;
   int       is       = 0;
@@ -109,7 +108,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
       delete_return_NULL(op);
   }
 
-  size = lol_get_vdisksize(op->vdisk_name, &op->sb, &st, RECUIRE_SB_INFO);
+  size = lol_get_vdisksize(op->vdisk_name, &op->sb, &op->cinfo, RECUIRE_SB_INFO);
 
   if (size < LOL_THEOR_MIN_DISKSIZE) {
       lol_errno = EIO;
@@ -122,7 +121,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
   }
 
   op->vdisk_size = (ULONG)size;
-  op->open_mode.device = st.st_mode;
+  op->open_mode.device = op->cinfo.st_mode; // in 2 places this one too...
 
   if(!(op->vdisk = fopen(op->vdisk_name, op->open_mode.vd_mode))) {
       lol_errno = EINVAL;
@@ -363,8 +362,9 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   } // end switch
 
   current_index = op->nentry.i_idx;
-  if ((current_index < 0) || (current_index >= op->sb.num_blocks))
-    LOL_ERR_RETURN(ENFILE, 0);
+  if ((current_index < 0) ||
+      (current_index >= op->sb.num_blocks))
+      LOL_ERR_RETURN(ENFILE, 0);
 
   if (!(file_size)) {
         op->eof = 1;
@@ -408,7 +408,6 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   end_bytes   = loop.end_bytes;
 
   i = 0;
-
   if (end_bytes) {
 
          current_index = lol_index_buffer[i++];
@@ -563,7 +562,6 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   if ((!(op->vdisk)) || (op->opened != 1))
        LOL_ERR_RETURN(EBADFD, 0);
 
-
   switch (op->open_mode.mode_num) {
 
       case             LOL_RDWR :
@@ -581,11 +579,12 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   } // end switch
 
   current_index = op->nentry.i_idx;
-  if ((current_index < 0) || (current_index >= op->sb.num_blocks))
-    LOL_ERR_RETURN(ENFILE, 0);
+  if ((current_index < 0) ||
+      (current_index >= op->sb.num_blocks))
+       LOL_ERR_RETURN(ENFILE, 0)
 
   if ((lol_is_writable(op)))
-      LOL_ERR_RETURN(EPERM, 0);
+      LOL_ERR_RETURN(EPERM, 0)
 
   amount = size * nmemb;
 
@@ -609,7 +608,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
                return 0;
            default :
 #if LOL_TESTING
-	     puts ("DEBUG: lol_fwrite err 1");
+	     lol_error("DEBUG: lol_fwrite err 1");
 #endif
                 op->err = lol_errno = EIO;
                return 0;
