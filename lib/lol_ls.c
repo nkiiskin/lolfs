@@ -16,36 +16,30 @@
 /*
  $Id: lol_ls.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#ifdef HAVE_CONFIG_H
+#include "../config.h"
+#endif
+#ifdef HAVE_STDIO_H
+#ifndef _STDIO_H
 #include <stdio.h>
-#include <stdlib.h>
+#endif
+#endif
+#ifdef HAVE_STRING_H
+#ifndef _STRING_H
 #include <string.h>
+#endif
+#endif
+#ifdef HAVE_TIME_H
+#ifndef _TIME_H
 #include <time.h>
-
+#endif
+#endif
 #ifndef _LOLFS_H
 #include <lolfs.h>
 #endif
 #ifndef _LOL_INTERNAL_H
 #include <lol_internal.h>
 #endif
-
-
-void strip_time(char* t) {
-  int i, ln;
-  if (!t)
-    return;
-
-  ln = strlen(t);
-  for(i = 0; i < ln; i++) {
-    if (t[i] == '\n' || t[i] == '\r') {
-        t[i] = '\0';
-      break;
-    }
-  }
-}
 /* ****************************************************************** */
 static const char params[] = "<container>";
 static const char    hlp[] = "       Type: 'lol %s -h' for help.\n";
@@ -58,6 +52,19 @@ static const char*   lst[] =
   "          Type: 'man lol' to read the manual.\n",
   NULL
 };
+/* ****************************************************************** */
+static void strip_time(char* t) {
+  int i, ln;
+  if (!(t))
+    return;
+  ln = (int)strlen(t);
+  for(i = 0; i < ln; i++) {
+    if ((t[i] == '\n') || (t[i] == '\r')) {
+         t[i] = '\0';
+      break;
+    }
+  }
+}
 /* ****************************************************************** */
 int lol_ls(int argc, char* argv[])
 {

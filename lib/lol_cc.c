@@ -16,9 +16,19 @@
 /*
  $Id: lol_cc.c, v0.20 2016/12/06 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
-
+#ifdef HAVE_CONFIG_H
+#include "../config.h"
+#endif
+#ifdef HAVE_STDIO_H
+#ifndef _STDIO_H
 #include <stdio.h>
+#endif
+#endif
+#ifdef HAVE_STRING_H
+#ifndef _STRING_H
 #include <string.h>
+#endif
+#endif
 #ifndef _LOLFS_H
 #include <lolfs.h>
 #endif
@@ -27,7 +37,6 @@
 #endif
 
 #define LOL_FSCK_INDEX_BLOCK 1024
-
 #define CONT_NOT_FOUND "cannot find container \'%s\'"
 static const char      lol_fsck_cc[] = "lol cc";
 static const char   lol_fsck_lolfs[] = "fsck.lolfs";
@@ -129,8 +138,8 @@ static int lol_fsck_geom(FILE *fp, const struct lol_super *sb,
   memset ((char *)size_s,  0, 128);
   g_size = (long)LOL_DEVSIZE(nb, bs);
   mode = st->st_mode;
-  lol_size_to_str((ULONG)(g_size), gsize_s);
-  lol_size_to_str((ULONG)(size), size_s);
+  lol_ltostr((ULONG)(g_size), gsize_s);
+  lol_ltostr((ULONG)(size), size_s);
 
   if (S_ISREG(mode)) {
     // In this case the calculated size must be
@@ -821,7 +830,7 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
   if (v) {
   memset((char *)message, 0, 512);
   memset((char *)size_str, 0, 128);
-  lol_size_to_str(f_alloc, size_str);
+  lol_ltostr(f_alloc, size_str);
   sprintf(message, "files reserve %s by index storage", size_str);
   lol_status_msg(me, message, LOL_FSCK_INFO);
   }
@@ -834,7 +843,7 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
 	 memset((char *)size_str, 0, 128);
 	 f_alloc = (ULONG)res_blocks_by_count;
 	 f_alloc *= bs;
-         lol_size_to_str(f_alloc, size_str);
+         lol_ltostr(f_alloc, size_str);
          sprintf(message,
 		 "they actually reserve %s", size_str);
          lol_status_msg(me, message, has_errors);
@@ -850,7 +859,7 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
 	 memset((char *)size_str, 0, 128);
 	 f_alloc = (ULONG)res_blocks_by_size;
 	 f_alloc *= bs;
-         lol_size_to_str(f_alloc, size_str);
+         lol_ltostr(f_alloc, size_str);
          sprintf(message,
 		 "they should reserve %s", size_str);
          lol_status_msg(me, message, has_errors);

@@ -140,8 +140,7 @@
 #define E_OUT_MEM                  ("Out of memory!\n")
 #define E_DISK_IO                  ("I/O error\n")
 #define E_FILE_READ                ("lol %s: error reading file \'%s\'\n")
-
-
+#define LOL_ALLOC(x)               ((x *)malloc(sizeof(x)))
 #if defined __FILE__               && defined __LINE__
 #define lol_debug(x)               fprintf (stderr, "%s: error file: %s, line %d.", \
                                     (x), __FILE__, __LINE__)
@@ -207,6 +206,7 @@
 
 #define LOL_FS_TOOSMALL      (-2)
 // Some integers
+#define LOL_BYTEBYTE    (1)
 #define LOL_KILOBYTE    (1024)
 #define LOL_04KILOBYTES (4096)
 #define LOL_08KILOBYTES (8192)
@@ -244,6 +244,9 @@ extern char lol_mode_combinations[MAX_LOL_OPEN_MODES][14][5];
 extern alloc_entry* lol_index_buffer;
 extern int lol_buffer_lock;
 extern const struct lol_open_mode lol_open_modes[];
+#define LOL_MAX_LOLSIZES 5
+extern const lol_size lol_sizes[];
+
 // status message alignment
 // We want to fit in terminal,
 // align should be max 72
@@ -324,6 +327,7 @@ int         lol_update_ichain(lol_FILE *op, const long olds,
 int         lol_update_nentry(lol_FILE *op);
 void        lol_clean_fp(lol_FILE *fp);
 int         lol_memset_indexbuffer(const alloc_entry val, const size_t x);
+int         lol_try_fclose(FILE *fp);
 int         lol_try_fgetpos(FILE *, fpos_t *);
 int         lol_try_fsetpos(FILE *, const fpos_t *);
 int         lol_valid_sb(const lol_FILE *op);
@@ -355,13 +359,13 @@ int         lol_count_file_blocks (FILE *vdisk, const struct lol_super *sb,
 long        lol_free_space (char *container, const int mode);
 void        lol_align(const char *before, const char *after, const size_t len, int out);
 int         lol_garbage_filename(const char *name);
-int         lol_size_to_str(const unsigned long size, char *s);
+int         lol_ltostr(const long size, char *s);
 int         lol_size_to_blocks(const char *size, const char *container,
                                const struct lol_super *sb,
                                const struct stat *st, DWORD *nb, int func);
 int         lol_is_number(const char ch);
 int         lol_is_integer(const char *str);
-long        lol_get_io_size(const long size);
+long        lol_get_io_size(const long size, const long blk);
 int         lol_extendfs(const char *container, const DWORD new_blocks,
 			 struct lol_super *sb, const struct stat *st);
 int         lol_status_msg(const char *me, const char* txt, const int type);
@@ -369,14 +373,14 @@ int         lol_status_msg(const char *me, const char* txt, const int type);
 
 // N_LOLFUNCS must match the number of functions below it
 #define N_LOLFUNCS 8
-int lol_ls   (int a, char* b[]);
-int lol_rm   (int a, char* b[]);
-int lol_cp   (int a, char* b[]);
-int lol_df   (int a, char* b[]);
-int lol_cat  (int a, char* b[]);
-int lol_fs   (int a, char* b[]);
-int lol_cc   (int a, char* b[]);
-int lol_rs   (int a, char* b[]);
+int lol_cat  (int, char**);
+int lol_cc   (int, char**);
+int lol_cp   (int, char**);
+int lol_df   (int, char**);
+int lol_fs   (int, char**);
+int lol_ls   (int, char**);
+int lol_rm   (int, char**);
+int lol_rs   (int, char**);
 
 //
 // These constants are here just for reference

@@ -18,19 +18,17 @@
  *
  */
 
-
-#ifndef HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 #include "../config.h"
 #endif
+#ifdef HAVE_ERRNO_H
 #ifndef _ERRNO_H
 #include <errno.h>
 #endif
+#endif
+#ifdef HAVE_STDIO_H
 #ifndef _STDIO_H
 #include <stdio.h>
-#endif
-#ifdef HAVE_LINUX_FS_H
-#ifndef _LINUX_FS_H
-#include <linux/fs.h>
 #endif
 #endif
 #ifndef _LOLFS_H
@@ -39,7 +37,7 @@
 #ifndef _LOL_INTERNAL_H
 #include <lol_internal.h>
 #endif
-/* **********************************************************
+/* ********************************************************* *
  *  INTERFACE FUNCTION
  *  lol_fopen:
  *
@@ -82,12 +80,10 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
        lol_errno = ENOENT;
        return NULL;
   }
-
   if ((mode_len <= 0) || (mode_len > 4)) {
       lol_errno = EINVAL;
       return NULL;
   }
-
   if (!(op = new_lol_FILE())) {
        lol_errno = ENOMEM;
        return NULL;

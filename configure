@@ -12274,10 +12274,6 @@ fi
 # Enable warnings.
 #AC_C_TRY_FLAG([-Wall])
 
-#AC_PROG_RANLIB
-#LT_PREREQ([2.4.2])
-#LT_INIT
-
 # ===========================================================================
 #  http://www.gnu.org/software/autoconf-archive/ax_compile_check_sizeof.html
 # ===========================================================================

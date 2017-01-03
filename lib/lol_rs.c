@@ -20,23 +20,33 @@
  * lol_rs: resize a container file.
  * Does not shrink, only adds more space.
  * ********************************************************************** */
-#ifndef HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 #include "../config.h"
 #endif
+#ifdef HAVE_ERRNO_H
 #ifndef _ERRNO_H
 #include <errno.h>
 #endif
+#endif
 #ifdef HAVE_LIMITS_H
+#ifndef _LIMITS_H
 #include <limits.h>
 #endif
+#endif
+#ifdef HAVE_STDIO_H
 #ifndef _STDIO_H
 #include <stdio.h>
 #endif
+#endif
+#ifdef HAVE_STDLIB_H
 #ifndef _STDLIB_H
 #include <stdlib.h>
 #endif
+#endif
+#ifdef HAVE_STRING_H
 #ifndef _STRING_H
 #include <string.h>
+#endif
 #endif
 #ifndef _LOLFS_H
 #include <lolfs.h>
@@ -66,19 +76,15 @@ static const char
 static const char
  lol_proceed_prompt[] = "                                     Proceed [y/n]? ";
 /* ************************************************************************ */
-/* ************************************************************************ */
 static int prompt_lol_rs(const char *txt) {
   char answer;
-
   if(!(txt))
     return -1;
-
-       printf("%s", txt);
-       answer = (char)getchar();
-       (void)getchar();
-       if (answer != 'y')
-	 return -1;
-
+  printf("%s", txt);
+  answer = (char)getchar();
+  (void)getchar();
+  if (answer != 'y')
+     return -1;
    return 0;
 } // end prompt_lol_rs
 /* ************************************************************************ */
@@ -125,8 +131,6 @@ int lol_rs (int argc, char* argv[])
         lol_error(LOL_MISSING_ARG_FMT, me, "<blocks> <container>");
         return -1;
     }
-
-
     if (argv[1][0] == '-') {
 
         if ((stat(argv[1], &st))) {
@@ -140,7 +144,6 @@ syntax_err:
         printf (hlp, me);
         return -1;
     }
-
   } // end if argc == 2
 
   if (argc != 4) {
@@ -255,12 +258,12 @@ syntax_err:
 
   if (val) {
 
-      lol_error("lol %s: invalid filesize \'%s\'\n", me, amount);
-      if (opt == LOL_RS_SIZE)
+     lol_error("lol %s: invalid filesize \'%s\'\n", me, amount);
+     if (opt == LOL_RS_SIZE)
 	lol_error("The minimum size must be at least 1 block (%ld bytes)\n",
-                (long)bs);
-	 return -1;
+                 (long)bs);
 
+	 return -1;
   } // end if val
 
   // Ok, new_blocks has the additional blocks now
@@ -297,6 +300,5 @@ syntax_err:
 
   puts("Done");
   return 0;
-
 } // end lol_rs
 

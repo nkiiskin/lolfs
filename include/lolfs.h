@@ -101,7 +101,7 @@ int       lol_unlink   (const char *name);
 int       lol_stat     (const char *path, struct stat *);
 
 /*
- * THESE NEXT FUNCTIONS (just one now) ARE PART OF LOLFS API TOO
+ * NEXT FUNCTIONS (just two now) ARE PART OF LOLFS API TOO
  * These are lolfs  -specific helper-functions which may or
  * may not have standard C counterpart.
  *
@@ -144,3 +144,6 @@ int       lol_stat     (const char *path, struct stat *);
 
 int lol_mkfs (const char *opt, const char *amount,
               const DWORD bs, const DWORD nb, const char *path);
+
+// lol_exit tries to do some cleanup before exiting
+void lol_exit(int status);

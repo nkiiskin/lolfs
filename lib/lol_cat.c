@@ -17,9 +17,19 @@
  $Id: lol_cat.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 
+#ifdef HAVE_CONFIG_H
+#include "../config.h"
+#endif
+#ifdef HAVE_STDIO_H
+#ifndef _STDIO_H
 #include <stdio.h>
+#endif
+#endif
+#ifdef HAVE_STRING_H
+#ifndef _STRING_H
 #include <string.h>
-
+#endif
+#endif
 #ifndef _LOLFS_H
 #include <lolfs.h>
 #endif

@@ -130,3 +130,8 @@ typedef struct lol_indref_t
   alloc_entry val;
 
 } lol_indref;
+
+ typedef struct lol_size_t {
+    float s;
+    char  n[6];
+ } lol_size;

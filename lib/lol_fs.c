@@ -16,19 +16,37 @@
 /*
  $Id: lol_fs.c, v0.20 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
-
+#ifdef HAVE_CONFIG_H
+#include "../config.h"
+#endif
+#ifdef HAVE_STDIO_H
+#ifndef _STDIO_H
 #include <stdio.h>
+#endif
+#endif
+#ifdef HAVE_STDLIB_H
+#ifndef _STDLIB_H
 #include <stdlib.h>
+#endif
+#endif
+#ifdef HAVE_STRING_H
+#ifndef _STRING_H
 #include <string.h>
+#endif
+#endif
+#ifndef _LOLFS_H
 #include <lolfs.h>
+#endif
+#ifndef _LOL_INTERNAL_H
 #include <lol_internal.h>
+#endif
 /* ************************************************************************ */
 static const char params[] =
           "Usage: %s -b <block size> <# of blocks> <name>\n       %s -s <size> <name>\n";
 static const char    hlp[] = "       Type: \'%s -h\' for help.\n";
 static const char*   lst[] =
 {
-  "    Usage: %s -b|-s <parameters> <container name>\n\n",
+  "  Usage: %s -b|-s <parameters> <container name>\n\n",
   "  Example 1:\n",
   "           %s -s 150M lol.db\n",
   "           This creates a container file \'lol.db\' which has\n",
@@ -46,28 +64,23 @@ static const char
        lol_overwrite_prompt[] = "                       Overwrite [y/n]? ";
 static const char
    lol_proceed_prompt[] = "                               Proceed [y/n]? ";
+static const char lol_ask_wp[] =
+   "        Please check if the directory is write protected";
 /* ************************************************************************ */
-// This is a terrible hack, I made a mistake: I planned that this
-// function (lol_fs) will be called only from the 'lol' app.
-// Then I changed my mind and made a separate 'mkfs.lolfs' app
-// which calls lol_fs also..
 void lol_fs_help(const char* name) {
-
   int i = 0;
-
   while (lst[i]) {
     printf(lst[i], name);
     i++;
   }
-
 } // end lol_fs_help
 /* ************************************************************************ */
 static int prompt_mkfs() {
-  char answer;
+  char answer[128];
 
-       answer = (char)getchar();
+       answer[0] = (char)getchar();
        (void)getchar();
-       if (answer != 'y')
+       if (answer[0] != 'y')
 	 return -1;
 
    return 0;
@@ -75,20 +88,21 @@ static int prompt_mkfs() {
 /* ************************************************************************ */
 int lol_fs (int argc, char* argv[])
 {
-  char  name[1024];
+  char    name[1024];
+  char size_str[128];
+
   struct stat st;
+  const ULONG crit_s = 100 * LOL_MEGABYTE;
 
   DWORD     bs =  0;
   DWORD     nb =  0;
-  char    *opt =  0;
   char   *file =  0;
+  char  *self  =  0;
   char *amount =  0;
   ULONG   size =  0;
-  int     ret  = -1;
   int    small =  0;
-  int    val   =  0;
-  int file_i   =  3;
-  char  *self  =  0;
+  int      val =  0;
+  int   file_i =  3;
 
   if ((!(argc)) || (!(argv))) {
      lol_error(lol_inter_err);
@@ -120,7 +134,6 @@ int lol_fs (int argc, char* argv[])
   if (argc == 2) {
 
     if (LOL_CHECK_HELP) {
-
          printf ("%s v%s. %s\n", name,
                  lol_version, lol_copyright);
 	 lol_fs_help(name);
@@ -128,15 +141,12 @@ int lol_fs (int argc, char* argv[])
 
     }
     if (LOL_CHECK_VERSION) {
-
 	printf ("%s v%s %s\n", name,
                 lol_version, lol_copyright);
 	return 0;
     }
 
-     lol_error("%s: unrecognized option \'%s\'\n",
-            name, argv[1]);
-
+     lol_error("%s: syntax error\n", name);
      lol_error(hlp, name);
      return -1;
 
@@ -145,15 +155,8 @@ int lol_fs (int argc, char* argv[])
   if ((argc < 4) || (argc > 5))
       goto error;
 
-  opt = argv[1];
-
-  if (!(opt))
-    goto error;
-  if (!(opt[0]))
-    goto error;
-
   // Does user want to specify size or number of blocks and their size?
-  if ((!(strcmp(opt, "-b"))) || (!(strcmp(opt, "--blocks")))) {
+  if (LOL_CHECK_BLOCKS) {
      if (argc != 5) {
          goto error;
      }
@@ -168,7 +171,7 @@ int lol_fs (int argc, char* argv[])
   } // end if add blocks
   else {
 
-     if ((!(strcmp(opt, "-s"))) || (!(strcmp(opt, "--size")))) {
+     if (LOL_CHECK_SIZE) {
          if (argc != 4) {
              goto error;
          }
@@ -181,16 +184,17 @@ int lol_fs (int argc, char* argv[])
 
        small = lol_size_to_blocks(amount, NULL,
 	       NULL, NULL, &nb, LOL_JUST_CALCULATE);
+
        if (small == LOL_FS_TOOSMALL) {
-	 lol_error("%s: sorry, the size is too small.\n", name);
-	 lol_error("        you may create tiny container\n");
-	 lol_error("        using option \'-b\' and specifying\n");
-	 lol_error("        the block size and number of them.\n");
-	 return -1;
+ 	   lol_error("%s: sorry, the size is too small.\n", name);
+	   lol_error("        you may create tiny container\n");
+	   lol_error("        using option \'-b\' and specifying\n");
+	   lol_error("        the block size and number of them.\n");
+	   return -1;
        } // end if too small
 
        if (small) {
-	    goto error;
+	   goto error;
        }
        else {
 	 // Got the amount of blocks!
@@ -203,9 +207,13 @@ int lol_fs (int argc, char* argv[])
      }
   } // end else adds file size
 
-  size = bs * nb;
+  size = (ULONG)(bs);
+  size *= ((ULONG)(nb));
   file = argv[file_i];
    val = stat(file, &st);
+
+  memset((char *)size_str, 0, 128);
+  lol_ltostr(size, size_str);
 
   if (!(val)) {
     // File or block device already exists
@@ -215,8 +223,7 @@ int lol_fs (int argc, char* argv[])
        printf("%s: warning! All the data in \'%s\' will be lost!\n",
                name, file);
        printf("%s", lol_proceed_prompt);
-       ret = prompt_mkfs();
-       if (ret)
+       if ((prompt_mkfs()))
 	  return 0;
     }
     else {
@@ -226,8 +233,7 @@ int lol_fs (int argc, char* argv[])
          printf("%s: warning! The file \'%s\' exists.\n",
               name, file);
          printf("%s", lol_overwrite_prompt);
-	 ret = prompt_mkfs();
-         if (ret)
+	 if ((prompt_mkfs()))
 	    return 0;
 
       } // end if regular file
@@ -235,37 +241,40 @@ int lol_fs (int argc, char* argv[])
 	lol_error("%s: cannot use \'%s\'\n", name, file);
 	return -1;
       }
-
     } // end else if S_ISBLK
-
   } // end if !stat
+  else {
+
+    // Prompt confimation if container size is > 100M
+    if (size > crit_s) {
+         printf("%s: creating container \'%s\', size %s\n",
+                name, file, size_str);
+         printf("%s", lol_proceed_prompt);
+	 if ((prompt_mkfs()))
+	     return 0;
+
+    } // end if > crit_s
+
+  } // end else
 
   // Ok, Let's do it
-
   if ((lol_mkfs("-b", NULL, bs, nb, file))) {
-
-          lol_error("%s: cannot create container \'%s\'\n",
-                 name, file);
-          lol_error("        Please check if the directory is write protected");
+          lol_error("%s: cannot create container \'%s\'\n", name, file);
+          lol_error("%s", lol_ask_wp);
           return -1;
       }
   else {
-       printf("Container \'%s\' created\nStorage capacity ", file);
-       memset((char *)name, 0, 1024);
-       lol_size_to_str(size, name);
-       puts(name);
-
+     printf("Container \'%s\' created\nStorage capacity %s\n",
+             file, size_str);
   } // end else
 
   return 0;
 
 error:
-
-         lol_error("%s v%s. %s\n", name,
-                 lol_version, lol_copyright);
-	 lol_error(params, name, name);
-
-     lol_error(hlp, name);
-     return -1;
+  lol_error("%s v%s. %s\n", name,
+            lol_version, lol_copyright);
+  lol_error(params, name, name);
+  lol_error(hlp, name);
+  return -1;
 
 } // end lol_fs

@@ -18,18 +18,36 @@
 
 */
 /* ************************************************************************** */
+#ifdef HAVE_CONFIG_H
+#include "../config.h"
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#ifndef _SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#endif
+#ifdef HAVE_SYS_STAT_H
+#ifndef _SYS_STAT_H
 #include <sys/stat.h>
-#include <unistd.h>
+#endif
+#endif
+#ifdef HAVE_STDIO_H
+#ifndef _STDIO_H
 #include <stdio.h>
+#endif
+#endif
+#ifdef HAVE_STRING_H
+#ifndef _STRING_H
 #include <string.h>
+#endif
+#endif
 #ifndef _LOLFS_H
 #include <lolfs.h>
 #endif
 #ifndef _LOL_INTERNAL_H
 #include <lol_internal.h>
 #endif
-
+/* ************************************************************** */
 
 /*
  * This program copies file(s) to and from a

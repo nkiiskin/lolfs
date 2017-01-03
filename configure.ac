@@ -36,10 +36,6 @@ AC_PROG_MAKE_SET
 # Enable warnings.
 #AC_C_TRY_FLAG([-Wall])
 
-#AC_PROG_RANLIB
-#LT_PREREQ([2.4.2])
-#LT_INIT
-
 m4_include([m4/m4_ax_compile_check_sizeof.m4])
 ## m4_include([m4/m4_ax_gnu_autotest.m4])
 ## m4_include([m4_ax_generate_changelog.m4])

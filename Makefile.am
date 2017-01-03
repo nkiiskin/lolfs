@@ -45,6 +45,9 @@ dist-hook:
 install-data-local:
 	@mkdir -p ${datarootdir}/man/man3
 
+# Patch lol_file.h since local install won't have LOL_FILENAME_MAX definition
+# (It is defined while making the lib & bins and the struct lol_FILE is
+#  meant to have only private members).
 install-exec-local:
 	@cd $(DESTDIR)$(includedir) && \
 	sed -i "s/#include <lol_config.h>//;" lol_file.h && \

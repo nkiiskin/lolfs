@@ -16,9 +16,16 @@
 /*
  $Id: lol_rm.c, v0.20 2016/04/14 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 
- */
+*/
 /* ****************************************************************** */
+#ifdef HAVE_CONFIG_H
+#include "../config.h"
+#endif
+#ifdef HAVE_STDIO_H
+#ifndef _STDIO_H
 #include <stdio.h>
+#endif
+#endif
 #ifndef  _LOLFS_H
 #include <lolfs.h>
 #endif
@@ -37,51 +44,53 @@ static const char*   lst[] =
   "          Type: 'man lol' to read the manual.\n",
   NULL
 };
-/* ****************************************************************** */
-// lol rm: Deletes a file which is inside a lol container
-//         Use like: lol rm my_container:/my_file.txt
+/* **************************************************************** *
+ * lol rm: Deletes a file which is inside a lol container
+ *         Use like: lol rm my_container:/my_file.txt
+ ****************************************************************** */
 int lol_rm (int argc, char* argv[])
 {
-  int i = 1;
-  int rm = 0;
+
+  struct stat st;
+
+  int    i = 1;
+  int   rm = 0;
+  char *me = argv[0];
 
   // Process standard --help & --version options.
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
-
-        printf (LOL_USAGE_FMT, argv[0], lol_version,
-                lol_copyright, argv[0], params);
+        printf (LOL_USAGE_FMT, me, lol_version,
+                lol_copyright, me, params);
         lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
-
-	printf (LOL_VERSION_FMT, argv[0],
+	printf (LOL_VERSION_FMT, me,
                 lol_version, lol_copyright);
 	return 0;
     }
     if (argv[1][0] == '-') {
-
-          lol_error(LOL_WRONG_OPTION, argv[0], argv[1]);
-          lol_error (hlp, argv[0]);
-          return -1;
+      if ((lol_stat(argv[1], &st))) {
+           lol_error(LOL_WRONG_OPTION, me, argv[1]);
+           lol_error (hlp, me);
+           return -1;
+      }
     }
   } // end if argc == 2
 
   if (argc < 2) {
-
-        printf (LOL_USAGE_FMT, argv[0], lol_version,
-                lol_copyright, argv[0], params);
+        printf (LOL_USAGE_FMT, me, lol_version,
+                lol_copyright, me, params);
         puts  ("       Removes file(s) from a container.");
-        printf (hlp, argv[0]);
+        printf (hlp, me);
         return 0;
   }
 
   while (i < argc)
   {
      if (lol_unlink(argv[i])) {
-         lol_error("lol %s: cannot delete '%s'\n",
-                argv[0], argv[i]);
+         lol_error("lol %s: cannot delete '%s'\n", me, argv[i]);
      }
      else {
        rm++;
@@ -90,15 +99,15 @@ int lol_rm (int argc, char* argv[])
   }
 
   switch (rm) {
-  case 0 :
-    puts("No files deleted");
-    break;
-  case 1 :
-    puts("1 file deleted");
-    break;
-  default:
-    printf("%d files deleted\n", rm);
-    break;
+    case 0 :
+      puts("No files deleted");
+      break;
+    case 1 :
+      puts("1 file deleted");
+      break;
+    default:
+      printf("%d files deleted\n", rm);
+      break;
   } // end switch
 
   return 0;
