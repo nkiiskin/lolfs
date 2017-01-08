@@ -35,7 +35,7 @@ typedef unsigned char  UCHAR;
 typedef          int   BOOL;
 typedef unsigned long  ULONG;
 
-// lol index (must be signed integer)
+// lol index (must be SIGNED integer)
 #if defined SIZEOF_SHORT && defined SIZEOF_INT && defined SIZEOF_LONG
 #if SIZEOF_SHORT == 4
 typedef short int alloc_entry;
@@ -54,9 +54,9 @@ typedef int alloc_entry;
 typedef struct lol_super {
   // private:
 
-  DWORD block_size;
-  DWORD num_blocks;
-  DWORD num_files;
+  DWORD bs;
+  DWORD nb;
+  DWORD nf;
 
   /* TODO: Add reserved blocks field!! */
 #if 0
@@ -64,7 +64,7 @@ typedef struct lol_super {
 #endif
 
   UCHAR reserved[4];
-} *lol_super_ptr;
+} lol_meta, *lol_super_ptr;
 
 // Directory entry
 // These come after the "lol_super"
@@ -83,7 +83,25 @@ typedef struct lol_name_entry {
   alloc_entry i_idx;
   ULONG  file_size;
 
-} *lol_name_entry_ptr;
+} lol_nentry, *lol_name_entry_ptr;
+
+typedef struct lol_nentryinfo_t
+{
+  long off; // Where the name entry begins
+            // counted from the beginning of
+            // the container. This is for
+            // fast fseek() to the entry.
+
+  long idx;        // The index of the entry
+                   // in the name entry storage.
+                   // (Some functions prefer this info).
+
+  lol_nentry *ne;  // Pointer to a name entry struct
+                   // (may be NULL if not needed)
+
+  short int res;   // Boolean value. Is the entry
+                   // Reserved (res != 0) or free (res = 0)
+} lol_ninfo, *lol_ninfo_ptr;
 
 struct lol_open_mode
 {

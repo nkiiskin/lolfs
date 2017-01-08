@@ -18,8 +18,15 @@
     file in the filesystem, so this should not be
     a huge problem)
 
+- Create a proper testsuite
+
+- Fix lol_cc.c --> buffer the i/o
+- lol_file.h: add last free nentry index to sb
+- lolfs.c: buffer lol_free_nentry
+- lol_cc.c: When invalid file found -> try to get more details
+
 - Thread safety: NOT thread safe as of v0.20.
-  Should add file lock
+  (Should add transaction locking)
 
 - sub-directories?
   Maybe later

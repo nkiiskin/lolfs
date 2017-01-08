@@ -1,24 +1,21 @@
 # Test Makefile.am
 # GNU Autotest rules
-# the make rules provided here. Substitute this in a separate line.
-#AX_GNU_AUTOTEST_RULES:
-#	@AX_GNU_AUTOTEST_DEFAULT@
+# Copyright (C) 2016 Niko Kiiskinen.
+# All Rights Reserved.
+# This file is distributed under the GPLv2 License.
 #
-# the list of files to be added to DISTCLEANFILES
-#AX_GNU_AUTOTEST_DCLEAN
+## $Id: Makefile.am tests 0.20 2017-01-08 23:17:15Z niko $
 #
-# the list of files to be added to EXTRA_DIST
-#AX_GNU_AUTOTEST_DIST: testsuite
+# Author: Niko Kiiskinen 2016-11-07
 #
-# includes all other substitutions and uses them in a "default" way.
-#AX_GNU_AUTOTEST_DEFAULT: @AX_GNU_AUTOTEST_DEFAULT@
+# This file defines the rules for LOLFS testsuite
 #
-
+#
 AUTOMAKE_OPTIONS = foreign
 DEFAULT_INCLUDES = -I$(top_builddir)/include
 AM_CFLAGS = -O2 -Wall -I$(top_builddir)/include @AM_CFLAGS@
 AM_LDFLAGS = -L$(top_builddir)/lib
-check_PROGRAMS = foo
+check_PROGRAMS = test1 test2 test3
 
 proj_heads = \
 	$(top_builddir)/include/lol_config.h \
@@ -30,28 +27,26 @@ proj_lib = $(top_builddir)/lib/liblolfs.la
 ## -L$(top_builddir)/lib -llolfs $(top_builddir)/lib/liblolfs.la
 
 noinst_HEADERS   = $(proj_heads)
-foo_DEPENDENCIES = $(proj_lib)
-foo_SOURCES      = $(top_builddir)/tests/foo.c $(proj_heads)
-foo_LDADD        = $(proj_lib)
-foo_LDFLAGS      = -L$(top_builddir)/lib
-## -rpath $(libdir)
+test1_DEPENDENCIES = $(proj_lib)
+test1_SOURCES      = $(top_builddir)/tests/test1.c $(proj_heads)
+test1_LDADD        = $(proj_lib)
+test1_LDFLAGS      = -L$(top_builddir)/lib
 
-## LDADD = -L$(top_builddir)/lib -llolfs $(top_builddir)/lib/liblolfs.la
-## foo_LDFLAGS = -L$(top_builddir)/lib
-## foo_LDADD = $(LDADD)
+test2_DEPENDENCIES = $(proj_lib)
+test2_SOURCES      = $(top_builddir)/tests/test2.c $(proj_heads)
+test2_LDADD        = $(proj_lib)
+test2_LDFLAGS      = -L$(top_builddir)/lib
 
-## @PTHREAD_LIBS@
+test3_DEPENDENCIES = $(proj_lib)
+test3_SOURCES      = $(top_builddir)/tests/test3.c $(proj_heads)
+test3_LDADD        = $(proj_lib)
+test3_LDFLAGS      = -L$(top_builddir)/lib
+
 EXTRA_DIST = $(TESTSUITE_AT) testsuite.at testsuite package.m4 \
-	atlocal.in fail.sh success.sh
+	atlocal.in fail.sh success.sh m4 m4/1.at m4/2.at m4/3.at
 DISTCLEANFILES       = atconfig $(check_SCRIPTS)
 MAINTAINERCLEANFILES = Makefile.in $(TESTSUITE) package.m4
 
-#dist-hook:
-#	mkdir $(distdir)/vt.in
-#	cp -p $(srcdir)/vt.in/* $(distdir)/vt.in
-#	mkdir $(distdir)/vt.out
-#	cp -p $(srcdir)/vt.out/* $(distdir)/vt.out
-#
 
 ## ------------ ##
 ## package.m4.  ##

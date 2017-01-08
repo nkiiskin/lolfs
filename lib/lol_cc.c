@@ -1,18 +1,19 @@
 /*
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as
-    published by the Free Software Foundation.
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License version 2 as
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-*/
 /*
  $Id: lol_cc.c, v0.20 2016/12/06 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
@@ -70,9 +71,9 @@ static int lol_fsck_sb(FILE *fp, const struct lol_super *sb,
 {
 
   char message[512];
-  const DWORD bs = sb->block_size;
-  const DWORD nb = sb->num_blocks;
-  const DWORD nf = sb->num_files;
+  const DWORD bs = sb->bs;
+  const DWORD nb = sb->nb;
+  const DWORD nf = sb->nf;
   int  ret = 0;
 
   if (!(nb)) {
@@ -118,8 +119,8 @@ static int lol_fsck_geom(FILE *fp, const struct lol_super *sb,
   char message[512];
   char gsize_s[128];
   char  size_s[128];
-  const  DWORD bs = sb->block_size;
-  const  DWORD nb = sb->num_blocks;
+  const  DWORD bs = sb->bs;
+  const  DWORD nb = sb->nb;
   long   size = 0;
   long g_size = 0;
   mode_t mode = 0;
@@ -211,9 +212,9 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
 
   char message[512];
   struct lol_name_entry nentry;
-  const long bs = (long)sb->block_size;
-  const long nb = (long)sb->num_blocks;
-  const long nf = (long)sb->num_files;
+  const long bs = (long)sb->bs;
+  const long nb = (long)sb->nb;
+  const long nf = (long)sb->nf;
   size_t              len = 0;
   long         dentry_off = 0;
   long          cont_size = 0;
@@ -680,9 +681,9 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
   char       message[512];
   char      size_str[128];
 
-  const long   bs = (long)sb->block_size;
-  const long   nb = (long)sb->num_blocks;
-  const long   nf = (long)sb->num_files;
+  const long   bs = (long)sb->bs;
+  const long   nb = (long)sb->nb;
+  const long   nf = (long)sb->nf;
 
   long n_dup_idx = 0;
   long data_size = 0;

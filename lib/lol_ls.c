@@ -1,18 +1,19 @@
 /*
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as
-    published by the Free Software Foundation.
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License version 2 as
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-*/
 /*
  $Id: lol_ls.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
@@ -123,7 +124,7 @@ int lol_ls(int argc, char* argv[])
 
     raw_size = lol_get_vdisksize(argv[1], &sb, NULL, RECUIRE_SB_INFO);
     if ((raw_size <  LOL_THEOR_MIN_DISKSIZE) ||
-        (sb.num_files > sb.num_blocks))
+        (sb.nf > sb.nb))
     {
 
       lol_error("lol %s: container \'%s\' has errors.\n", argv[0], argv[1]);
@@ -141,9 +142,9 @@ int lol_ls(int argc, char* argv[])
        return -1;
     }
 
-      nf = sb.num_files;
-      num_blocks = sb.num_blocks;
-      bs = (long)sb.block_size;
+      nf = sb.nf;
+      num_blocks = sb.nb;
+      bs = (long)sb.bs;
       if (nf > num_blocks)
 	corr = 1;
 

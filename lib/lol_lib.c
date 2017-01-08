@@ -246,7 +246,7 @@ int lol_fclose(lol_FILE *op)
    if (op->vdisk) {
       do { /* Try to close 10 times */
 
-           ret = fclose(op->vdisk);
+           ret = lol_try_fclose(op->vdisk);
 	   i--;
 
 	   if (ret) {
@@ -330,7 +330,7 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
     return LOL_ERR_EOF;
 
   file_size    = (size_t)op->nentry.file_size;
-  block_size   = (size_t)op->sb.block_size;
+  block_size   = (size_t)op->sb.bs;
   left_to_read = file_size - op->curr_pos;
 
   if (!(left_to_read)) {
@@ -359,7 +359,7 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 
   current_index = op->nentry.i_idx;
   if ((current_index < 0) ||
-      (current_index >= op->sb.num_blocks))
+      (current_index >= op->sb.nb))
       LOL_ERR_RETURN(ENFILE, 0);
 
   if (!(file_size)) {
@@ -553,7 +553,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
       LOL_ERR_RETURN(ENFILE, 0);
 
   filesize    = (long)op->nentry.file_size;
-  block_size  = (size_t)op->sb.block_size;
+  block_size  = (size_t)op->sb.bs;
 
   if ((!(op->vdisk)) || (op->opened != 1))
        LOL_ERR_RETURN(EBADFD, 0);
@@ -576,7 +576,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 
   current_index = op->nentry.i_idx;
   if ((current_index < 0) ||
-      (current_index >= op->sb.num_blocks))
+      (current_index >= op->sb.nb))
        LOL_ERR_RETURN(ENFILE, 0)
 
   if ((lol_is_writable(op)))
@@ -681,7 +681,6 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
                  (char *)(ptr+off), block_size, LOL_WRITE);
 
         if (amount < 0) {
-	  //    off = 0;
 	    goto error;
         }
 
@@ -697,7 +696,6 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
     if (start_bytes) {
 
         current_index = lol_index_buffer[i];
-
 	if (current_index < 0) {
 	    LOL_ERRSET(EFAULT);
 	    goto error;
@@ -709,9 +707,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
         if (amount < 0) {
 	    goto error;
         }
-
         off += amount;
-
 	if (amount != start_bytes) {
 	    amount = -1;
 	    goto error;
@@ -741,7 +737,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
       LOL_ERRSET(EIO);
 
  error:
-     lol_index_free((size_t)(write_blocks));
+  lol_index_free((size_t)(write_blocks));
 
   if ((!(off)) && (!(op->err)))
        LOL_ERRSET(EIO);
@@ -865,9 +861,9 @@ int lol_unlink(const char *name) {
   // Check that the entry is consistent, so that we won't
   // accidentally corrupt other files
 
-  last_block = fp->sb.num_blocks - 1;
+  last_block = fp->sb.nb - 1;
   if ((fp->nentry_index > last_block) ||
-      (!(fp->sb.num_files))           ||
+      (!(fp->sb.nf))           ||
       (fp->nentry_index < 0)) {
       lol_errno = EIO;
       goto error;
@@ -942,7 +938,7 @@ int lol_unlink(const char *name) {
   } // end if fwrite
 
       // Adjust sb
-      fp->sb.num_files--;
+      fp->sb.nf--;
       if ((fseek(fp->vdisk, 0, SEEK_SET))) {
 	 lol_errno = errno;
          goto error;
@@ -1068,9 +1064,9 @@ int lol_stat(const char *path, struct stat *st) {
   if (rs < LOL_THEOR_MIN_DISKSIZE)
       LOL_ERRET(ENXIO, -1);
 
-  bs = (DWORD)sb.block_size;
-  nb = (DWORD)sb.num_blocks;
-  nf = (DWORD)sb.num_files;
+  bs = (DWORD)sb.bs;
+  nb = (DWORD)sb.nb;
+  nf = (DWORD)sb.nf;
 
     if (LOL_INVALID_MAGIC)
         LOL_ERRET(ENXIO, -1);
@@ -1154,7 +1150,7 @@ int lol_stat(const char *path, struct stat *st) {
   } // end for i
 
 error:
-    fclose(fp);
+    lol_try_fclose(fp);
     return ret;
 } // end lol_stat
 /* **********************************************************
@@ -1189,7 +1185,7 @@ int lol_mkfs (const char *opt, const char *amount,
   // Does user want to specify size or number of blocks and their size?
   if ((!(strcmp(opt, "-b"))) || (!(strcmp(opt, "--blocks")))) {
 
-      if ((bs < 1) || (nb < 1))
+     if ((bs < 1) || (nb < 1))
 	return LOL_ERR_USER;
 
       blocks = nb;
@@ -1218,20 +1214,17 @@ int lol_mkfs (const char *opt, const char *amount,
        return LOL_ERR_USER;
      } // end else
   } // end else blocks
-
   if ((bsize < 1) || (blocks < 1)) // This should never happen here
     return LOL_ERR_INTRN;
 
-  sb.num_files = 0;
+  sb.nf = 0;
   // We need 2 numbers, block size and the number of blocks
-  sb.block_size = bsize;
-  sb.num_blocks = blocks;
+  sb.bs = bsize;
+  sb.nb = blocks;
   // We set these two bytes to LOL_MAGIC always when creating a container
   sb.reserved[0] = sb.reserved[1] = LOL_MAGIC;
-
   if (!(fp = fopen(path, "w")))
-      return LOL_ERR_IO;
-
+     return LOL_ERR_IO;
   // Then we just write the information to the new
   // container metadata/superblock.
   // (See the definition of struct lol_super in <lolfs.h> for details).
@@ -1242,39 +1235,32 @@ int lol_mkfs (const char *opt, const char *amount,
   // After the super block, follow all the data blocks and
   // we initialize them with zeros.
   v = (size_t)(blocks * bsize);
-  if ((null_fill (v, fp)) != v) {
-      ret = LOL_ERR_IO;
-      goto error;
-  }
   // After the datablocks comes the (root-)directory entries,
   // which in a new container, we fill all of them with zeros...
-  v = blocks * NAME_ENTRY_SIZE;
-  if ((null_fill (v, fp)) != v) {
-       ret = LOL_ERR_IO;
-       goto error;
+  v += blocks * NAME_ENTRY_SIZE;
+  if ((lol_fclear (v, fp)) != v) {
+      ret = LOL_ERR_IO;
+      goto error;
   }
   // Finally after the directory entries comes the data-allocation
   // indexes, which (in a new  container) we set all of them all to
   // FREE_LOL_INDEX value.
-  v = blocks * ENTRY_SIZE;
-  if ((lol_fill_with_value(FREE_LOL_INDEX, v, fp)) != v) {
+  v = (size_t)blocks; // * ENTRY_SIZE;
+  if ((lol_ifcopy(FREE_LOL_INDEX, v, fp)) != v) {
        ret = LOL_ERR_IO;
        goto error;
   }
-
   ret = 0;
 error:
-
-  fclose(fp);
+  lol_try_fclose(fp);
   if (!(ret))
      return 0;
 
-  // If we failed, delete the failed container
+  // If we failed, delete the container
   if (!(stat(path, &st))) {
-      if (S_ISREG(st.st_mode)) {
-          unlink(path);
-      }
+     if (S_ISREG(st.st_mode)) {
+        unlink(path);
+     }
   } // end if !stat
-
   return ret;
 } // end lol_mkfs

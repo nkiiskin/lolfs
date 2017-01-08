@@ -1,17 +1,17 @@
 /*
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as
-    published by the Free Software Foundation.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License version 2 as
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
 */
 /*
  $Id: lol_rs.c, v0.20 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
@@ -46,6 +46,11 @@
 #ifdef HAVE_STRING_H
 #ifndef _STRING_H
 #include <string.h>
+#endif
+#endif
+#ifdef HAVE_CTYPE_H
+#ifndef _CTYPE_H
+#include <ctype.h>
 #endif
 #endif
 #ifndef _LOLFS_H
@@ -90,22 +95,23 @@ static int prompt_lol_rs(const char *txt) {
 /* ************************************************************************ */
 int lol_rs (int argc, char* argv[])
 {
+  char nsize[64];
+  struct stat         st;
+  lol_meta            sb;
 
-  struct stat st;
-  struct lol_super sb;
-  DWORD bs;
-  DWORD nb;
-  DWORD   new_blocks = 0;
-  size_t         len = 0;
-  long    free_space = 0;
   char           *me = 0;
+  char         *cont = 0;
   char       *option = 0;
   char       *amount = 0;
-  char    *container = 0;
+  DWORD           nb = 0;
+  DWORD           bs = 0;
+  DWORD         news = 0;
+  size_t         len = 0;
+  long         space = 0;
   int            ret = 0;
   int            val = 0;
   int            opt = 0;
-  char           ch  = 0;
+  char            ch = 0;
 
   me = argv[0];
 
@@ -116,7 +122,6 @@ int lol_rs (int argc, char* argv[])
                  lol_version, lol_copyright, me, params);
 	 lol_help(lst);
          return 0;
-
     }
     if (LOL_CHECK_VERSION) {
 	printf (LOL_VERSION_FMT, me,
@@ -145,17 +150,16 @@ syntax_err:
         return -1;
     }
   } // end if argc == 2
-
   if (argc != 4) {
-        lol_error (LOL_USAGE_FMT, me,
+      lol_error (LOL_USAGE_FMT, me,
                 lol_version, lol_copyright, me, params);
-        lol_error (hlp, me);
-     return -1;
+      lol_error (hlp, me);
+      return -1;
   }
 
      option = argv[1];
      amount = argv[2];
-  container = argv[3];
+  cont = argv[3];
 
   // Does user want to add bytes or blocks?
   if (LOL_CHECK_BLOCKS) {
@@ -165,7 +169,6 @@ syntax_err:
      // strtol converts "1000M" to 1000 for example
      // and this may cause confusion
      if ((lol_is_integer((const char *)amount))) {
-
          lol_error("lol %s: number of blocks must be integer\n", me);
          lol_error("        Please try again");
          return -1;
@@ -193,14 +196,12 @@ syntax_err:
     } // end else not blocks or size
 
   } // end else
-
   // Does the container exist?
-  free_space = lol_get_vdisksize(container, &sb, &st, RECUIRE_SB_INFO);
-  if (free_space < LOL_THEOR_MIN_DISKSIZE) {
-      lol_error(cantuse, me, container);
+  space = lol_get_vdisksize(cont, &sb, &st, RECUIRE_SB_INFO);
+  if (space < LOL_THEOR_MIN_DISKSIZE) {
+      lol_error(cantuse, me, cont);
       return -1;
   }
-
   if (LOL_INVALID_MAGIC) {
       lol_error("lol %s: invalid file id [0x%x, 0x%x].\n",
 	         me, (int)sb.reserved[0], (int)sb.reserved[1]);
@@ -208,16 +209,15 @@ syntax_err:
       return -1;
   }
 
-  nb = sb.num_blocks;
-  bs = sb.block_size;
+  nb = sb.nb;
+  bs = sb.bs;
 
   if ((!(nb)) || (!(bs))) {
-      lol_error(cantuse, me, container);
+      lol_error(cantuse, me, cont);
       return -1;
   }
 
-  // Seems like a valid container, let's see what we'll do
-
+  // Seems like a valid container, let's see what we'll do.
   // We only add blocks, so if user wants to add size,
   // (for example 200 Mb), we convert it to blocks first...
 
@@ -225,8 +225,8 @@ syntax_err:
 
      case LOL_RS_SIZE :
 
-       if ((lol_size_to_blocks(amount, container,
-            &sb, &st, &new_blocks, LOL_EXISTING_FILE))) {
+       if ((lol_size_to_blocks(amount, cont,
+            &sb, &st, &news, LOL_EXISTING_FILE))) {
 	   val = -1;
        }
        break;
@@ -246,8 +246,7 @@ syntax_err:
       if (ret < 1)
           val = -1;
       if (!(val))
-	  new_blocks = (DWORD)(ret);
-
+	  news = (DWORD)(ret);
       break;
 
     default :
@@ -255,50 +254,59 @@ syntax_err:
       return -1;
 
   } // end switch opt
-
   if (val) {
 
      lol_error("lol %s: invalid filesize \'%s\'\n", me, amount);
      if (opt == LOL_RS_SIZE)
 	lol_error("The minimum size must be at least 1 block (%ld bytes)\n",
                  (long)bs);
-
-	 return -1;
+     return -1;
   } // end if val
-
-  // Ok, new_blocks has the additional blocks now
-
+  // Ok, news has the additional blocks now
   if (opt == LOL_RS_BLOCKS) {
       printf("lol %s: this will add %s blocks to container \'%s\'\n",
-	   me, amount, container);
+	   me, amount, cont);
   }
   else {
       len = strlen(amount);
       ch = amount[len - 1];
-      if ((lol_is_number(ch)))
+
+      if ((lol_is_number(ch))) {
+#ifdef HAVE_CTYPE_H
+	 amount[len - 1] = (char)toupper((int)(ch));
+#endif
          printf("lol %s: this will add %s space to container \'%s\'\n",
-	         me, amount, container);
-      else
-         printf("lol %s: this will add %s bytes to container \'%s\'\n",
-	         me, amount, container);
+	         me, amount, cont);
+      }
+      else {
+         printf("lol %s: this will add %s Bytes to container \'%s\'\n",
+	         me, amount, cont);
+      }
   }
 
-   if ((prompt_lol_rs(lol_proceed_prompt))) {
-       puts("Aborted.\n");
-   } // end if
+  if ((prompt_lol_rs(lol_proceed_prompt))) {
+       puts("Aborted.");
+       return 0;
+  } // end if
 #if LOL_TESTING
-   lol_error("new_blocks = %u - calling extendfs\n", new_blocks);
-   lol_error("bs = %u, nb = %u, st.st.size = %ld\n", sb.block_size, sb.num_blocks, (long)(st.st_size));
+   lol_error("news = %u - calling extendfs\n", news);
+   lol_error("bs = %u, nb = %u, st.st.size = %ld\n", sb.bs, sb.nb, (long)(st.st_size));
    return -1;
 #endif
 
    // We have green light, let's begin expanding
-   if ((lol_extendfs(container, new_blocks, &sb, &st))) {
-        lol_error("lol %s: error extending container.\n", me);
-        return -1;
-   } // end if error
+  if ((lol_extendfs(cont, news, &sb, &st))) {
+       lol_error("lol %s: error extending container.\n", me);
+       return -1;
+  } // end if error
 
-  puts("Done");
+  space = (long)nb;
+  space += news;
+  space *= bs;
+  memset((char *)nsize, 0, 64);
+  lol_ltostr(space, nsize);
+  printf("Done, new size is %s\n", nsize);
+
   return 0;
-} // end lol_rs
 
+} // end lol_rs

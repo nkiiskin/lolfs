@@ -586,13 +586,15 @@ at_change_dir=false
 # Whether to enable colored test results.
 at_color=no
 # List of the tested programs.
-at_tested='foo'
+at_tested=''
 # As many question marks as there are digits in the last test group number.
 # Used to normalize the test group numbers so that `ls' lists them in
 # numerical order.
 at_format='?'
 # Description of all the test groups.
-at_help_all="1;testsuite.at:6;Creating a test container;;
+at_help_all="1;1.at:6;Creating a test container;;
+2;2.at:5;Copying files to container;;
+3;3.at:6;Modifying file test.db:/Changelog;;
 "
 # List of the all the test groups.
 at_groups_all=`$as_echo "$at_help_all" | sed 's/;.*//'`
@@ -606,7 +608,7 @@ at_fn_validate_ranges ()
   for at_grp
   do
     eval at_value=\$$at_grp
-    if test $at_value -lt 1 || test $at_value -gt 1; then
+    if test $at_value -lt 1 || test $at_value -gt 3; then
       $as_echo "invalid test group: $at_value" >&2
       exit 1
     fi
@@ -1990,28 +1992,23 @@ exit 0
 ## Actual tests. ##
 ## ------------- ##
 #AT_START_1
-at_fn_group_banner 1 'testsuite.at:6' \
+at_fn_group_banner 1 '1.at:6' \
   "Creating a test container" "                      " 1
 at_xfail=no
 (
   $as_echo "1. $at_setup_line: testing $at_desc ..."
   $at_traceon
 
-# AT_CAPTURE_FILE([file])
-# AT_XFAIL_IF(shell condition)
-# AT_DATA (file, contents)
-# AT_KEYWORDS([gcc])
-#cat $abs_srcdir/gsm0408/gsm0408_test.ok > expout
 { set +x
-$as_echo "$at_srcdir/testsuite.at:12: \$abs_top_builddir/tests/foo"
-at_fn_check_prepare_dynamic "$abs_top_builddir/tests/foo" "testsuite.at:12"
-( $at_check_trace; $abs_top_builddir/tests/foo
+$as_echo "$at_srcdir/1.at:6: rm -f \$abs_top_builddir/tests/test.db; \$abs_top_builddir/tests/test1"
+at_fn_check_prepare_dynamic "rm -f $abs_top_builddir/tests/test.db; $abs_top_builddir/tests/test1" "1.at:6"
+( $at_check_trace; rm -f $abs_top_builddir/tests/test.db; $abs_top_builddir/tests/test1
 ) >>"$at_stdout" 2>>"$at_stderr" 5>&-
 at_status=$? at_failed=false
 $at_check_filter
 echo stderr:; tee stderr <"$at_stderr"
 echo stdout:; tee stdout <"$at_stdout"
-at_fn_check_status 0 $at_status "$at_srcdir/testsuite.at:12"
+at_fn_check_status 0 $at_status "$at_srcdir/1.at:6"
 if $at_failed; then :
   $abs_top_builddir/tests/fail.sh
 else
@@ -2025,3 +2022,65 @@ $at_traceon; }
 ) 5>&1 2>&1 7>&- | eval $at_tee_pipe
 read at_status <"$at_status_file"
 #AT_STOP_1
+#AT_START_2
+at_fn_group_banner 2 '2.at:5' \
+  "Copying files to container" "                     " 1
+at_xfail=no
+(
+  $as_echo "2. $at_setup_line: testing $at_desc ..."
+  $at_traceon
+
+{ set +x
+$as_echo "$at_srcdir/2.at:5: \$abs_top_builddir/tests/test2 \$abs_top_builddir/INSTALL \$abs_top_builddir/ChangeLog \$abs_top_builddir/TODO \$abs_top_builddir/tests/test.db"
+at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test2 $abs_top_builddir/INSTALL $abs_top_builddir/ChangeLog $abs_top_builddir/TODO $abs_top_builddir/tests/test.db" "2.at:5"
+( $at_check_trace; $abs_top_builddir/tests/test2 $abs_top_builddir/INSTALL $abs_top_builddir/ChangeLog $abs_top_builddir/TODO $abs_top_builddir/tests/test.db
+) >>"$at_stdout" 2>>"$at_stderr" 5>&-
+at_status=$? at_failed=false
+$at_check_filter
+echo stderr:; tee stderr <"$at_stderr"
+echo stdout:; tee stdout <"$at_stdout"
+at_fn_check_status 0 $at_status "$at_srcdir/2.at:5"
+if $at_failed; then :
+  $abs_top_builddir/tests/fail.sh
+else
+  $abs_top_builddir/tests/success.sh
+fi
+$at_failed && at_fn_log_failure
+$at_traceon; }
+
+  set +x
+  $at_times_p && times >"$at_times_file"
+) 5>&1 2>&1 7>&- | eval $at_tee_pipe
+read at_status <"$at_status_file"
+#AT_STOP_2
+#AT_START_3
+at_fn_group_banner 3 '3.at:6' \
+  "Modifying file test.db:/Changelog" "              " 1
+at_xfail=no
+(
+  $as_echo "3. $at_setup_line: testing $at_desc ..."
+  $at_traceon
+
+{ set +x
+$as_echo "$at_srcdir/3.at:6: \$abs_top_builddir/tests/test3"
+at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test3" "3.at:6"
+( $at_check_trace; $abs_top_builddir/tests/test3
+) >>"$at_stdout" 2>>"$at_stderr" 5>&-
+at_status=$? at_failed=false
+$at_check_filter
+echo stderr:; tee stderr <"$at_stderr"
+echo stdout:; tee stdout <"$at_stdout"
+at_fn_check_status 0 $at_status "$at_srcdir/3.at:6"
+if $at_failed; then :
+  $abs_top_builddir/tests/fail.sh
+else
+  $abs_top_builddir/tests/success.sh
+fi
+$at_failed && at_fn_log_failure
+$at_traceon; }
+
+  set +x
+  $at_times_p && times >"$at_times_file"
+) 5>&1 2>&1 7>&- | eval $at_tee_pipe
+read at_status <"$at_status_file"
+#AT_STOP_3

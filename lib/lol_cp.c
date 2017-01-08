@@ -1,18 +1,19 @@
 /*
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as
-    published by the Free Software Foundation.
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License version 2 as
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-*/
 /*
  $Id: lol_cp.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 
@@ -341,11 +342,11 @@ int copy_from_disk_to_lolfile(int argc, char *argv[]) {
     } while (0);
 
   if (lol_fclose(dest)) {
-      fclose(src);
+      lol_try_fclose(src);
       printf("lol %s: I/O error\n", argv[0]);
       return -1;
   }
-  if (fclose(src)) {
+  if (lol_try_fclose(src)) {
       printf("lol %s: I/O error\n", argv[0]);
       return -1;
   }
@@ -510,11 +511,11 @@ int copy_from_lolfile_to_disk(int argc, char *argv[]) {
     } // end if src_size
 
   if (lol_fclose(src)) {
-      fclose(dest);
+      lol_try_fclose(dest);
       printf("lol %s: I/O error\n", argv[0]);
       return -1;
   }
-  if (fclose(dest)) {
+  if (lol_try_fclose(dest)) {
       printf("lol %s: I/O error\n", argv[0]);
       return -1;
   }

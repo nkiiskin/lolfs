@@ -39,6 +39,8 @@ dist-hook:
 	rm -f *~ bin/*~ src/*.o src/*~ lib/*.o lib/*.so lib/*~ man/*~
 	rm -fr autom4te.cache
 	mkdir -p $(distdir)/m4
+	mkdir -p $(distdir)/tests/m4
+	cp -f $(srcdir)/tests/m4/* $(distdir)/tests/m4
 
 ## dist-ChangeLog
 

@@ -14,22 +14,6 @@
 
 @SET_MAKE@
 
-# Test Makefile.am
-# GNU Autotest rules
-# the make rules provided here. Substitute this in a separate line.
-#AX_GNU_AUTOTEST_RULES:
-#	@AX_GNU_AUTOTEST_DEFAULT@
-#
-# the list of files to be added to DISTCLEANFILES
-#AX_GNU_AUTOTEST_DCLEAN
-#
-# the list of files to be added to EXTRA_DIST
-#AX_GNU_AUTOTEST_DIST: testsuite
-#
-# includes all other substitutions and uses them in a "default" way.
-#AX_GNU_AUTOTEST_DEFAULT: @AX_GNU_AUTOTEST_DEFAULT@
-#
-
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -94,7 +78,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-check_PROGRAMS = foo$(EXEEXT)
+check_PROGRAMS = test1$(EXEEXT) test2$(EXEEXT) test3$(EXEEXT)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/atlocal.in $(top_srcdir)/depcomp $(noinst_HEADERS)
@@ -111,15 +95,25 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES = atlocal
 CONFIG_CLEAN_VPATH_FILES =
 am__objects_1 =
-am_foo_OBJECTS = foo.$(OBJEXT) $(am__objects_1)
-foo_OBJECTS = $(am_foo_OBJECTS)
+am_test1_OBJECTS = test1.$(OBJEXT) $(am__objects_1)
+test1_OBJECTS = $(am_test1_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-foo_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(foo_LDFLAGS) $(LDFLAGS) -o $@
+	$(test1_LDFLAGS) $(LDFLAGS) -o $@
+am_test2_OBJECTS = test2.$(OBJEXT) $(am__objects_1)
+test2_OBJECTS = $(am_test2_OBJECTS)
+test2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(test2_LDFLAGS) $(LDFLAGS) -o $@
+am_test3_OBJECTS = test3.$(OBJEXT) $(am__objects_1)
+test3_OBJECTS = $(am_test3_OBJECTS)
+test3_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(test3_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -153,8 +147,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(foo_SOURCES)
-DIST_SOURCES = $(foo_SOURCES)
+SOURCES = $(test1_SOURCES) $(test2_SOURCES) $(test3_SOURCES)
+DIST_SOURCES = $(test1_SOURCES) $(test2_SOURCES) $(test3_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -298,6 +292,19 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+
+# Test Makefile.am
+# GNU Autotest rules
+# Copyright (C) 2016 Niko Kiiskinen.
+# All Rights Reserved.
+# This file is distributed under the GPLv2 License.
+#
+#
+# Author: Niko Kiiskinen 2016-11-07
+#
+# This file defines the rules for LOLFS testsuite
+#
+#
 AUTOMAKE_OPTIONS = foreign
 DEFAULT_INCLUDES = -I$(top_builddir)/include
 proj_heads = \
@@ -308,12 +315,20 @@ proj_heads = \
 
 proj_lib = $(top_builddir)/lib/liblolfs.la
 noinst_HEADERS = $(proj_heads)
-foo_DEPENDENCIES = $(proj_lib)
-foo_SOURCES = $(top_builddir)/tests/foo.c $(proj_heads)
-foo_LDADD = $(proj_lib)
-foo_LDFLAGS = -L$(top_builddir)/lib
+test1_DEPENDENCIES = $(proj_lib)
+test1_SOURCES = $(top_builddir)/tests/test1.c $(proj_heads)
+test1_LDADD = $(proj_lib)
+test1_LDFLAGS = -L$(top_builddir)/lib
+test2_DEPENDENCIES = $(proj_lib)
+test2_SOURCES = $(top_builddir)/tests/test2.c $(proj_heads)
+test2_LDADD = $(proj_lib)
+test2_LDFLAGS = -L$(top_builddir)/lib
+test3_DEPENDENCIES = $(proj_lib)
+test3_SOURCES = $(top_builddir)/tests/test3.c $(proj_heads)
+test3_LDADD = $(proj_lib)
+test3_LDFLAGS = -L$(top_builddir)/lib
 EXTRA_DIST = $(TESTSUITE_AT) testsuite.at testsuite package.m4 \
-	atlocal.in fail.sh success.sh
+	atlocal.in fail.sh success.sh m4 m4/1.at m4/2.at m4/3.at
 
 DISTCLEANFILES = atconfig $(check_SCRIPTS)
 MAINTAINERCLEANFILES = Makefile.in $(TESTSUITE) package.m4
@@ -366,9 +381,17 @@ clean-checkPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
-foo$(EXEEXT): $(foo_OBJECTS) $(foo_DEPENDENCIES) $(EXTRA_foo_DEPENDENCIES) 
-	@rm -f foo$(EXEEXT)
-	$(AM_V_CCLD)$(foo_LINK) $(foo_OBJECTS) $(foo_LDADD) $(LIBS)
+test1$(EXEEXT): $(test1_OBJECTS) $(test1_DEPENDENCIES) $(EXTRA_test1_DEPENDENCIES) 
+	@rm -f test1$(EXEEXT)
+	$(AM_V_CCLD)$(test1_LINK) $(test1_OBJECTS) $(test1_LDADD) $(LIBS)
+
+test2$(EXEEXT): $(test2_OBJECTS) $(test2_DEPENDENCIES) $(EXTRA_test2_DEPENDENCIES) 
+	@rm -f test2$(EXEEXT)
+	$(AM_V_CCLD)$(test2_LINK) $(test2_OBJECTS) $(test2_LDADD) $(LIBS)
+
+test3$(EXEEXT): $(test3_OBJECTS) $(test3_DEPENDENCIES) $(EXTRA_test3_DEPENDENCIES) 
+	@rm -f test3$(EXEEXT)
+	$(AM_V_CCLD)$(test3_LINK) $(test3_OBJECTS) $(test3_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -376,7 +399,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/foo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test3.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -399,19 +424,47 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-foo.o: $(top_builddir)/tests/foo.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT foo.o -MD -MP -MF $(DEPDIR)/foo.Tpo -c -o foo.o `test -f '$(top_builddir)/tests/foo.c' || echo '$(srcdir)/'`$(top_builddir)/tests/foo.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/foo.Tpo $(DEPDIR)/foo.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/tests/foo.c' object='foo.o' libtool=no @AMDEPBACKSLASH@
+test1.o: $(top_builddir)/tests/test1.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test1.o -MD -MP -MF $(DEPDIR)/test1.Tpo -c -o test1.o `test -f '$(top_builddir)/tests/test1.c' || echo '$(srcdir)/'`$(top_builddir)/tests/test1.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test1.Tpo $(DEPDIR)/test1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/tests/test1.c' object='test1.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o foo.o `test -f '$(top_builddir)/tests/foo.c' || echo '$(srcdir)/'`$(top_builddir)/tests/foo.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test1.o `test -f '$(top_builddir)/tests/test1.c' || echo '$(srcdir)/'`$(top_builddir)/tests/test1.c
 
-foo.obj: $(top_builddir)/tests/foo.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT foo.obj -MD -MP -MF $(DEPDIR)/foo.Tpo -c -o foo.obj `if test -f '$(top_builddir)/tests/foo.c'; then $(CYGPATH_W) '$(top_builddir)/tests/foo.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/tests/foo.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/foo.Tpo $(DEPDIR)/foo.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/tests/foo.c' object='foo.obj' libtool=no @AMDEPBACKSLASH@
+test1.obj: $(top_builddir)/tests/test1.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test1.obj -MD -MP -MF $(DEPDIR)/test1.Tpo -c -o test1.obj `if test -f '$(top_builddir)/tests/test1.c'; then $(CYGPATH_W) '$(top_builddir)/tests/test1.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/tests/test1.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test1.Tpo $(DEPDIR)/test1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/tests/test1.c' object='test1.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o foo.obj `if test -f '$(top_builddir)/tests/foo.c'; then $(CYGPATH_W) '$(top_builddir)/tests/foo.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/tests/foo.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test1.obj `if test -f '$(top_builddir)/tests/test1.c'; then $(CYGPATH_W) '$(top_builddir)/tests/test1.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/tests/test1.c'; fi`
+
+test2.o: $(top_builddir)/tests/test2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test2.o -MD -MP -MF $(DEPDIR)/test2.Tpo -c -o test2.o `test -f '$(top_builddir)/tests/test2.c' || echo '$(srcdir)/'`$(top_builddir)/tests/test2.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2.Tpo $(DEPDIR)/test2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/tests/test2.c' object='test2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test2.o `test -f '$(top_builddir)/tests/test2.c' || echo '$(srcdir)/'`$(top_builddir)/tests/test2.c
+
+test2.obj: $(top_builddir)/tests/test2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test2.obj -MD -MP -MF $(DEPDIR)/test2.Tpo -c -o test2.obj `if test -f '$(top_builddir)/tests/test2.c'; then $(CYGPATH_W) '$(top_builddir)/tests/test2.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/tests/test2.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2.Tpo $(DEPDIR)/test2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/tests/test2.c' object='test2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test2.obj `if test -f '$(top_builddir)/tests/test2.c'; then $(CYGPATH_W) '$(top_builddir)/tests/test2.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/tests/test2.c'; fi`
+
+test3.o: $(top_builddir)/tests/test3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test3.o -MD -MP -MF $(DEPDIR)/test3.Tpo -c -o test3.o `test -f '$(top_builddir)/tests/test3.c' || echo '$(srcdir)/'`$(top_builddir)/tests/test3.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test3.Tpo $(DEPDIR)/test3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/tests/test3.c' object='test3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test3.o `test -f '$(top_builddir)/tests/test3.c' || echo '$(srcdir)/'`$(top_builddir)/tests/test3.c
+
+test3.obj: $(top_builddir)/tests/test3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test3.obj -MD -MP -MF $(DEPDIR)/test3.Tpo -c -o test3.obj `if test -f '$(top_builddir)/tests/test3.c'; then $(CYGPATH_W) '$(top_builddir)/tests/test3.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/tests/test3.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test3.Tpo $(DEPDIR)/test3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/tests/test3.c' object='test3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test3.obj `if test -f '$(top_builddir)/tests/test3.c'; then $(CYGPATH_W) '$(top_builddir)/tests/test3.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/tests/test3.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -626,13 +679,6 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am
 
-
-#dist-hook:
-#	mkdir $(distdir)/vt.in
-#	cp -p $(srcdir)/vt.in/* $(distdir)/vt.in
-#	mkdir $(distdir)/vt.out
-#	cp -p $(srcdir)/vt.out/* $(distdir)/vt.out
-#
 
 $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	{				      \

@@ -14,7 +14,7 @@
 
 */
 /*
- $Id: foo.c, v0.20 2016/12/27 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: test2.c, v0.20 2016/12/27 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************ */
 #include <stdio.h>
@@ -23,38 +23,37 @@
 #include <lolfs.h>
 #include <lol_internal.h>
 /* ************************************************************************ */
-/* LoL testsuite1: test 1                                                   */
+/* LoL testsuite: test #2 (Copy files to container)                         */
 /* ************************************************************************ */
+char *args[] = {
+  "cp",
+  "../../../README.md",
+  "../../../INSTALL",
+  "../../../TODO",
+  "../../../ChangeLog",
+  "../../test.db",
+  NULL
+};
 int main (int argc, char* argv[])
 {
   const char *me = argv[0];
-
-
   // Process standard --help & --version options.
   if (argc > 1) {
-
     if (LOL_CHECK_HELP) {
-
-        printf ("%s v%s. %s\n",
+        printf ("lol %s v%s. %s\n",
                 me, lol_version, lol_copyright);
-
     } else {
        if (LOL_CHECK_VERSION) {
-
-         printf ("%s v%s %s\n",
+           printf ("lol %s v%s %s\n",
 	         me, lol_version, lol_copyright);
-
        }
     }
   }
-
-  if ((lol_mkfs ("-s", "5M", 0, 0, "test.db"))) {
-      lol_error("testsuite 1: Error, cannot create container");
-      exit(1);
+  if ((lol_cp (6, args))) {
+      lol_error("Error, cannot copy files\n");
+      return -1;
   }
-
-  puts("testsuite 1: Success, created container \'lol.db\'");
-  exit(0);
-
+  puts("Success, copied files to \'test.db\'");
+  return 0;
 }
 /* ************************************************************************ */

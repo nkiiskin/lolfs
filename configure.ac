@@ -53,6 +53,7 @@ AC_CHECK_HEADER([sys/ioctl.h], [AC_DEFINE([HAVE_SYS_IOCTL_H], [1], [ioctl suppor
 
 AC_CHECK_HEADER([limits.h], [AC_DEFINE([HAVE_LIMITS_H], [1], [Need this for LONG_MAX and LONG_MIN])], [])
 AC_CHECK_HEADER([unistd.h], [AC_DEFINE([HAVE_UNISTD_H], [1], [do we have unistd.h?])], [])
+AC_CHECK_HEADER([ctype.h], [AC_DEFINE([HAVE_CTYPE_H], [1], [Need ctype for toupper])], [])
 AC_CHECK_HEADERS([errno.h sys/types.h sys/stat.h time.h stdio.h stdlib.h string.h fcntl.h signal.h])
 
 AX_COMPILE_CHECK_SIZEOF(char)
@@ -74,7 +75,7 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 # Checks for library functions.
-AC_CHECK_FUNCS([memset strtol fsetpos sigaction sigemptyset sigfillset puts sprintf strcat ioctl])
+AC_CHECK_FUNCS([memset strtol fsetpos sigaction sigemptyset sigfillset puts sprintf strcat ioctl toupper])
 
 ## AX_GNU_AUTOTEST([tests], [testsuite], [Makefile], [yes], [no])
 # Initialize the test suite.

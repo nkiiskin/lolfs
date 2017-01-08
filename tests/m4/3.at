@@ -1,0 +1,6 @@
+m4_define([CHECK_LOL_FWRITE], [AT_SETUP([Modifying file test.db:/Changelog])
+AT_CHECK([$abs_top_builddir/tests/test3], [0], [stdout], [stderr],
+[$abs_top_builddir/tests/fail.sh], [$abs_top_builddir/tests/success.sh])
+AT_CLEANUP])
+
+CHECK_LOL_FWRITE

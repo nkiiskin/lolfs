@@ -12434,6 +12434,14 @@ $as_echo "#define HAVE_UNISTD_H 1" >>confdefs.h
 fi
 
 
+ac_fn_c_check_header_mongrel "$LINENO" "ctype.h" "ac_cv_header_ctype_h" "$ac_includes_default"
+if test "x$ac_cv_header_ctype_h" = xyes; then :
+
+$as_echo "#define HAVE_CTYPE_H 1" >>confdefs.h
+
+fi
+
+
 for ac_header in errno.h sys/types.h sys/stat.h time.h stdio.h stdlib.h string.h fcntl.h signal.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -12887,7 +12895,7 @@ _ACEOF
 fi
 
 # Checks for library functions.
-for ac_func in memset strtol fsetpos sigaction sigemptyset sigfillset puts sprintf strcat ioctl
+for ac_func in memset strtol fsetpos sigaction sigemptyset sigfillset puts sprintf strcat ioctl toupper
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"

@@ -46,6 +46,10 @@
      Lolfs has very simple C API to put those things together,
      see bottom of this file.
 
+     LolFS is more than just a simple container for files. It is an
+     actual filesystem - you may modify the files while they are
+     inside the container, using the a simple C API (See below).
+
 
     lol program
     ============
@@ -288,38 +292,53 @@ lolfs API:
      Then test the C API:
 
 
-#include <stdio.h>
-#include <string.h>
-#include <lolfs.h>
-
-int main()
-/* test.c - a lolfs API test */
+LolFS test program:
+===================
 
 
-{
-    lol_FILE *fp;
-    char text[] = "Hello World!\n";
+  #include   <stdio.h>
+  #include   <string.h>
+  #include   <lolfs.h>
 
-    fp = lol_fopen("my.db:/test.txt", "w");
 
-    if (!(fp)) {
-        printf("cannot create the file\n");
-        return -1;
-    }
 
-    if ((lol_fwrite((char *)text, strlen(text), 1, fp)) != 1)
-    {
-        printf("Dang! Could not write the file!\n");
-        lol_fclose(fp);
-        return -1;
-    }
+  // Github propably messes up these
+  // includes but you know what I mean :)
+  // (Read the original 'README.md' file)
 
-    // YES! The file is there!
 
-    lol_fclose(fp);
-    return 0;
 
-} // end main
+ /* ======= MAIN ============ */
+
+
+  int main()  {
+
+
+
+      lol_FILE *fp;
+      char text[] = "Hello World!\n";
+
+      fp = lol_fopen("my.db:/test.txt", "w");
+
+      if (!(fp)) {
+         printf("cannot create the file\n");
+         return -1;
+      }
+      if ((lol_fwrite((char *)text,
+           strlen(text), 1, fp)) != 1) {
+           printf("Dang! Could not write the file!\n");
+           lol_fclose(fp);
+           return -1;
+      }
+
+      // YES! The file is there!
+      lol_fclose(fp);
+      return 0;
+
+  } // end main
+
+
+ /* ======= END MAIN ============== */
 
 
 How to compile and link a lolfs C program:
@@ -334,29 +353,37 @@ gcc test.c -o test -L/usr/local/lib64 -llolfs -I/usr/local/include
 If the build does not fail, run the test:
 
 
-shell> ./test
+ './test'
 
-(There is no ouput, it just writes a file into the container).
+
+(There is no ouput, it just writes a file into 'my.db' container).
 Then check the list of files inside. It should show something
 like this:
 
-shell> lol ls my.db
+'lol ls my.db'
+
 Thu Dec 29 19:56:18 2016 13 hello.txt
+
 total 1
 
 
 Then see the contents of hello.txt
 
 
-shell> lol cat my.db:/hello.txt
+'lol cat my.db:/hello.txt'
+
 Hello World!
 
 
 
+ Have fun with LolFS !
+ =====================
 
-Questions, Bug reports, etc..
+ Questions, Bug reports, etc
 
  Niko Kiiskinen
+
  lolfs.bugs@gmail.com
+
  https://github.com/nkiiskin/lolfs
 

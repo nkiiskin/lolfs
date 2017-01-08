@@ -23,22 +23,23 @@
 #define _LOL_CONFIG_H  1
 #endif
 
-// Compile time special parameters that
-// affect performance among other things:
+
+// Compile- and runtime time parameters
+// that affect performance.
 
 
 // Set LOL_TESTING to 1 if you want to
 // compile a debug version of lolfs
 #define LOL_TESTING 0
 // Set the current version of lolfs
+// This is usually set by configure but
+// we hardcode it here.
 #define LOLFS_VERSION ("0.20")
-// Define copy string as shown by programs
-#define LOLFS_COPYRIGHT ("Copyright (C) 2016, Niko Kiiskinen")
 // If we create a container by specifying the
 // size instead of number of blocks and block size,
-// then this value will be used as the block size
-// by functions like lol_mkfs.
-#define LOL_DEFAULT_BLOCKSIZE  2048
+// then this value will be used as the default
+// block size by functions like lol_mkfs.
+#define LOL_DEFAULT_BLOCKSIZE  1024
 // Storage size here is the limit, after which we will
 // allocate memory dynamically.
 // Bigger LOL_STORAGE_SIZE may result in better performance.
@@ -52,8 +53,12 @@
 #endif
 #define LOL_INDEX_MALLOC_MAX LOL_02GIGABYTES
 // Smallest possible container file.
-// This number is highly version dependent,
+// This number is highly version and
+// architecture dependent constant,
 // so let it be if you are not sure.
+// One way to figure this out is by creating a
+// container: 'lol fs -b 1 1 foo' and then
+// check the size of 'foo': ls -l foo
 #define LOL_THEOR_MIN_DISKSIZE 77
 // Filename max length in lolfs container
 // Modern filesystems allow at least 256
@@ -63,3 +68,6 @@
 #define LOL_FILENAME_MAX 32
 // Max path accepted by lol_fopen, lol_stat etc..
 #define LOL_DEVICE_MAX 256
+// Define copy string as shown by programs.
+// This must not be edited!
+#define LOLFS_COPYRIGHT ("Copyright (C) 2016, Niko Kiiskinen")
