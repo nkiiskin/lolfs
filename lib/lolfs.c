@@ -128,6 +128,11 @@ const lol_size lol_sizes[] = {
     {LOL_GIGABYTE, "Gb"},
     {LOL_TERABYTE, "Tb"},
 };
+
+const char  lol_usefsck_txt[] = LOL_FSCK_FMT;
+const char  lol_cantuse_txt[] = LOL_CANTUSE_FMT;
+const char lol_cantread_txt[] = LOL_CANTREAD_FMT;
+const char     lol_help_txt[] = LOL_HELP_FMT;
 alloc_entry *lol_index_buffer = 0;
 alloc_entry  lol_storage_buffer[LOL_STORAGE_SIZE+1];
 const char lol_valid_filechars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-_:!+#%[]{}?,;&()1234567890=~@";

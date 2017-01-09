@@ -66,7 +66,7 @@
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define LOL_ENDIAN 0
 #else
-#error "Cannot figure out machine byte order!"
+#error "can not figure out machine byte order!"
 #endif
 // LOL_MAGIC number is actually 0x7b7b,
 // so we only need one definition
@@ -134,8 +134,16 @@
 #define LOL_OOM_FMT                ("lol %s: out of memory.\n")
 #define LOL_USAGE_FMT              ("lol %s v%s. %s\nUsage: lol %s %s\n")
 #define LOL_MISSING_ARG_FMT        ("lol %s: missing argument(s): \'%s\'\n")
+#define LOL_IMAGIC_FMT             ("lol %s: corrupted file id [0x%x, 0x%x].\n")
+#define LOL_MAG_0                  ((DWORD)sb.reserved[0])
+#define LOL_MAG_1                  ((DWORD)sb.reserved[1])
+#define LOL_CORRCONT_FMT           ("lol %s: container \'%s\' has errors.\n")
 #define LOL_FSCK_FMT               ("        fsck.lolfs recommended\n")
+#define LOL_CANTUSE_FMT            ("lol %s: cannot use \'%s\'\n");
+#define LOL_CANTREAD_FMT           ("lol %s: cannot read \'%s\'\n");
+#define LOL_HELP_FMT               ("       Type: 'lol %s -h' for help.\n")
 #define LOL_INTERERR_FMT           ("Internal error. Sorry!\n")
+#define LOL_SPACE()                putchar((int)(' '))
 #define LOLFS_INTERNAL_ERR         LOL_INTERERR_FMT
 #define E_DISK_FULL                ("Not enough space in disk\n")
 #define E_OUT_MEM                  ("Out of memory!\n")
@@ -241,7 +249,11 @@
 #define LOL_FSCK_FATAL  (4)
 #define LOL_FSCK_INTRN  (5)
 extern const char* lol_prefix_list[];
-extern const char* lol_tag_list[];
+extern const char*    lol_tag_list[];
+extern const char  lol_usefsck_txt[];
+extern const char  lol_cantuse_txt[];
+extern const char lol_cantread_txt[];
+extern const char     lol_help_txt[];
 extern char lol_mode_combinations[MAX_LOL_OPEN_MODES][14][5];
 extern alloc_entry* lol_index_buffer;
 extern int lol_buffer_lock;

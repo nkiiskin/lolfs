@@ -62,7 +62,6 @@
 /* ********************************************************************** */
 static const char params[] =
           "-b <blocks> <container>\n       lol rs -s <size> <container>";
-static const char    hlp[] = "       Type: \'lol %s -h\' for help.\n";
 static const char*   lst[] =
 {
   "  Example 1:\n",
@@ -75,7 +74,6 @@ static const char*   lst[] =
   NULL
 };
 /* ********************************************************************** */
-static const char  cantuse[] = "lol %s: cannot use container %s\n";
 static const char
        lol_overwrite_prompt[] = "                       Overwrite [y/n]? ";
 static const char
@@ -140,26 +138,26 @@ int lol_rs (int argc, char* argv[])
 
         if ((stat(argv[1], &st))) {
             lol_error(LOL_WRONG_OPTION, me, argv[1]);
-	    lol_error(hlp, me);
+	    lol_error(lol_help_txt, me);
             return -1;
         }
 syntax_err:
         printf (LOL_USAGE_FMT, me,
                 lol_version, lol_copyright, me, params);
-        printf (hlp, me);
+        printf (lol_help_txt, me);
         return -1;
     }
   } // end if argc == 2
   if (argc != 4) {
       lol_error (LOL_USAGE_FMT, me,
                 lol_version, lol_copyright, me, params);
-      lol_error (hlp, me);
+      lol_error (lol_help_txt, me);
       return -1;
   }
 
-     option = argv[1];
-     amount = argv[2];
-  cont = argv[3];
+  option = argv[1];
+  amount = argv[2];
+    cont = argv[3];
 
   // Does user want to add bytes or blocks?
   if (LOL_CHECK_BLOCKS) {
@@ -187,7 +185,7 @@ syntax_err:
       // Maybe wrong option?
       if (option[0] == '-') {
           lol_error(LOL_WRONG_OPTION, me, option);
-          lol_error (hlp, me);
+          lol_error (lol_help_txt, me);
           return -1;
       }
       // Syntax error...
@@ -199,13 +197,12 @@ syntax_err:
   // Does the container exist?
   space = lol_get_vdisksize(cont, &sb, &st, RECUIRE_SB_INFO);
   if (space < LOL_THEOR_MIN_DISKSIZE) {
-      lol_error(cantuse, me, cont);
+      lol_error(lol_cantuse_txt, me, cont);
       return -1;
   }
   if (LOL_INVALID_MAGIC) {
-      lol_error("lol %s: invalid file id [0x%x, 0x%x].\n",
-	         me, (int)sb.reserved[0], (int)sb.reserved[1]);
-      lol_error(LOL_FSCK_FMT);
+      lol_error(LOL_IMAGIC_FMT, me, LOL_MAG_0, LOL_MAG_1);
+      lol_error(lol_usefsck_txt);
       return -1;
   }
 
@@ -213,7 +210,7 @@ syntax_err:
   bs = sb.bs;
 
   if ((!(nb)) || (!(bs))) {
-      lol_error(cantuse, me, cont);
+      lol_error(lol_cantuse_txt, me, cont);
       return -1;
   }
 

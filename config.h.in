@@ -36,6 +36,9 @@
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
 
+/* Define to 1 if you have the `putchar' function. */
+#undef HAVE_PUTCHAR
+
 /* Define to 1 if you have the `puts' function. */
 #undef HAVE_PUTS
 

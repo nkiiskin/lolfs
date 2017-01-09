@@ -42,7 +42,6 @@
 #define LOL_BUG_FOUND "lol %s: %s: I/O error\n"
 /* ****************************************************************** */
 static const char params[] = "<container:/filename>";
-static const char    hlp[] = "       Type: 'lol %s -h' for help.\n";
 static const char*   lst[] =
 {
   "  Example:\n",
@@ -71,30 +70,26 @@ int lol_cat (int argc, char *argv[]) {
   // Process standard --help & --version options.
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
-
         printf (LOL_USAGE_FMT, me, lol_version,
                 lol_copyright, me, params);
         lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
-
 	printf (LOL_VERSION_FMT, me,
                 lol_version, lol_copyright);
 	return 0;
     }
     if ((argv[1][0] == '-') && (argv[1][1] == '-')) {
-
           lol_error(LOL_WRONG_OPTION, me, argv[1]);
-	  lol_error(hlp, me);
+	  lol_error(lol_help_txt, me);
           return -1;
     }
   } // end if argc == 2
   if (argc != 2) {
-
         printf (LOL_USAGE_FMT, me, lol_version,
                 lol_copyright, me, params);
-        printf (hlp, me);
+        printf (lol_help_txt, me);
         return 0;
   }
 
@@ -152,3 +147,5 @@ errlol:
   lol_fclose(fp);
   return ret;
 } // end lol_cat
+#undef LOL_BUG_FOUND
+#undef LOL_NOT_FOUND

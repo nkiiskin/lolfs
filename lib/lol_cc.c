@@ -935,7 +935,6 @@ static const lol_check_func lol_check_funcs[] =
 };
 /* ****************************************************************** */
 static const char params[] = "[-d] <container>";
-static const char    hlp[] = "       Type: '%s -h' for help.\n";
 static const char*   lst[] =
 {
   /* If you EDIT this, you MUST edit lol_fsck_help too! */
@@ -1031,7 +1030,7 @@ int lol_cc (int argc, char *argv[]) {
 
       if ((stat(argv[1], &st))) {
           lol_error(LOL_WRONG_OPTION, me, argv[1]);
-	  lol_error(hlp, me);
+	  lol_error(lol_help_txt, me);
           return -1;
       }
     }
@@ -1048,7 +1047,7 @@ int lol_cc (int argc, char *argv[]) {
   if (argc != 2) {
       printf ("%s v%s. %s\nUsage: %s %s\n", me,
       lol_version, lol_copyright, me, params);
-      printf (hlp, me);
+      printf (lol_help_txt, me);
       return 0;
   }
 

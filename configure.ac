@@ -75,7 +75,7 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 # Checks for library functions.
-AC_CHECK_FUNCS([memset strtol fsetpos sigaction sigemptyset sigfillset puts sprintf strcat ioctl toupper])
+AC_CHECK_FUNCS([memset strtol fsetpos sigaction sigemptyset sigfillset puts sprintf strcat ioctl toupper putchar])
 
 ## AX_GNU_AUTOTEST([tests], [testsuite], [Makefile], [yes], [no])
 # Initialize the test suite.

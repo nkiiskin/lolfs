@@ -43,10 +43,7 @@
 #include <lol_internal.h>
 #endif
 /* ****************************************************************** */
-static const char  cantuse[] = "lol %s: cannot use %s\n";
-static const char cantread[] = "lol %s: cannot read %s\n";
 static const char   params[] = "[-s] <container>";
-static const char      hlp[] = "       Type: 'lol %s -h' for help.\n";
 static const char*     lst[] =
 {
   "  Example:\n",
@@ -70,12 +67,13 @@ static void lol_fd_clear(char *a, char *b) {
 #define LOL_DF_TEMP 256
 int lol_df (int argc, char* argv[])
 {
+  const long nes = (long)(NAME_ENTRY_SIZE);
   char   temp[LOL_DF_TEMP * NAME_ENTRY_SIZE];
   char number[LOL_DF_MESSAGE];
   char before[LOL_DF_MESSAGE];
   char  after[LOL_DF_MESSAGE];
-  struct lol_super sb;
-  struct      stat st;
+  lol_meta    sb;
+  struct stat st;
   size_t         mem = 0;
   lol_nentry *buffer = 0;
   lol_nentry *nentry = 0;
@@ -125,7 +123,7 @@ int lol_df (int argc, char* argv[])
     if (argv[1][0] == '-') {
       if ((stat(argv[1], &st))) {
           lol_error(LOL_WRONG_OPTION, me, argv[1]);
-	  lol_error(hlp, me);
+	  lol_error(lol_help_txt, me);
           return -1;
       }
     }
@@ -141,7 +139,7 @@ int lol_df (int argc, char* argv[])
         printf (LOL_USAGE_FMT, me, lol_version,
                 lol_copyright, me, params);
         puts  ("       Shows container space usage.");
-        printf (hlp, me);
+        printf (lol_help_txt, me);
         return 0;
   }
 
@@ -151,20 +149,19 @@ action:
   free_space = lol_get_vdisksize(cont, &sb,
                NULL, RECUIRE_SB_INFO);
   if (free_space < LOL_THEOR_MIN_DISKSIZE) {
-      lol_error(cantuse, me, cont);
+      lol_error(lol_cantuse_txt, me, cont);
       return -1;
   }
   if (LOL_INVALID_MAGIC) {
-      lol_error("lol %s: invalid file id [0x%x, 0x%x].\n",
-	   me, (int)sb.reserved[0], (int)sb.reserved[1]);
-      lol_error(LOL_FSCK_FMT);
+      lol_error(LOL_IMAGIC_FMT, me, LOL_MAG_0, LOL_MAG_1);
+      lol_error(lol_usefsck_txt);
       return -1;
   }
 
   nb = (long)sb.nb;
   bs = (long)sb.bs;
   if ((!(nb)) || (!(bs))) {
-      lol_error(cantuse, me, cont);
+      lol_error(lol_cantuse_txt, me, cont);
       return -1;
   }
 
@@ -177,16 +174,15 @@ action:
   lol_align(before, after, LOL_DF_ALIGN, LOL_STDOUT);
   nf = (int)sb.nf;
 
-  data_size  = (long)NAME_ENTRY_SIZE;
-  data_size *= (long)(nb);
-  io = lol_get_io_size(data_size, (long)NAME_ENTRY_SIZE);
+  data_size  = nes * nb;
+  io = lol_get_io_size(data_size, nes);
   if (io <= 0) {
       lol_debug("lol_df: Internal error: io <= 0");
       return -1;
   }
   if (!(buffer = (lol_nentry *)lol_malloc((size_t)(io)))) {
         buffer = (lol_nentry *)temp;
-        io     = LOL_DF_TEMP * NAME_ENTRY_SIZE;
+        io     = nes * LOL_DF_TEMP;
   }
   else {
      mem = (size_t)(io);
@@ -194,16 +190,16 @@ action:
   }
 
   times = data_size / io;
-  frac  = (size_t)(data_size % io);
-  k = io / NAME_ENTRY_SIZE;
+  frac  = data_size % io;
+  k = io / nes;
 
   if (!(fp = fopen(cont, "r"))) {
-       lol_error(cantread, me, cont);
+       lol_error(lol_cantread_txt, me, cont);
        goto just_free;
   }
   i = LOL_DENTRY_OFFSET_EXT(nb, bs);
   if (fseek (fp, i, SEEK_SET)) {
-      lol_error(cantread, me, cont);
+      lol_error(lol_cantread_txt, me, cont);
       goto closefree;
   }
 
@@ -211,7 +207,7 @@ action:
   for (i = 0; i < times; i++) {
 
     if ((lol_fio((char *)buffer, io, fp, LOL_READ)) != io) {
-         lol_error(cantread, me, cont);
+         lol_error(lol_cantread_txt, me, cont);
          goto closefree;
     }
     // Now check the entries
@@ -247,7 +243,7 @@ action:
   if ((frac) && (loops)) {
       times = 1;
       io = frac;
-       k = io / NAME_ENTRY_SIZE;
+       k = io / nes;
       loops = 0;
       goto dentry_loop;
   } // end if frac
@@ -257,7 +253,7 @@ action:
   data_size *= (long)(nb);
   io = lol_get_io_size(data_size, (long)ENTRY_SIZE);
   times = data_size / io;
-  frac  = (size_t)(data_size % io);
+  frac  = data_size % io;
   k = io / ENTRY_SIZE;
   buf = (alloc_entry *)buffer;
   loops = 1;
@@ -265,7 +261,7 @@ action:
  index_loop:
   for (i = 0; i < times; i++) {
     if ((lol_fio((char *)buf, io, fp, LOL_READ)) != io) {
-         lol_error(cantread, me, cont);
+         lol_error(lol_cantread_txt, me, cont);
          goto closefree;
     }
     // Now check the entries
@@ -345,7 +341,7 @@ action:
   if ((used_space > io)  || (err) || (nf > nb_used) ||
       (nb_used > nb) || (nf != files)) {
       lol_error("lol %s: container \'%s\' has errors.\n", me, cont);
-      lol_error(LOL_FSCK_FMT);
+      lol_error(lol_usefsck_txt);
       return -1;
   }
   if (!(silent)) {

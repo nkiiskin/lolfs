@@ -42,9 +42,8 @@
 #include <lol_internal.h>
 #endif
 /* ****************************************************************** */
-static const char params[] = "<container>";
-static const char    hlp[] = "       Type: 'lol %s -h' for help.\n";
-static const char*   lst[] =
+static const char   params[] = "<container>";
+static const char*     lst[] =
 {
   "  Example:\n",
   "          lol ls lol.db",
@@ -65,180 +64,208 @@ static void strip_time(char* t) {
       break;
     }
   }
-}
+} // end strip_time
 /* ****************************************************************** */
+#define LOL_LS_TEMP 256
 int lol_ls(int argc, char* argv[])
 {
-  struct lol_super sb;
-  struct lol_name_entry entry;
-  char tmp[128];
-  FILE *vdisk;
-  DWORD i, nf, num_blocks;
-  long bs, doff;
-  long raw_size;
-  long files = 0;
-  char *time_string = 0;
-  int j, ln, spaces;
-  int fails = 0;
-  int corr  = 0;
+  char temp[LOL_LS_TEMP * NAME_ENTRY_SIZE];
+  char *co, *time, tmp[128];
+  const long nes = (long)NAME_ENTRY_SIZE;
+  const char  *me = argv[0];
+  struct stat st;
+  lol_meta    sb;
+  size_t     ln, mem = 0;
+  lol_nentry    *buf = 0;
+  lol_nentry  *entry = 0;
+  FILE           *fp = 0;
+  long     data_size = 0;
+  long         times = 0;
+  long          size = 0;
+  long nf = 0, files = 0;
+  long      i = 0, k = 0;
+  long    io = 0, nb = 0;
+  long  frac = 0, bs = 0;
+  long          corr = 0;
+  int          loops = 1;
+  int          alloc = 0;
+  int     n = 0, err = 0;
+  int      j = 0, sp = 0;
+  int           ret = -1;
 
   // Process standard --help & --version options.
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
-
-        printf (LOL_USAGE_FMT, argv[0], lol_version,
-                lol_copyright, argv[0], params);
-
+        printf (LOL_USAGE_FMT, me, lol_version,
+                lol_copyright, me, params);
         lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
-
-	printf(LOL_VERSION_FMT, argv[0],
+	printf(LOL_VERSION_FMT, me,
                 lol_version, lol_copyright);
 	return 0;
     }
     if (argv[1][0] == '-') {
-
-          lol_error(LOL_WRONG_OPTION, argv[0], argv[1]);
-          lol_error(hlp, argv[0]);
+       if ((stat(argv[1], &st))) {
+          lol_error(LOL_WRONG_OPTION, me, argv[1]);
+          lol_error(lol_help_txt, me);
           return -1;
+       }
     }
   } // end if argc == 2
-
   if (argc != 2) {
-
-        printf (LOL_USAGE_FMT, argv[0], lol_version,
-                lol_copyright, argv[0], params);
+        printf (LOL_USAGE_FMT, me, lol_version,
+                lol_copyright, me, params);
 	puts  ("       Lists files inside a container.");
-        printf (hlp, argv[0]);
+        printf (lol_help_txt, me);
         return 0;
   }
-
-    if (!(lol_is_validfile(argv[1]))) {
-	  lol_error("lol %s: %s is not a valid container.\n",
-                  argv[0], argv[1]);
-          return -1;
-
-    }
-
-    raw_size = lol_get_vdisksize(argv[1], &sb, NULL, RECUIRE_SB_INFO);
-    if ((raw_size <  LOL_THEOR_MIN_DISKSIZE) ||
-        (sb.nf > sb.nb))
-    {
-
-      lol_error("lol %s: container \'%s\' has errors.\n", argv[0], argv[1]);
-      lol_error(LOL_FSCK_FMT);
-      return -1;
-    }
-
-    if (LOL_INVALID_MAGIC)
-    {
-
-       lol_error("lol %s: corrupted file id [0x%x, 0x%x].\n",
-	       argv[0], (unsigned int)sb.reserved[0],
-               (unsigned int)sb.reserved[1]);
-       lol_error(LOL_FSCK_FMT);
+  co = argv[1];
+  if (!(lol_is_validfile(co))) {
+       lol_error(lol_cantuse_txt, me, co);
        return -1;
+  }
+  size = lol_get_vdisksize(co, &sb, NULL, RECUIRE_SB_INFO);
+  if (size <  LOL_THEOR_MIN_DISKSIZE) {
+      lol_error(lol_cantuse_txt, me, co);
+      lol_error(lol_usefsck_txt);
+      return -1;
+  }
+  if (LOL_INVALID_MAGIC) {
+     lol_error(LOL_IMAGIC_FMT, me, LOL_MAG_0, LOL_MAG_1);
+     lol_error(lol_usefsck_txt);
+     return -1;
+  }
+
+  nf = (long)sb.nf;
+  nb = (long)sb.nb;
+  bs = (long)sb.bs;
+
+  data_size  = nes * nb;
+  io = lol_get_io_size(data_size, nes);
+  if (io <= 0) {
+      lol_debug("lol_ls: Internal error: io <= 0");
+      return -1;
+  }
+  if (!(buf = (lol_nentry *)lol_malloc((size_t)(io)))) {
+        buf = (lol_nentry *)temp;
+        io  = nes * LOL_LS_TEMP;
+  }
+  else {
+     mem = (size_t)(io);
+     alloc = 1;
+  }
+
+  times = data_size / io;
+  frac  = data_size % io;
+  k = io / nes;
+
+  if (!(fp = fopen(co, "r"))) {
+       lol_error(lol_cantread_txt, me, co);
+       goto just_free;
+  }
+  i = LOL_DENTRY_OFFSET_EXT(nb, bs);
+  if (fseek (fp, i, SEEK_SET)) {
+      lol_error(lol_cantread_txt, me, co);
+      goto closefree;
+  }
+
+ dentry_loop:
+  for (i = 0; i < times; i++) {
+
+    if ((lol_fio((char *)buf, io, fp, LOL_READ)) != io) {
+         lol_error(lol_cantread_txt, me, co);
+         goto closefree;
     }
+    // Now check the entries
+    for (j = 0; j < k; j++) { // foreach entry...
 
-      nf = sb.nf;
-      num_blocks = sb.nb;
-      bs = (long)sb.bs;
-      if (nf > num_blocks)
-	corr = 1;
+       entry = &buf[j];
+       if (!(entry->filename[0]))
+	   continue;
 
-      if (!(vdisk = fopen(argv[1], "r"))) {
+       files++;
+       err = 0;
+       if ((entry->i_idx < 0) || (entry->i_idx >= nb)) {
+	    err = 1; corr++;
+       }
+       ln = strlen((char *)entry->filename);
+       if (ln > LOL_FILENAME_MAXLEN) {
+           entry->filename[LOL_FILENAME_MAXLEN] = '\0';
+           err = 1; corr++;
+       }
+       time = ctime(&entry->created);
+       if (time) {
 
-	   lol_error("lol %s: cannot read container \'%s\'.\n",
-                   argv[0], argv[1]);
-
-	   return -1;
-      }
-
-      doff = (long)LOL_DENTRY_OFFSET_EXT(num_blocks, bs);
-
-      if (fseek (vdisk, doff, SEEK_SET)) {
-	   fclose(vdisk);
-	   lol_error("lol %s: cannot read container \'%s\'.\n",
-                   argv[0], argv[1]);
-	   return -1;
-      }
-
-      // Read the name entries
-
-    for (i = 0; i < num_blocks; i++) {
-
-      if ((fread ((char *)&entry, (size_t)(NAME_ENTRY_SIZE), 1, vdisk)) != 1)
-      {
-	  lol_error("lol %s: cannot read file number %u\n", argv[0], i);
-
-	  if (++fails > 3) {
-	      break;
+          strip_time(time);
+          printf("%s", time);
+          ln = strlen(time);
+          sp = 30 - ln;
+          if (sp < 4)
+	      sp = 4;
+          for (n = 0; n < sp; n++) {
+               LOL_SPACE();
           }
-
-	  continue;
-      }
-
-      if (!(entry.filename[0]))
-	  continue;
-
-              ln = strlen((char *)entry.filename);
-	      if (ln >= LOL_FILENAME_MAX) {
-		  if (++fails > 3) {
-		      break;
-                  }
-	            continue;
-              }
-
-
-                files++;
-
-                 time_string = ctime(&entry.created);
-
-                 if (time_string) {
-
-                     strip_time(time_string);
-                      printf("%s", time_string);
-                       ln = strlen(time_string);
-                        spaces = 30 - ln;
-                        if (spaces < 4)
-	                     spaces = 4;
-
-                          for (j = 0; j < spaces; j++) {
-                               printf(" ");
-                          }
-                           // Append file size;
-                           memset(tmp, 0, 128);
-                           sprintf(tmp, "%lu", entry.file_size);
-                           printf("%s", tmp);
-                          ln = strlen(tmp);
-                         spaces = 16 - ln;
-                        if (spaces < 4)
-	                      spaces = 4;
-                       for (j = 0; j < spaces; j++) {
-                             printf(" ");
-                       }
-                     printf("%s\n", entry.filename);
-                 } // end if time_string
-                 else
-                    printf("01-Jan 00:00:00 1970          %lu     %s\n",
-			   entry.file_size, entry.filename);
-
+          // Append file size;
+          memset(tmp, 0, 128);
+          sprintf(tmp, "%lu", entry->file_size);
+          printf("%s", tmp);
+          ln = strlen(tmp);
+          sp = 16 - ln;
+          if (sp < 4)
+	      sp = 4;
+          for (n = 0; n < sp; n++) {
+              LOL_SPACE();
+          }
+          printf("%s", entry->filename);
+          if (err) {
+             puts ("  w");
+          }
+	  else {
+             puts("");
+          }
+      } // end if time
+       else {
+          printf("01-Jan 00:00:00 1970          %lu     %s  w\n",
+		 entry->file_size, entry->filename);
+	  corr++;
+       }
+       if (files >= nf)
+	 goto ooloop;
+    } // end for j
   } // end for i
+  // Now the fractional data
+  if ((frac) && (loops)) {
+      times = 1;
+      io = frac;
+       k = io / nes;
+      loops = 0;
+      goto dentry_loop;
+  } // end if frac
 
-    fclose(vdisk);
+ooloop:
+  ret = 0;
 
-    if ((nf != files) || (fails) || (corr)) {
+closefree:
+ lol_try_fclose(fp);
+just_free:
+ if (alloc) {
+    lol_free(mem);
+ }
 
-       lol_error("lol %s: container \'%s\' has errors.\n",
-               argv[0], argv[1]);
-       lol_error(LOL_FSCK_FMT);
+ if (!(ret)) {
+
+    if (corr) {
+       lol_error("lol %s: container \'%s\' has errors.\n", me, co);
+       lol_error(lol_usefsck_txt);
     }
     else {
       printf("total %ld\n", files);
     }
 
-  return 0;
+ } // end if !ret
 
+ return ret;
 } // end lol_ls
+#undef LOL_LS_TEMP
