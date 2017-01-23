@@ -839,9 +839,9 @@ install-exec-local:
 	@cd $(DESTDIR)$(includedir) && \
 	sed -i "s/#include <lol_config.h>//;" lol_file.h && \
 	sed -i "s/#include \"..\/config.h\"//;" lol_file.h && \
-	sed -i "s/filename\[LOL_FILENAME_MAX\]/\*filename/;" lol_file.h && \
-	sed -i "s/vdisk_file\[LOL_FILENAME_MAX\]/\*vdisk_file/;" lol_file.h && \
-	sed -i "s/vdisk_name\[LOL_DEVICE_MAX\]/\*vdisk_name/;" lol_file.h
+	sed -i "s/name\[LOL_FILENAME_MAX\]/\*name/;" lol_file.h && \
+	sed -i "s/file\[LOL_FILENAME_MAX\]/\*file/;" lol_file.h && \
+	sed -i "s/cont\[LOL_DEVICE_MAX\]/\*cont/;" lol_file.h
 	@echo '******************************'
 	@echo '*                            *'
 	@echo '* The manual has been instal-*'
