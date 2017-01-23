@@ -2,7 +2,7 @@
 # All Rights Reserved.
 # This file is distributed under the GPLv2 License.
 #
-## $Id: Makefile.am main 0.20 2016-11-07 01:28:49Z niko $
+## $Id: Makefile.am main 0.30 2016-11-07 01:28:49Z niko $
 #
 # Author: Niko Kiiskinen 2016-11-07
 #
@@ -18,7 +18,7 @@ SUBDIRS = lib bin src include man tests
 EXTRA_DIST = README.md gpl3.txt
 DEFS = @DEFS@
 
-##CHANGELOG_START = 0.20^
+##CHANGELOG_START = 0.30^
 #CHANGELOG_START = 633f37efc5743504fa094fc91f18de0f2df7f3b9
 #CHANGELOG_GIT_FLAGS = --pretty=format:"%h %ad | %s%d (nk)" --graph --date=short
 #CHANGELOG_GIT_DIR = $(top_srcdir)/.git

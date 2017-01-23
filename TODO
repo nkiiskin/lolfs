@@ -1,4 +1,4 @@
-- Version 0.20 notes:
+- Version 0.30 notes:
 
 - Endianess questions & portability of containers from
   BIG- to LITTLE endian. Must be fixed.
@@ -18,14 +18,14 @@
     file in the filesystem, so this should not be
     a huge problem)
 
-- Create a proper testsuite
+- Add more tests to the testsuite
 
 - Fix lol_cc.c --> buffer the i/o
 - lol_file.h: add last free nentry index to sb
 - lolfs.c: buffer lol_free_nentry
 - lol_cc.c: When invalid file found -> try to get more details
 
-- Thread safety: NOT thread safe as of v0.20.
+- Thread safety: NOT thread safe as of v0.30.
   (Should add transaction locking)
 
 - sub-directories?

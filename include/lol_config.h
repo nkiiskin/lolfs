@@ -16,7 +16,7 @@
  */
 
 /*
- $Id: lol_config.h, v0.20 2016/12/26 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $
+ $Id: lol_config.h, v0.30 2016/12/26 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $
  */
 
 #ifndef _LOL_CONFIG_H
@@ -31,15 +31,25 @@
 // Set LOL_TESTING to 1 if you want to
 // compile a debug version of lolfs
 #define LOL_TESTING 0
+
+// Define LOL_INLINE_MEMCPY
+// if you want to test inline
+// functions instead of C library
+// calls in some routines
+#define LOL_INLINE_MEMCPY 1
+
 // Set the current version of lolfs
 // This is usually set by configure but
 // we hardcode it here.
-#define LOLFS_VERSION ("0.20")
+#define LOLFS_VERSION ("0.30")
 // If we create a container by specifying the
 // size instead of number of blocks and block size,
 // then this value will be used as the default
 // block size by functions like lol_mkfs.
 #define LOL_DEFAULT_BLOCKSIZE  1024
+// Specify how much memory do we reserve from
+// stack when allocating various data buffers
+#define LOL_DEFBUF 4096
 // Storage size here is the limit, after which we will
 // allocate memory dynamically.
 // Bigger LOL_STORAGE_SIZE may result in better performance.

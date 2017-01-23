@@ -4,7 +4,7 @@
 # All Rights Reserved.
 # This file is distributed under the GPLv2 License.
 #
-## $Id: Makefile.am tests 0.20 2017-01-08 23:17:15Z niko $
+## $Id: Makefile.am tests 0.30 2017-01-08 23:17:15Z niko $
 #
 # Author: Niko Kiiskinen 2016-11-07
 #

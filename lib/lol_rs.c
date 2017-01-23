@@ -14,7 +14,7 @@
  *
 */
 /*
- $Id: lol_rs.c, v0.20 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol_rs.c, v0.30 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************
  * lol_rs: resize a container file.
@@ -115,36 +115,33 @@ int lol_rs (int argc, char* argv[])
 
   // Process standard --help & --version options.
   if (argc == 2) {
+
     if (LOL_CHECK_HELP) {
-         printf (LOL_USAGE_FMT, me,
-                 lol_version, lol_copyright, me, params);
-	 lol_help(lst);
-         return 0;
+        lol_show_usage(me);
+        lol_help(lst);
+        return 0;
     }
     if (LOL_CHECK_VERSION) {
-	printf (LOL_VERSION_FMT, me,
-                lol_version, lol_copyright);
+        lol_show_version(me);
 	return 0;
     }
     if (LOL_CHECK_SIZE) {
-        lol_error(LOL_MISSING_ARG_FMT, me, "<size> <container>");
+        lol_errfmt2(LOL_2E_ARGMISS, me, "<size> <container>");
         return -1;
     }
     if (LOL_CHECK_BLOCKS) {
-        lol_error(LOL_MISSING_ARG_FMT, me, "<blocks> <container>");
+        lol_errfmt2(LOL_2E_ARGMISS, me, "<blocks> <container>");
         return -1;
     }
     if (argv[1][0] == '-') {
-
-        if ((stat(argv[1], &st))) {
-            lol_error(LOL_WRONG_OPTION, me, argv[1]);
-	    lol_error(lol_help_txt, me);
-            return -1;
-        }
+      if ((stat(argv[1], &st))) {
+         lol_errfmt2(LOL_2E_OPTION, me, argv[1]);
+	 lol_ehelpf(me);
+         return -1;
+      }
 syntax_err:
-        printf (LOL_USAGE_FMT, me,
-                lol_version, lol_copyright, me, params);
-        printf (lol_help_txt, me);
+        lol_show_usage(me);
+	lol_ehelpf(me);
         return -1;
     }
   } // end if argc == 2
@@ -195,14 +192,14 @@ syntax_err:
 
   } // end else
   // Does the container exist?
-  space = lol_get_vdisksize(cont, &sb, &st, RECUIRE_SB_INFO);
+  space = lol_getsize(cont, &sb, &st, RECUIRE_SB_INFO);
   if (space < LOL_THEOR_MIN_DISKSIZE) {
-      lol_error(lol_cantuse_txt, me, cont);
-      return -1;
+     lol_errfmt2(LOL_2E_CANTUSE, me, cont);
+     return -1;
   }
   if (LOL_INVALID_MAGIC) {
       lol_error(LOL_IMAGIC_FMT, me, LOL_MAG_0, LOL_MAG_1);
-      lol_error(lol_usefsck_txt);
+      lol_errfmt(LOL_0E_USEFSCK);
       return -1;
   }
 
@@ -210,7 +207,7 @@ syntax_err:
   bs = sb.bs;
 
   if ((!(nb)) || (!(bs))) {
-      lol_error(lol_cantuse_txt, me, cont);
+      lol_errfmt2(LOL_2E_CANTUSE, me, cont);
       return -1;
   }
 
@@ -247,7 +244,7 @@ syntax_err:
       break;
 
     default :
-      lol_error("lol %s: %s\n", me, LOL_INTERERR_FMT);
+      lol_errfmt1(LOL_1E_INTER, me);
       return -1;
 
   } // end switch opt

@@ -13,9 +13,9 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lol_internal.h, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
- *
- *
+ */
+/*
+$Id: lol_internal.h, v0.30 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp$
  */
 
 
@@ -76,25 +76,200 @@
 #define LOL_DEV_MINOR  (2)
 // struct stat st_rdev field
 #define LOL_FILE_RDEV (0)
+// lol file default mode (octal 100666)
+// (Regular file with permissions rw-rw-rw-)
+// (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP |
+//  S_IWGRP | S_IROTH | S_IWOTH)
+#define LOL_FILE_DEFAULT_MODE 33206
 
 #define LOL_FALSE     (0xFEFFFFDF)
 #define LOL_PATH_MAX  (LOL_DEVICE_MAX + LOL_FILENAME_MAX + 2)
+#define LOL_PATH_BUF  (LOL_PATH_MAX + 1)
 #define LOL_FILENAME_MAXLEN (LOL_FILENAME_MAX - 1)
+// Some structs ////////////////////////////////////////////////
+
+
+// Constants (or'd together) and
+// structure for lol_pathinfo
+#define LOL_PATHLEN  1
+#define LOL_FILELEN  2
+#define LOL_FILENAME 4
+#define LOL_CONTPATH 8
+#define LOL_CONTNAME 16
+
+// The next 2 constants
+// are used internally
+#define LOL_SIMULATE LOL_FILELEN
+#define LOL_PATHMAGIC 0x510b47d9
+
+// This struct is being used by
+// function lol_pathinfo
+typedef struct lol_path_info
+{
+  char  *fullp;
+  char   *file;
+  char   *cont;
+  int     flen;
+  int     clen;
+  int     plen;
+  int     func;
+
+} lol_pinfo;
+
+typedef struct lol_nentryinfo_t
+{
+  long off; // Where the name entry begins
+            // counted from the beginning of
+            // the container. This is for
+            // fast fseek() to the entry.
+
+  long idx;        // The index of the entry
+                   // in the name entry storage.
+                   // (Some functions prefer this info).
+
+  lol_nentry *ne;  // Pointer to a name entry struct
+                   // (may be NULL if not needed)
+
+  short int res;   // Boolean value. Is the entry
+                   // Reserved (res != 0) or free (res = 0)
+} lol_ninfo, *lol_ninfo_ptr;
+
+typedef struct lol_indref_t
+{
+  int         num;
+  alloc_entry   i;
+  alloc_entry   j;
+  alloc_entry val;
+
+} lol_indref;
+
+typedef struct lol_size_t {
+    float s;
+    char  n[6];
+} lol_size;
+
+struct lol_loop {
+  // private:
+   size_t  num_blocks;
+   size_t start_bytes;
+   size_t  full_loops;
+   size_t   end_bytes;
+};
+
+#define lol_error(x, ...) fprintf(stderr, x, ##__VA_ARGS__)
+// Indexes to global error message lists /////////////////
+extern const char *lol_msg_list0[];
+// indexes to global error message list
+#define LOL_0E_USEFSCK  0
+#define LOL_0E_INTERERR 1
+
+// And corresponging messages with 0 variables
+#define LOL_FSCK_FMT               ("        fsck.lolfs recommended\n")
+#define LOL_INTERERR_FMT           ("Internal error. Sorry!\n")
+
+#define E_DISK_FULL                ("Not enough space in disk\n")
+#define LOL_DISKFULL_FMT           E_DISK_FULL
+#define LOLFS_INTERNAL_ERR         LOL_INTERERR_FMT
+#define E_OUT_MEM                  ("Out of memory!\n")
+#define E_DISK_IO                  ("I/O error\n")
+
+#define lol_errfmt(x)              fprintf(stderr, "%s", lol_msg_list0[(x)])
+
+
+// indexes to global error message list
+extern const char *lol_msg_list1[];
+#define LOL_1E_OOM    0
+#define LOL_1E_IOERR  1
+#define LOL_1E_SYNTAX 2
+#define LOL_1E_IMAGIC 3
+#define LOL_1E_HELP   4
+#define LOL_1E_INTER  5
+
+// The actual messages
+// Messages with 1 variable
+#define LOL_OOM_FMT           ("lol %s: out of memory.\n")
+#define LOL_IOERR_FMT         ("lol %s: I/O error\n")
+#define LOL_SYNTAX_FMT        ("lol %s: syntax error\n")
+#define LOL_IMAGIC_FMT        ("lol %s: corrupted file id [0x%x, 0x%x].\n")
+#define LOL_HELP_FMT          ("       Type: 'lol %s -h' for help.\n")
+#define LOL_INTERE_FMT        ("lol %s: internal error\n")
+#define lol_mprintf1(x, ...)  printf(lol_msg_list1[(x)], ##__VA_ARGS__)
+#define lol_errfmt1(x, ...)   fprintf(stderr, lol_msg_list1[(x)], ##__VA_ARGS__)
+#define lol_helpf(x)          printf(lol_msg_list1[LOL_1E_HELP], (x))
+#define lol_ehelpf(x)         fprintf(stderr, lol_msg_list1[LOL_1E_HELP], (x))
+#define lol_syntax(x)         fprintf(stderr, lol_msg_list1[LOL_1E_SYNTAX], (x))
+
+// indexes to global error message list
+extern const char *lol_msg_list2[];
+#define LOL_2E_CANTREAD  0
+#define LOL_2E_CANTWRITE 1
+#define LOL_2E_CANTUSE   2
+#define LOL_2E_CANTCOPY  3
+#define LOL_2E_DIRMISS   4
+#define LOL_2E_NOSUCHF   5
+#define LOL_2E_OPTION    6
+#define LOL_2E_ARGMISS   7
+#define LOL_2E_CORRCONT  8
+#define LOL_2E_NOTROOM   9
+#define LOL_2E_OW_PMT   10
+#define LOL_2E_FULLCONT 11
+#define LOL_2E_FIOERR   12
+#define LOL_2E_ACDENIED 13
+#define LOL_2E_INVSRC   14
+#define LOL_2E_OWCONT   15
+// The actual messages in that list are:
+// Messages with 2 variables
+#define LOL_CANTREAD_FMT     ("lol %s: cannot read from \'%s\'\n")
+#define LOL_CANTWRITE_FMT    ("lol %s: cannot write to \'%s\'\n")
+#define LOL_CANTUSE_FMT      ("lol %s: cannot use \'%s\'\n")
+#define LOL_CANTCOPY_FMT     ("lol %s: cannot copy to file \'%s\'\n")
+#define LOL_CANTFINDDIR_FMT  ("lol %s: cannot find directory \'%s\'\n")
+#define LOL_NOTSUCHFILE_FMT  ("lol %s: \'%s\': No such file or directory\n")
+#define LOL_WRONG_OPTION     ("lol %s: unrecognized option \'%s\'\n")
+#define LOL_MISSING_ARG_FMT  ("lol %s: missing argument(s): \'%s\'\n")
+#define LOL_CORRCONT_FMT     ("lol %s: container \'%s\' has errors\n")
+#define LOL_NOTROOM_FMT      ("lol %s: not enough room for \'%s\'\n")
+#define LOL_OW_PROMPT_FMT    ("lol %s: \'%s\' exists. Replace [y/n]? ")
+#define LOL_FULLCONT_FMT     ("lol %s: container \'%s\' is full\n")
+#define LOL_FIO_ERR_FMT      ("lol %s: I/O error \'%s\'\n")
+#define LOL_ACCDENIED_FMT    ("lol %s: cannot copy to file \'%s\', access denied\n")
+#define LOL_INVSOURCE_FMT    ("lol %s: the file \'%s\' is not inside a container\n")
+#define LOL_OWCONT_FMT       ("lol %s: will not overwrite container \'%s\'\n")
+#define lol_errfmt2(x, ...)  fprintf(stderr, lol_msg_list2[(x)], ##__VA_ARGS__)
+#define lol_inffmt2(x, ...)  printf(lol_msg_list2[(x)], ##__VA_ARGS__)
+
 // Some macros for common expressions/tasks
-#define LOL_MEMCPY(x,y,z)          memcpy((char *)(x), (const char *)(y), ((size_t)(z)))
+#define LOL_MEMCPY(x,y,z)          memcpy((char *)(x), \
+                                   (const char *)(y), ((size_t)(z)))
+#define LOL_MEMSET(x,y,z)          memset((char *)(x),(int)(y),((size_t)(z)))
 #define LOL_DEVSIZE(x,y)           (DISK_HEADER_SIZE + ((ULONG)(x)) * \
                                    (((ULONG)(y)) + ENTRY_SIZE + \
                                    NAME_ENTRY_SIZE))
+
+// x = file size
+// y = block size
+// z = number of blocks (the answer)
+#define LOL_FILE_BLOCKS(x,y,z)     if ((x)) { (z) = ((x) / (y)); \
+                                   if ((x) % (y)) (z)++; } \
+                                   else {(z) = 1;}
+/*
+x = entries
+y = bytes
+z = e_size
+k = frac */
+#define LOL_CALC_ENTRIES(x,y,z,k)  (x) = (y) / (z); (k) = (y) % (z); \
+                                   if ((k)) { (x)++; }
 #define LOL_INDEX_OFFSET(x,y,z)    (DISK_HEADER_SIZE + (x) * \
                                    (NAME_ENTRY_SIZE + (y)) + (z) * ENTRY_SIZE)
+#define LOL_DATA_OFFSET(x,y)       (DISK_HEADER_SIZE + (x) * (y))
 #define LOL_DENTRY_OFFSET(x)       (DISK_HEADER_SIZE + ((x)->sb.nb) * \
                                    ((x)->sb.bs))
 #define LOL_DENTRY_OFFSET_EXT(x,y) ((long)(DISK_HEADER_SIZE) + \
                                    (long)(x) * (long)(y))
 #define LOL_GOTO_NENTRY(x,y,z,w)   (fseek((x), DISK_HEADER_SIZE + (y) * (z) + \
                                    (w) * NAME_ENTRY_SIZE, SEEK_SET))
-#define LOL_GOTO_DENTRY(x)         (fseek((x)->vdisk, DISK_HEADER_SIZE + \
-                                   (x)->nentry_index * NAME_ENTRY_SIZE + \
+#define LOL_GOTO_DENTRY(x)         (fseek((x)->dp, DISK_HEADER_SIZE + \
+                                   (x)->n_idx * NAME_ENTRY_SIZE + \
                                    (x)->sb.bs * \
                                    (x)->sb.nb, SEEK_SET))
 #define LOL_TABLE_START_EXT(x,y)   (DISK_HEADER_SIZE + (x) * \
@@ -103,6 +278,12 @@
                                    (((x)->sb.bs) + NAME_ENTRY_SIZE))
 #define LOL_CHECK_MAGIC(x)         ((x)->sb.reserved[0] != LOL_MAGIC || \
                                    (x)->sb.reserved[1]  != LOL_MAGIC)
+#define LOL_ISDIR                  (S_ISDIR(st.st_mode))
+#define LOL_ISREG                  (S_ISREG(st.st_mode))
+#define LOL_ISDIRP                 (S_ISDIR(st->st_mode))
+#define LOL_ISREGP                 (S_ISREG(st->st_mode))
+#define LOL_NOTDIR                 (!(S_ISDIR(st.st_mode)))
+#define LOL_NOTREG                 (!(S_ISREG(st.st_mode)))
 #define LOL_ERRET(x,y)             { lol_errno = (x); return (y); }
 #define LOL_ERR_RETURN(x,y)        { op->err = lol_errno = (x); return (y); }
 #define LOL_ERRSET(x)              { op->err = lol_errno = (x); }
@@ -126,38 +307,35 @@
 #define LOL_INVALID_MAGIC_PTR      ((sb->reserved[0] != LOL_MAGIC) || \
 				   (sb->reserved[1]  != LOL_MAGIC))
 #define LOL_DATA_START             (DISK_HEADER_SIZE)
-#define delete_return_NULL(x)      { delete_lol_FILE((x)); return NULL; }
-#define close_return_NULL(x)       { lol_fclose((x)); return NULL; }
-#define lol_error(x, ...)          fprintf(stderr, x, ##__VA_ARGS__)
-#define LOL_WRONG_OPTION           ("lol %s: unrecognized option \'%s\'\n")
-#define LOL_VERSION_FMT            ("lol %s v%s %s\n")
-#define LOL_OOM_FMT                ("lol %s: out of memory.\n")
-#define LOL_USAGE_FMT              ("lol %s v%s. %s\nUsage: lol %s %s\n")
-#define LOL_MISSING_ARG_FMT        ("lol %s: missing argument(s): \'%s\'\n")
-#define LOL_IMAGIC_FMT             ("lol %s: corrupted file id [0x%x, 0x%x].\n")
+#define delete_return_NULL(x,y)    { lol_errno = (x); delete_lol_FILE((y)); return NULL; }
+#define close_return_NULL(x,y)     { lol_errno = (x); lol_fclose((y)); return NULL; }
 #define LOL_MAG_0                  ((DWORD)sb.reserved[0])
 #define LOL_MAG_1                  ((DWORD)sb.reserved[1])
-#define LOL_CORRCONT_FMT           ("lol %s: container \'%s\' has errors.\n")
-#define LOL_FSCK_FMT               ("        fsck.lolfs recommended\n")
-#define LOL_CANTUSE_FMT            ("lol %s: cannot use \'%s\'\n");
-#define LOL_CANTREAD_FMT           ("lol %s: cannot read \'%s\'\n");
-#define LOL_HELP_FMT               ("       Type: 'lol %s -h' for help.\n")
-#define LOL_INTERERR_FMT           ("Internal error. Sorry!\n")
 #define LOL_SPACE()                putchar((int)(' '))
-#define LOLFS_INTERNAL_ERR         LOL_INTERERR_FMT
-#define E_DISK_FULL                ("Not enough space in disk\n")
-#define E_OUT_MEM                  ("Out of memory!\n")
-#define E_DISK_IO                  ("I/O error\n")
-#define E_FILE_READ                ("lol %s: error reading file \'%s\'\n")
 #define LOL_ALLOC(x)               ((x *)malloc(sizeof(x)))
 #if defined __FILE__               && defined __LINE__
-#define lol_debug(x)               fprintf (stderr, "%s: error file: %s, line %d.", \
-                                    (x), __FILE__, __LINE__)
+#define lol_debug(x)               fprintf (stderr, "%s: error file: %s, \
+                                   line %d.", (x), __FILE__, __LINE__)
 #else
 #define lol_debug(x)               fprintf(stderr, "%s: ", (x))
 #endif
-#define       LOL_READ   (0)
-#define       LOL_WRITE  (1)
+
+// Messages with 3 variables
+#define LOL_VERSION_FMT            ("lol %s v%s %s\n")
+
+#define lol_show_version(x)        printf(LOL_VERSION_FMT, (x), \
+                                   lol_version, lol_copyright)
+// Messages with 5 variables
+#define LOL_USAGE_FMT              ("lol %s v%s. %s\nUsage: lol %s %s\n")
+#define lol_show_usage(x)          printf (LOL_USAGE_FMT,(x),lol_version, \
+                                   lol_copyright,(x),params)
+
+// funcs for lol_fio:
+#define        LOL_READ (0)
+#define       LOL_WRITE (1)
+#define   LOL_READ_CONT (2)
+#define  LOL_WRITE_CONT (3)
+
 // Some internal use flags
 #define LOL_NO_SUCH_FILE (0)
 #define LOL_FILE_EXISTS  (1)
@@ -190,9 +368,10 @@
 #define LOL_ERR_BUSY    (-12)
 #define LOL_ERR_SIG     (-13)
 #define LOL_ERR_BADFD   (-14)
+#define LOL_ERR_ENOENT  (-15)
 
 #define MAX_LOL_OPEN_MODES    (6)
-// Constants for lol_get_vdisksize
+// Constants for lol_getsize
 #define RECUIRE_SB_INFO       (1)
 #define USE_SB_INFO           (2)
 // Constants for lol_supermod func
@@ -207,10 +386,13 @@
 // Flags to lol_delete_chain_from:
 #define LOL_UNLINK            (0)
 #define LOL_SAVE_FIRST_BLOCK  (1)
-// uhh..
-#define LOL_FORMAT_TO_REGULAR (1)
-#define LOL_LOCAL_TRUNCATE    (2)
-// Flags to lol_get_free_index
+
+// Flags for lol_split_fname
+#define LOL_SAVE_FULLPATH     (1)
+#define LOL_SAVE_NAMEONLY     (2)
+#define LOL_SAVE_FILEONLY     (3)
+
+// Flags for lol_get_free_index
 #define LOL_MARK_USED         (1)
 
 #define LOL_FS_TOOSMALL      (-2)
@@ -248,6 +430,7 @@
 #define LOL_FSCK_ERROR  (3)
 #define LOL_FSCK_FATAL  (4)
 #define LOL_FSCK_INTRN  (5)
+
 extern const char* lol_prefix_list[];
 extern const char*    lol_tag_list[];
 extern const char  lol_usefsck_txt[];
@@ -307,15 +490,10 @@ enum {
 #define LOL_COLOR_CYAN     "\x1b[36m"
 #define LOL_COLOR_RESET    "\x1b[0m"
 
-struct lol_loop {
-  // private:
-   size_t  num_blocks;
-   size_t start_bytes;
-   size_t  full_loops;
-   size_t   end_bytes;
-};
 #define LOL_STORAGE_ALL ((size_t)(LOL_STORAGE_SIZE + 1))
-typedef size_t (*lol_io_func)(void *, size_t, size_t, FILE *);
+typedef size_t (*lol_io_func)(void *, size_t, size_t, void *);
+typedef void* (*lol_open_func)(const char *, const char *);
+typedef int (*lol_close_func)(void *);
 
 // Miscallaneous helper-functions,
 // not to be used in the interface
@@ -326,24 +504,31 @@ int         lol_try_fgetpos(FILE *, fpos_t *);
 int         lol_try_fsetpos(FILE *, const fpos_t *);
 size_t      lol_fclear(const size_t bytes, FILE *);
 size_t      lol_ifcopy(const alloc_entry val, const size_t times, FILE *s);
-size_t      lol_fio(char *ptr, const size_t bytes, FILE *s, const int func);
+size_t      lol_fio(char *ptr, const size_t bytes, void *s, const int func);
 // Some 'get' functions
 int         lol_getsb(FILE *fp, lol_meta *sb);
 int         lol_getmode(const char *m);
 long        lol_get_io_size(const long size, const long blk);
-int         lol_get_basename(const char* name, char *new_name, const int mode);
-int         lol_get_filename(const char *path, lol_FILE *op);
-int         lol_get_free_index(FILE *,const lol_meta *,alloc_entry *idx, int mark);
-//long        lol_get_free_nentry(FILE *, const lol_meta *, const lol_nentry *);
+int         lol_pathinfo(lol_pinfo *);
+int         lol_fnametolol(const char *src, const char *cont,
+                           char *out, const size_t contlen);
+int         lol_get_free_index(FILE *,const lol_meta *,
+                               alloc_entry *idx, int mark);
 long        lol_get_free_nentry(FILE *, const lol_meta *, lol_ninfo *);
-long        lol_get_rawdevsize (char *device, struct lol_super *sb, struct stat *st);
-long        lol_get_vdisksize (char *name, struct lol_super *sb, struct stat *st, int func);
-alloc_entry lol_get_index_value (FILE *f, const DWORD nb, const DWORD bs,
-                                 const alloc_entry idx);
+long        lol_rgetsize (const char *device, lol_meta *sb, struct stat *st);
+long        lol_getsize (const char *name, lol_meta *sb,
+                         struct stat *st, int func);
+#ifndef     lol_fgetsize
+#define     lol_fgetsize(x) lol_getsize((x)->cont, &(x)->sb, &(x)->cinfo, RECUIRE_SB_INFO)
+#endif
+alloc_entry lol_get_index_value (FILE *f, const DWORD nb,
+                                 const DWORD bs, const alloc_entry idx);
 // Various 'check' functions
+int         lol_can_replace (const long, const long, const long, const long);
 int         lol_is_number(const char ch);
 int         lol_is_integer(const char *str);
-BOOL        lol_is_validfile(char *name);
+BOOL        lol_validcont(const char *name, lol_meta *sb, struct stat *st);
+BOOL        lol_validpath(char *path);
 int         lol_is_writable(const lol_FILE *op);
 int         lol_valid_sb(const lol_FILE *op);
 int         lol_check_corr(const lol_FILE *op, const int mode);
@@ -354,25 +539,27 @@ lol_FILE   *new_lol_FILE(void);
 void        delete_lol_FILE(lol_FILE *fp);
 int         lol_memset_indexbuffer(const alloc_entry val, const size_t x);
 // Container functions
-int         lol_supermod (FILE *fp, struct lol_super *sb, const int func);
-long        lol_free_space (char *container, const int mode);
+int         lol_supermod (FILE *fp, const lol_meta *sb, const int func);
+long        lol_free_space (const char *cont, lol_meta *sb, const int mode);
 int         lol_extendfs(const char *container, const DWORD new_blocks,
 			 struct lol_super *sb, const struct stat *st);
 // Some lol_FILE helper functions
 int         lol_touch_file(lol_FILE *op);
 int         lol_truncate_file(lol_FILE *op);
 int         lol_update_nentry(lol_FILE *op);
-void        lol_clean_fp(lol_FILE *fp);
 int         lol_read_nentry(lol_FILE *);
 long        lol_io_dblock(lol_FILE *op, const size_t block_number,
-			      char *ptr, const size_t bytes, int func);
-size_t      lol_num_blocks(lol_FILE *op, const size_t amount, struct lol_loop *loop);
+			  char *ptr, const size_t bytes, const int func);
+size_t      lol_num_blocks(lol_FILE *op, const size_t amount,
+                           struct lol_loop *loop);
 int         lol_garbage_filename(const char *name);
-int         lol_remove_nentry (FILE *fp, const DWORD nb, const DWORD bs, const DWORD nentry,
-                               int remove_idx);
+int         lol_remove_nentry (FILE *fp, const DWORD nb, const DWORD bs,
+                               const DWORD nentry, int rm_idx);
 int         lol_count_file_blocks (FILE *vdisk, const struct lol_super *sb,
-                                   const alloc_entry first_index, const long dsize,
-                                   long *count, const int terminate);
+                                   const alloc_entry first_index,
+                                   const long dsize, long *count,
+                                   const int terminate);
+
 // Signal handling
 int         lol_setup_sighandlers(void);
 void        lol_restore_sighandlers(void);
@@ -393,10 +580,12 @@ int         lol_new_ichain(lol_FILE *op, const long olds, const long news,
                            alloc_entry *last_old);
 int         lol_update_ichain(lol_FILE *op, const long olds,
                               const long news, const alloc_entry last_old);
-int         lol_set_index_value (FILE *f, const DWORD nb, const DWORD bs,
-                                 const alloc_entry idx, const alloc_entry new_val);
+int         lol_set_index_value (FILE *f, const DWORD nb,
+                                 const DWORD bs, const alloc_entry idx,
+                                 const alloc_entry new_val);
 // Message output
-void        lol_align(const char *before, const char *after, const size_t len, int out);
+void        lol_align(const char *before, const char *after,
+                      const size_t len, int out);
 int         lol_status_msg(const char *me, const char* txt, const int type);
 void        lol_help(const char** lst);
 // The 'lol' app internal functions

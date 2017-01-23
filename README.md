@@ -59,7 +59,7 @@
 
                 'lol' has several built-in functions which
                 may be used to execute some common file operations.
-                These functions are currently (in v 0.20) :
+                These functions are currently (in v 0.30) :
 
                 - fs
                 - cat
@@ -96,6 +96,17 @@
                          each 1000 bytes. So the storage capacity
                          for this example is 1000 * 5000 bytes.
 
+                         I highly recommend using the '-s' option
+                         instead of '-b', since in most cases
+                         containers created using '-s' option
+                         are much faster because they are optimized
+                         for fast file I/O.
+                         However, there maybe situations when it is
+                         sensible to customize the block size
+                         using '-b' option.
+
+                        ( When you use '-s', the block size will
+                          default to 2048, eg. 2K ).
 
 
 
@@ -128,13 +139,17 @@
                              "lol cc test.db"
 
                  Example 2:
-                             "lol cc -d test.db" (shows more details)
+                             "lol cc -d test.db"
+
+                             ( The '-d' option shows more details
+                               if the container has errors )
 
 
 
 
                  lol cp function:
                  ----------------
+
 
                  lol cp copies files to (and from) a container.
 
@@ -145,7 +160,7 @@
                              "lol cp readme.txt test.db"
 
 
-                     You can copy multiple files like:
+                     You may -of course- copy multiple files like:
 
                  Example 2:
                              "lol cp *.jpg test.db"
@@ -159,7 +174,6 @@
 
                    NOTE: When accessing files inside your container, you must
                          separate the path with ':' like in above example.
-
 
 
 
@@ -177,7 +191,7 @@
 
 
               lol ls function:
-                 ----------------
+              ----------------
 
 
                  lol ls   lists the files inside a container.
@@ -193,7 +207,7 @@
 
 
                lol rm function:
-                 ----------------
+               ----------------
 
 
                  lol rm   deletes a file from your container file.
@@ -210,7 +224,7 @@
 
 
               lol rs function:
-                 ----------------
+              ----------------
 
 
                  lol rs    extends a container file by adding more
@@ -242,10 +256,12 @@
                 "mkfs.lolfs" creates a new container file.
 
 
-                  It works exactly as 'lol fs' command. (See above).
+                  It works _exactly_ as 'lol fs' command. (See above).
 
 
-                 ( In Linux, lolfs may be used directly with removable storage,
+                 NOTE:
+
+                   In Linux, lolfs may be used directly with removable storage,
                    without warranty of course!
                    So, you may actually insert a SDHC card or USB stick to
                    your Linux and create a lol storage directly there.
@@ -254,7 +270,7 @@
                    for example "mkfs.lolfs -b 512 4000000 /dev/sdc1"
                    You MUST know what you are doing then, and of course
                    you must be root to do that - or anything similar.
-                   You have been warned! :)
+                   You have been warned!
 
 
 
@@ -267,13 +283,13 @@
                 It works exactly as 'lol cc' command. (See above).
 
 
-lolfs API:
 
 
-lolfs API:
+
+lolFS API:
 ==========
 
-     The API functions are explained in <lolfs.h>
+     The API prototypes are in <lolfs.h>
      They are identical to their standard C counterparts,
      except the "lol_" prefix in the name:
 
@@ -303,7 +319,7 @@ LolFS test program:
 
 
   // Github propably messes up these
-  // includes but you know what I mean :)
+  // includes... :(
   // (Read the original 'README.md' file)
 
 
@@ -326,12 +342,13 @@ LolFS test program:
       }
       if ((lol_fwrite((char *)text,
            strlen(text), 1, fp)) != 1) {
-           printf("Dang! Could not write the file!\n");
-           lol_fclose(fp);
-           return -1;
+
+         printf("Dang! Could not write the file!\n");
+         lol_fclose(fp);
+         return -1;
       }
 
-      // YES! The file is there!
+     // YES! The file is there!
       lol_fclose(fp);
       return 0;
 
@@ -348,6 +365,7 @@ gcc test.c -o test -llolfs
 (You may need to include compiler option -L/path/to/librarydir
  if the linker does not find lolfs library)
 
+Something like:
 gcc test.c -o test -L/usr/local/lib64 -llolfs -I/usr/local/include
 
 If the build does not fail, run the test:
@@ -381,9 +399,7 @@ Hello World!
 
  Questions, Bug reports, etc
 
- Niko Kiiskinen
-
- lolfs.bugs@gmail.com
-
- https://github.com/nkiiskin/lolfs
+ - Niko Kiiskinen
+   lolfs.bugs@gmail.com
+   https://github.com/nkiiskin/lolfs
 

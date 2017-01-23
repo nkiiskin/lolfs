@@ -15,7 +15,7 @@
  */
 
 /*
- $Id: lol_cc.c, v0.20 2016/12/06 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol_cc.c, v0.30 2016/12/06 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 #ifdef HAVE_CONFIG_H
 #include "../config.h"
@@ -126,7 +126,7 @@ static int lol_fsck_geom(FILE *fp, const struct lol_super *sb,
   mode_t mode = 0;
   int     ret = 0;
 
-  size = lol_get_vdisksize((char *)cont,
+  size = lol_getsize((char *)cont,
                            (struct lol_super *)sb,
                            NULL, USE_SB_INFO);
 
@@ -296,8 +296,8 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
     idx = (long)(nentry.i_idx);
     // Check 1: if no name but file_size > 0   => error
     // Check 2: if no name but allocated index => error
-    if (!(nentry.filename[0])) {
-        if ((nentry.file_size) || (idx)) {
+    if (!(nentry.name[0])) {
+        if ((nentry.fs) || (idx)) {
            // This is f*cked up, continue
 	  if (v) {
              memset((char *)message, 0, 512);
@@ -317,12 +317,6 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
 	  // Also, the file_size should be 0
 
 	continue;
-#if 0
-  UCHAR  filename[LOL_FILENAME_MAX];
-  time_t created;
-  alloc_entry i_idx;
-  ULONG  file_size;
-#endif
 
     } // end if no name
 
@@ -330,10 +324,10 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
     n_files++;
     // Check if it seems to be ok
     // How about the size of the file?
-    assumed_fblocks = (long)nentry.file_size;
+    assumed_fblocks = (long)nentry.fs;
     if (assumed_fblocks) {
         assumed_fblocks /= bs;
-        if (((long)nentry.file_size) % bs)
+        if (((long)nentry.fs) % bs)
             assumed_fblocks++;
     }
     else {
@@ -344,17 +338,17 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
         res_blocks_by_size += assumed_fblocks;
     }
 
-    len = strlen((char *)nentry.filename);
+    len = strlen((char *)nentry.name);
 
     if (len > LOL_FILENAME_MAXLEN) {
     // TODO & THINK: This is actually very severe error!
     // It may corrupt the i_idx and file_size fields...
 
        if (v) {
-          nentry.filename[LOL_FILENAME_MAXLEN] = '\0';
+          nentry.name[LOL_FILENAME_MAXLEN] = '\0';
           memset((char *)message, 0, 512);
 	  sprintf(message, "%s\'%s\'", lol_fsck_susp_name,
-                                  (char *)(nentry.filename));
+                                  (char *)(nentry.name));
           lol_status_msg(me, message, LOL_FSCK_ERROR);
        }
        if (ret < LOL_FSCK_ERROR)
@@ -365,13 +359,13 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
 	 continue;
     }
 
-    if ((lol_garbage_filename((char *)(nentry.filename)))) {
+    if ((lol_garbage_filename((char *)(nentry.name)))) {
          n_suspicious++;
 	 if (v) {
 
             memset((char *)message, 0, 512);
 	    sprintf(message, "%s\'%s\'", lol_fsck_susp_name,
-                                  (char *)(nentry.filename));
+                                  (char *)(nentry.name));
 	    // Give warning but we are not sure
 	    // if this is actually corrupted.
             lol_status_msg(me, message, LOL_FSCK_WARN);
@@ -382,14 +376,14 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
     } // end if garbage name
 
 
-    if ((((long)(nentry.file_size)) < 0) ||
+    if ((((long)(nentry.fs)) < 0) ||
           (idx < 0) || (idx >= nb))
     {
          num_corrupted++;
 	 if (v) {
             memset((char *)message, 0, 512);
 	    sprintf(message, "invalid file \'%s\' found",
-                    (char *)(nentry.filename));
+                    (char *)(nentry.name));
             lol_status_msg(me, message, LOL_FSCK_ERROR);
 	 }
          if (ret < LOL_FSCK_ERROR)
@@ -406,7 +400,7 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
 	if (v) {
            memset((char *)message, 0, 512);
 	   sprintf(message, "invalid file '%s\' found",
-                             (char *)(nentry.filename));
+                             (char *)(nentry.name));
            lol_status_msg(me, message, LOL_FSCK_ERROR);
 	}
         if (ret < LOL_FSCK_ERROR)
@@ -430,7 +424,7 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
 	    if (v) {
                memset((char *)message, 0, 512);
 	       sprintf(message, "invalid file '%s\' found",
-                                (char *)(nentry.filename));
+                                (char *)(nentry.name));
                lol_status_msg(me, message, LOL_FSCK_ERROR);
 	    }
             if (ret < LOL_FSCK_ERROR)
@@ -448,7 +442,7 @@ static int lol_fsck_nent(FILE *fp, const struct lol_super *sb,
 	  if (v) {
              memset((char *)message, 0, 512);
              sprintf(message, "found corrupted file \'%s\'",
-                              (char *)(nentry.filename));
+                              (char *)(nentry.name));
              lol_status_msg(me, message, LOL_FSCK_ERROR);
 	  }
           if (ret < LOL_FSCK_ERROR)
@@ -735,7 +729,7 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
   frac  = (size_t)(data_size % io);
   if (frac % ENTRY_SIZE)
         return lol_status_msg(me,
-               LOL_INTERERR_FMT, LOL_FSCK_FATAL);
+               lol_msg_list0[LOL_0E_INTERERR], LOL_FSCK_FATAL);
 
   offset = LOL_TABLE_START_EXT(nb, bs);
   if ((fseek(fp, offset, SEEK_SET))) {
@@ -744,45 +738,35 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
   } // end if fseek
 
   for (i = 0; i < times; i++) {
-    // Read LOL_FSCK_INDEX_BLOCK indices at a time
-    // (This is most likely 4k or 8k of data)
-    if ((lol_fio((char *)buffer, io, fp, LOL_READ)) != io) {
-        return lol_status_msg(me,
-               lol_fsck_io, LOL_FSCK_FATAL);
-    } // end if cannot read
+     // Read LOL_FSCK_INDEX_BLOCK indices at a time
+     // (This is most likely 4k or 8k of data)
+     if ((lol_fio((char *)buffer, io, fp, LOL_READ)) != io) {
+         return lol_status_msg(me,
+                lol_fsck_io, LOL_FSCK_FATAL);
+     } // end if cannot read
 
-    // Cross reference this block of indices
-    memset((char *)fsck_indref, 0, indref_siz);
-    LOL_MEMCPY(backup, buffer, io);
-    corr_ind = lol_fsck_index_crossref(buffer,
-               LOL_FSCK_INDEX_BLOCK, nb);
+     // Cross reference this block of indices
+     memset((char *)fsck_indref, 0, indref_siz);
+     LOL_MEMCPY(backup, buffer, io);
+     corr_ind = lol_fsck_index_crossref(buffer,
+                LOL_FSCK_INDEX_BLOCK, nb);
+     n_dup_idx += corr_ind;
 
-#if 0
-  int         num;
-  alloc_entry   i;
-  alloc_entry   j;
-  alloc_entry val;
-#endif
+     if ((corr_ind) && (v)) {
+         printf("Found %ld indices with duplicates in block %ld\n", corr_ind, i);
+         lol_cc_index_report(corr_ind, LOL_FSCK_INDEX_BLOCK, base_off);
+     } // end if corr_ind
 
-  n_dup_idx += corr_ind;
-
-  if ((corr_ind) && (v)) {
-      printf("Found %ld indices with duplicates in block %ld\n", corr_ind, i);
-      lol_cc_index_report(corr_ind, LOL_FSCK_INDEX_BLOCK, base_off);
-  } // end if corr_ind
-
-    // Calculate different types of indices
-    lol_fsck_calc_indexes(backup, &num_free, &num_last, &num_corr,
-                          &num_res, nb, LOL_FSCK_INDEX_BLOCK);
-
-    base_off += LOL_FSCK_INDEX_BLOCK;
+     // Calculate different types of indices
+     lol_fsck_calc_indexes(backup, &num_free, &num_last, &num_corr,
+                           &num_res, nb, LOL_FSCK_INDEX_BLOCK);
+     base_off += LOL_FSCK_INDEX_BLOCK;
   } // end for i
 
   if (frac) {
 
     if ((lol_fio((char *)buffer, frac, fp, LOL_READ)) != frac) {
-        return lol_status_msg(me,
-               lol_fsck_io, LOL_FSCK_FATAL);
+        return lol_status_msg(me, lol_fsck_io, LOL_FSCK_FATAL);
     } // end if cannot read
 
     frac /= ENTRY_SIZE;
@@ -797,13 +781,10 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
     if ((corr_ind) && (v)) {
         printf("Found %ld indices with duplicates.\n", corr_ind);
         lol_cc_index_report(corr_ind, frac, base_off);
-
     } // end if corr_ind
-
     // Calculate different types of indices
-    lol_fsck_calc_indexes(backup, &num_free, &num_last, &num_corr,
-                          &num_res, nb, frac);
-
+    lol_fsck_calc_indexes(backup, &num_free, &num_last,
+                          &num_corr, &num_res, nb, frac);
   } // end if frac
 
   /* Now, Let's report our findings... */
@@ -829,16 +810,15 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
   } // end if nf
 
   if (v) {
-  memset((char *)message, 0, 512);
-  memset((char *)size_str, 0, 128);
-  lol_ltostr(f_alloc, size_str);
-  sprintf(message, "files reserve %s by index storage", size_str);
-  lol_status_msg(me, message, LOL_FSCK_INFO);
+    memset((char *)message, 0, 512);
+    memset((char *)size_str, 0, 128);
+    lol_ltostr(f_alloc, size_str);
+    sprintf(message, "files reserve %s by index storage", size_str);
+    lol_status_msg(me, message, LOL_FSCK_INFO);
   }
 
   if (files_res != res_blocks_by_count) {
-         has_errors = LOL_FSCK_ERROR;
-
+      has_errors = LOL_FSCK_ERROR;
       if (v) {
          memset((char *)message, 0, 512);
 	 memset((char *)size_str, 0, 128);
@@ -849,12 +829,11 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
 		 "they actually reserve %s", size_str);
          lol_status_msg(me, message, has_errors);
       }
-
   } // end if files_res
 
   if ((files_res != res_blocks_by_size) &&
       (res_blocks_by_size != res_blocks_by_count)) {
-         has_errors = LOL_FSCK_ERROR;
+       has_errors = LOL_FSCK_ERROR;
      if (v) {
          memset((char *)message, 0, 512);
 	 memset((char *)size_str, 0, 128);
@@ -886,19 +865,6 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
       }
   } // end if n_dup_idx
 
-#if 0
-
-  long res_blocks_by_count
-  long res_blocks_by_size
-
-  long  n_dup_idx;
-  long  num_free = 0;
-  long  num_last = 0;
-  long  num_corr = 0;
-  long   num_res = 0;
-
-#endif
-
   if ((has_errors) && (!(v))) {
     // Recommend verbose mode
      lol_status_msg(me,
@@ -916,7 +882,7 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
 typedef int (*lol_check_t)(FILE *, const struct lol_super *,
                            const struct stat *, const char *,
                            const char *, const int);
-
+/* ****************************************************************** */
 typedef struct lol_check_func_t
 {
   lol_check_t      func;
@@ -1027,7 +993,6 @@ int lol_cc (int argc, char *argv[]) {
         return -1;
     }
     if (argv[1][0] == '-') {
-
       if ((stat(argv[1], &st))) {
           lol_error(LOL_WRONG_OPTION, me, argv[1]);
 	  lol_error(lol_help_txt, me);

@@ -15,7 +15,7 @@
 */
 
 /*
- * $Id: lol_df.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ * $Id: lol_df.c, v0.30 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 
 #ifdef HAVE_CONFIG_H
@@ -43,7 +43,7 @@
 #include <lol_internal.h>
 #endif
 /* ****************************************************************** */
-static const char   params[] = "[-s] <container>";
+static const char   params[] = "<container>";
 static const char*     lst[] =
 {
   "  Example:\n",
@@ -67,11 +67,12 @@ static void lol_fd_clear(char *a, char *b) {
 #define LOL_DF_TEMP 256
 int lol_df (int argc, char* argv[])
 {
-  const long nes = (long)(NAME_ENTRY_SIZE);
   char   temp[LOL_DF_TEMP * NAME_ENTRY_SIZE];
   char number[LOL_DF_MESSAGE];
   char before[LOL_DF_MESSAGE];
   char  after[LOL_DF_MESSAGE];
+  const long nes = (long)(NAME_ENTRY_SIZE);
+  const long  es = (long)(ENTRY_SIZE);
   lol_meta    sb;
   struct stat st;
   size_t         mem = 0;
@@ -106,25 +107,23 @@ int lol_df (int argc, char* argv[])
   // Process standard --help & --version options.
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
-        printf (LOL_USAGE_FMT, me, lol_version,
-                lol_copyright, me, params);
+        lol_show_usage(me);
         lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
-	printf (LOL_VERSION_FMT, me,
-                lol_version, lol_copyright);
+        lol_show_version(me);
 	return 0;
     }
     if (LOL_CHECK_SILENT) {
-        lol_error(LOL_MISSING_ARG_FMT, me, "<container>");
+        lol_errfmt2(LOL_2E_ARGMISS, me, params);
         return -1;
     }
     if (argv[1][0] == '-') {
       if ((stat(argv[1], &st))) {
-          lol_error(LOL_WRONG_OPTION, me, argv[1]);
-	  lol_error(lol_help_txt, me);
-          return -1;
+         lol_errfmt2(LOL_2E_OPTION, me, argv[1]);
+	 lol_ehelpf(me);
+         return -1;
       }
     }
   } // end if argc == 2
@@ -136,32 +135,26 @@ int lol_df (int argc, char* argv[])
     }
   } // end if argc == 3
   if (argc != 2) {
-        printf (LOL_USAGE_FMT, me, lol_version,
-                lol_copyright, me, params);
-        puts  ("       Shows container space usage.");
-        printf (lol_help_txt, me);
-        return 0;
+      lol_show_usage(me);
+      puts  ("       Shows container space usage.");
+      lol_helpf(me);
+      return 0;
   }
 
   cont = argv[1];
 
 action:
-  free_space = lol_get_vdisksize(cont, &sb,
+  free_space = lol_getsize(cont, &sb,
                NULL, RECUIRE_SB_INFO);
   if (free_space < LOL_THEOR_MIN_DISKSIZE) {
-      lol_error(lol_cantuse_txt, me, cont);
-      return -1;
-  }
-  if (LOL_INVALID_MAGIC) {
-      lol_error(LOL_IMAGIC_FMT, me, LOL_MAG_0, LOL_MAG_1);
-      lol_error(lol_usefsck_txt);
+      lol_errfmt2(LOL_2E_CANTUSE, me, cont);
       return -1;
   }
 
   nb = (long)sb.nb;
   bs = (long)sb.bs;
   if ((!(nb)) || (!(bs))) {
-      lol_error(lol_cantuse_txt, me, cont);
+      lol_errfmt2(LOL_2E_CANTUSE, me, cont);
       return -1;
   }
 
@@ -213,27 +206,27 @@ action:
     // Now check the entries
     for (j = 0; j < k; j++) { // foreach entry...
        nentry = &buffer[j];
-       if (!(nentry->filename[0])) {
+       if (!(nentry->name[0])) {
 	   continue;
        }
        files++;
        if ((nentry->i_idx < 0) || (nentry->i_idx >= nb)) {
 	    err = 1;
        }
-       if (nentry->file_size) {
-            used_space += nentry->file_size;
-	    nb_estim += (nentry->file_size / bs);
-            if (nentry->file_size % bs)
+       if (nentry->fs) {
+            used_space += nentry->fs;
+	    nb_estim += (nentry->fs / bs);
+            if (nentry->fs % bs)
 	        nb_estim++;
        }
        else {
 	  nb_estim++; // Zero size occupy 1 block
        }
        // Do some checking while we are here..
-       if ((lol_garbage_filename((char *)(nentry->filename)))) {
+       if ((lol_garbage_filename((char *)(nentry->name)))) {
 	     susp++;
        } // end if suspicious name
-       if ((strlen((char *)(nentry->filename)))
+       if ((strlen((char *)(nentry->name)))
                     >= LOL_FILENAME_MAX) {
 	    err = 1;
        }
@@ -249,12 +242,11 @@ action:
   } // end if frac
 
   // Read also the reserved blocks.
-  data_size  = (long)ENTRY_SIZE;
-  data_size *= (long)(nb);
-  io = lol_get_io_size(data_size, (long)ENTRY_SIZE);
+  data_size  = nb * es;
+  io = lol_get_io_size(data_size, es);
   times = data_size / io;
   frac  = data_size % io;
-  k = io / ENTRY_SIZE;
+  k = io / es;
   buf = (alloc_entry *)buffer;
   loops = 1;
 
@@ -286,7 +278,7 @@ action:
   if ((frac) && (loops)) {
       times = 1;
       io = frac;
-       k = io / ENTRY_SIZE;
+       k = io / es;
       loops = 0;
       goto index_loop;
   } // end if frac
@@ -340,8 +332,8 @@ action:
   }
   if ((used_space > io)  || (err) || (nf > nb_used) ||
       (nb_used > nb) || (nf != files)) {
-      lol_error("lol %s: container \'%s\' has errors.\n", me, cont);
-      lol_error(lol_usefsck_txt);
+      lol_errfmt2(LOL_2E_CORRCONT, me, cont);
+      lol_errfmt(LOL_0E_USEFSCK);
       return -1;
   }
   if (!(silent)) {

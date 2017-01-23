@@ -13,7 +13,7 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lol_lib.c, v0.20 2017/01/01 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ * $Id: lol_lib.c, v0.30 2017/01/01 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
  *
  *
  */
@@ -29,6 +29,11 @@
 #ifdef HAVE_STDIO_H
 #ifndef _STDIO_H
 #include <stdio.h>
+#endif
+#endif
+#ifdef HAVE_STDLIB_H
+#ifndef _STDLIB_H
+#include <stdlib.h>
 #endif
 #endif
 #ifndef _LOLFS_H
@@ -56,6 +61,7 @@
  * ********************************************************** */
 lol_FILE *lol_fopen(const char *path, const char *mode)
 {
+  lol_pinfo p;
   lol_FILE *op       = 0;
   int       r        = 0;
   int       is       = 0;
@@ -91,41 +97,32 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
 
   mod = op->open_mode.mode_num = lol_getmode(mode);
 
-  if ((mod < 0) || (mod >= MAX_LOL_OPEN_MODES)) {
-       lol_errno = EINVAL;
-       delete_return_NULL(op);
-  }
+  if ((mod < 0) || (mod >= MAX_LOL_OPEN_MODES))
+       delete_return_NULL(EINVAL, op);
 
   strcpy(op->open_mode.mode_str, lol_open_modes[mod].mode_str);
   strcpy(op->open_mode.vd_mode,  lol_open_modes[mod].vd_mode);
 
-  if (lol_get_filename(path, op)) {
-      // lol_errno already set
-      delete_return_NULL(op);
-  }
+  p.fullp = (char *)path;
+  p.file  = op->file;
+  p.cont  = op->cont;
+  p.func  = LOL_FILENAME | LOL_CONTPATH;
 
-  size = lol_get_vdisksize(op->vdisk_name, &op->sb, &op->cinfo, RECUIRE_SB_INFO);
+  if ((lol_pathinfo(&p)))
+      delete_return_NULL(EINVAL, op);
 
-  if (size < LOL_THEOR_MIN_DISKSIZE) {
-      lol_errno = EIO;
-      delete_return_NULL(op);
-  }
+  size = lol_fgetsize(op);
 
-  if (LOL_CHECK_MAGIC(op)) {
-      lol_errno = EIO;
-      delete_return_NULL(op);
-  }
+  if (size < LOL_THEOR_MIN_DISKSIZE)
+      delete_return_NULL(EIO, op);
 
-  op->vdisk_size = (ULONG)size;
+  op->csiz = (ULONG)size;
   op->open_mode.device = op->cinfo.st_mode; // in 2 places this one too...
-
-  if(!(op->vdisk = fopen(op->vdisk_name, op->open_mode.vd_mode))) {
-      lol_errno = EINVAL;
-      delete_return_NULL(op);
-  }
+  if (!(op->dp = fopen(op->cont, op->open_mode.vd_mode)))
+      delete_return_NULL(EINVAL, op);
 
   is = lol_read_nentry(op);  // Can we find the dir entry?
-  fs = op->nentry.file_size;
+  fs = op->nentry.fs;
 
   switch (is) {  // What we do here depends on open_mode
 
@@ -134,18 +131,14 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
            // Does not exist, so we return NULL
            // if trying to read (cases "r" & "r+")
 
-		if (mod < 2)  { /* if "r" or "r+", cannot read.. */
-		    lol_errno = ENOENT;
-                    close_return_NULL(op);
-		}
+		if (mod < 2) /* if "r" or "r+", cannot read.. */
+                    close_return_NULL(ENOENT, op);
 
 	        op->curr_pos = 0;
                 // if not reading,
 		// then it must be w/a, create new file...
-	        if ((r = lol_touch_file(op))) {
-		// lol_errno already set
-                    close_return_NULL(op);
-		}
+	        if ((r = lol_touch_file(op)))
+		   close_return_NULL(lol_errno, op);
 
                 break;
 
@@ -187,8 +180,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
 
 		            default:
 
-                                 lol_errno = EINVAL;
-                                 close_return_NULL(op);
+                                 close_return_NULL(EINVAL, op);
 
 	              } // end switch mod
 
@@ -196,8 +188,7 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
 
                default:
 
-                    lol_errno = EIO;
-                    close_return_NULL(op);
+                    close_return_NULL(EIO, op);
 
 
   } // end switch file exists
@@ -208,8 +199,8 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
 #if LOL_TESTING
 	  lol_error("DEBUG: lol_fopen: truncate failed, ret = %d\n", r);
 #endif
-	  lol_errno = EIO; // TODO: FIX! Check return value
-          close_return_NULL(op);
+	  // TODO: FIX! Check return value
+          close_return_NULL(EIO, op);
       }
 
       op->curr_pos = 0;
@@ -227,6 +218,8 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
  *  Closes a previously opened (by lol_fopen) lol-file.
  *  Upon successful completion 0 is returned. Otherwise, EOF
  *  is returned and errno  is  set  to indicate  the error.
+ *  (In either case, any further access to the file handle
+ *   results in undefined behavior, read: segmentation fault)
  *
  *  Return value:
  *
@@ -237,34 +230,32 @@ lol_FILE *lol_fopen(const char *path, const char *mode)
 int lol_fclose(lol_FILE *op)
 {
   int ret = 0;
-  int i = 10;
 
   if (!(op)) {
        lol_errno = EBADF;
        return EOF;
    }
-   if (op->vdisk) {
-      do { /* Try to close 10 times */
+   if (op->dp) {
 
-           ret = lol_try_fclose(op->vdisk);
-	   i--;
-
-	   if (ret) {
-	      lol_errno = errno;
-	   }
-	   else {
-              op->vdisk = NULL;
-	      //lol_errno = 0;
-	   }
-
-       } while ((i) && (ret));
+       if (fclose(op->dp)) {
+          ret = EOF;
+	  if (errno)
+	    lol_errno = errno;
+	  else
+	    lol_errno = EBUSY;
+       }
+       else {
+          op->dp = NULL;
+	  lol_errno = 0;
+       }
    }
    else {
       lol_errno = EBADF;
       ret = EOF;
    }
 
-   delete_lol_FILE(op);
+   free (op);
+   op = NULL;
    return ret;
 } // end lol_fclose
 /* **********************************************************
@@ -329,7 +320,7 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   if (op->eof)
     return LOL_ERR_EOF;
 
-  file_size    = (size_t)op->nentry.file_size;
+  file_size    = (size_t)op->nentry.fs;
   block_size   = (size_t)op->sb.bs;
   left_to_read = file_size - op->curr_pos;
 
@@ -338,7 +329,7 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
        return LOL_ERR_EOF;
   }
 
-  if ((!(op->vdisk)) || (op->opened != 1))
+  if ((!(op->dp)) || (op->opened != 1))
       LOL_ERR_RETURN(EBADFD, 0);
 
   switch (op->open_mode.mode_num) {
@@ -552,10 +543,10 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   if ((lol_valid_sb(op)))
       LOL_ERR_RETURN(ENFILE, 0);
 
-  filesize    = (long)op->nentry.file_size;
+  filesize    = (long)op->nentry.fs;
   block_size  = (size_t)op->sb.bs;
 
-  if ((!(op->vdisk)) || (op->opened != 1))
+  if ((!(op->dp)) || (op->opened != 1))
        LOL_ERR_RETURN(EBADFD, 0);
 
   switch (op->open_mode.mode_num) {
@@ -647,7 +638,8 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 	  goto error;
       }
 
-      amount = lol_io_dblock(op, current_index, (char *)ptr, end_bytes, LOL_WRITE);
+      amount = lol_io_dblock(op, current_index,
+                             (char *)ptr, end_bytes, LOL_WRITE);
 
       if (amount < 0) {
 	  goto error;
@@ -720,7 +712,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
     // MUST ALSO WRITE MODIFIED CHAIN !
 
      ret = 0;
-     op->nentry.file_size = (ULONG)new_filesize;
+     op->nentry.fs = (ULONG)new_filesize;
      ret = lol_update_nentry(op);
 
      if (ret) {
@@ -765,14 +757,14 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
     lol_errno = EBADF;
     return -1;
   }
-  if ((!(op->vdisk)) || (op->opened != 1)) {
+  if ((!(op->dp)) || (op->opened != 1)) {
     lol_errno = EBADF;
     return -1;
   }
   // It is possible to fseek over the file size.
   // But not under --> return -1 & EINVAL
 
-  file_size = (long)op->nentry.file_size;
+  file_size = (long)op->nentry.fs;
   pos       = (long)op->curr_pos;
 
       switch (whence) {
@@ -862,9 +854,9 @@ int lol_unlink(const char *name) {
   // accidentally corrupt other files
 
   last_block = fp->sb.nb - 1;
-  if ((fp->nentry_index > last_block) ||
+  if ((fp->n_idx > last_block) ||
       (!(fp->sb.nf))           ||
-      (fp->nentry_index < 0)) {
+      (fp->n_idx < 0)) {
       lol_errno = EIO;
       goto error;
   }
@@ -875,7 +867,7 @@ int lol_unlink(const char *name) {
       goto error;
   }
 
-  clearerr(fp->vdisk);
+  clearerr(fp->dp);
   if ((ret = lol_delete_chain_from(fp, LOL_UNLINK))) {
 
      switch (ret) {
@@ -899,7 +891,7 @@ int lol_unlink(const char *name) {
             break;
             default :
 
-	      if (ferror(fp->vdisk))
+	      if (ferror(fp->dp))
 		lol_errno = errno;
               else
 	        lol_errno = EBADF;
@@ -912,9 +904,9 @@ int lol_unlink(const char *name) {
      goto error;
   } // end if ret
 
-  clearerr(fp->vdisk);
+  clearerr(fp->dp);
   if ((LOL_GOTO_DENTRY(fp))) {
-      if (ferror(fp->vdisk))
+      if (ferror(fp->dp))
 	  lol_errno = errno;
       else
 	  lol_errno = EBADF;
@@ -922,11 +914,11 @@ int lol_unlink(const char *name) {
   }
 
   memset((char *)&entry, 0, NAME_ENTRY_SIZE);
-  clearerr(fp->vdisk);
+  clearerr(fp->dp);
   if ((fwrite((char *)&entry,
-      (size_t)(NAME_ENTRY_SIZE), 1, fp->vdisk)) != 1) {
+      (size_t)(NAME_ENTRY_SIZE), 1, fp->dp)) != 1) {
 
-      if ((ferror(fp->vdisk))) {
+      if ((ferror(fp->dp))) {
 	        lol_errno = errno;
                 goto error;
       }
@@ -939,15 +931,15 @@ int lol_unlink(const char *name) {
 
       // Adjust sb
       fp->sb.nf--;
-      if ((fseek(fp->vdisk, 0, SEEK_SET))) {
+      if ((fseek(fp->dp, 0, SEEK_SET))) {
 	 lol_errno = errno;
          goto error;
       } // end if fseek
 
-      clearerr(fp->vdisk);
+      clearerr(fp->dp);
       if ((fwrite((char *)&fp->sb, (size_t)(DISK_HEADER_SIZE),
-                   1, fp->vdisk)) != 1) {
-	    if ((ferror(fp->vdisk))) {
+                   1, fp->dp)) != 1) {
+	    if ((ferror(fp->dp))) {
 	        lol_errno = errno;
                 goto error;
 	    }
@@ -1009,7 +1001,7 @@ long lol_ftell(lol_FILE *s) {
   long ret = -1;
 
   if (s) {
-    if (s->vdisk) {
+    if (s->dp) {
         ret = (long)(s->curr_pos);
     }
     else {
@@ -1023,116 +1015,177 @@ long lol_ftell(lol_FILE *s) {
 } // end lol_ftell
 /* **********************************************************
  * lol_stat:
- * Stats the file pointed to by path and fills in buf.
+ * Stats the file pointed to by 'path' and fills in 'st'.
+ *
+ * NOTE: This function must be FAST.
+ * We may thus need to use some ugly methods...
+ *
  * Return value:
  * -1 : error
  *  0 : success
  * ********************************************************** */
+#define LOL_STAT_TMP 256
 int lol_stat(const char *path, struct stat *st) {
 
-  struct lol_super sb;
-  struct lol_name_entry entry;
-  lol_FILE op;
-  FILE *fp = 0;
-
-  size_t    len = 0;
-  size_t   nlen = 0;
-  size_t max_fs = 0;
-
-  long   rs = 0;
-  long doff = 0;
-
-  DWORD bs = 0;
-  DWORD nb = 0;
-  DWORD nf = 0;
-  DWORD  i = 0;
-
-  int ret = -1;
+  const long nes = (long)(NAME_ENTRY_SIZE);
+  const long temp_mem = nes * LOL_STAT_TMP;
+  char temp[temp_mem];
+  char cont[256];
+  char fname[64];
+  lol_meta sb;
+  lol_pinfo p;
+  FILE *fp;
+  lol_nentry *buffer;
+  lol_nentry *nentry;
+  size_t mem = 0;
+  long files = 0;
+  long data;
+  long doff;
+  long frac;
+  long   io;
+  long   nb;
+  long   bs;
+  long   nf;
+  int times;
+  int i;
+  int j;
+  int k;
+  int alloc = 0;
+  int  ret = -1;
 
   if (!(path))
-    LOL_ERRET(EFAULT, -1);
+      LOL_ERRET(EINVAL, -1);
   if (!(st))
-    LOL_ERRET(EFAULT, -1);
+      LOL_ERRET(EINVAL, -1);
 
-  lol_clean_fp(&op);
-  if ((lol_get_filename(path, &op))) {
-    // lol_errno already set
-    return -1;
-  }
-  rs = lol_get_vdisksize(op.vdisk_name, &sb,
-                         NULL, RECUIRE_SB_INFO);
-  if (rs < LOL_THEOR_MIN_DISKSIZE)
+  p.fullp = (char *)path;
+  p.file  = fname;
+  p.cont  = cont;
+  p.func  = LOL_FILENAME | LOL_CONTPATH;
+
+  if ((lol_pathinfo(&p)))
+      LOL_ERRET(EINVAL, -1);
+  if ((stat(cont, st)))
+      LOL_ERRET(ENOENT, -1);
+  if (st->st_size < LOL_THEOR_MIN_DISKSIZE)
       LOL_ERRET(ENXIO, -1);
+  if (!(fp = fopen((char *)cont, "r")))
+      LOL_ERRET(EIO, -1);
+  if ((fread ((char *)&sb, DISK_HEADER_SIZE, 1, fp)) != 1) {
+      lol_errno = EIO;
+      goto closeret;
+  }
+  bs = (long)sb.bs;
+  nb = (long)sb.nb;
+  nf = (long)sb.nf;
+  if ((!(nb)) || (!(bs))) {
+      lol_errno = ENXIO;
+      goto closeret;
+  }
+  data = (long)LOL_DEVSIZE(nb, bs);
+  if (data != st->st_size) {
+      lol_errno = ENXIO;
+      goto closeret;
+  }
+  if (LOL_INVALID_MAGIC) {
+      lol_errno = ENXIO;
+      goto closeret;
+  }
+  if (nf > nb) {
+      lol_errno = EOVERFLOW;
+      goto closeret;
+  }
+  data  = nes * nb;
+  io = lol_get_io_size(data, nes);
+  if (io <= 0) {
+      lol_errno = EIO;
+      lol_debug("lol_stat: Internal error: io <= 0");
+      goto closeret;
+  }
 
-  bs = (DWORD)sb.bs;
-  nb = (DWORD)sb.nb;
-  nf = (DWORD)sb.nf;
-
-    if (LOL_INVALID_MAGIC)
-        LOL_ERRET(ENXIO, -1);
-    if (nf > nb) {
-       lol_errno = EOVERFLOW;
-       return -1;
+  if (io > temp_mem) {
+    if (!(buffer = (lol_nentry *)lol_malloc((size_t)(io)))) {
+          buffer = (lol_nentry *)temp;
+          io     = temp_mem;
+    } else {
+       mem = (size_t)(io);
+       alloc = 1;
     }
-    if (!(fp = fopen((char *)op.vdisk_name, "r")))
-        LOL_ERRET(EIO, -1);
+  } else {
+    buffer = (lol_nentry *)temp;
+    io     = temp_mem;
+  }
 
-    doff = (long)LOL_DENTRY_OFFSET_EXT(nb, bs);
-    if ((fseek(fp, doff, SEEK_SET))) {
-         lol_errno = ENOENT;
-         goto error;
-    }
-    nlen = strlen((char *)op.vdisk_file);
-    if ((nlen < 1) || (nlen > LOL_FILENAME_MAXLEN)) {
-         lol_errno = ENAMETOOLONG;
-         goto error;
-    }
-    max_fs = (size_t)(((size_t)(nb)) * ((size_t)(bs)));
-    for (i = 0; i < nb; i++) {
-
-	if ((fread ((char *)&entry, NAME_ENTRY_SIZE, 1, fp)) != 1) {
-	     lol_errno = EIO;
-	     goto error;
-        }
-        if (!(entry.filename[0])) {
-	      continue;
-	}
-
-        len = strlen((char *)entry.filename);
-        if (len != nlen) {
-	    continue;
-	}
-        if ((strncmp((char *)entry.filename, (char *)op.vdisk_file, len))) {
-	     continue;
+  doff = (long)LOL_DENTRY_OFFSET_EXT(nb, bs);
+  if ((fseek(fp, doff, SEEK_SET))) {
+        if (errno) {
+	    lol_errno = errno;
         }
         else {
+            lol_errno = EIO;
+        }
+        goto closefree;
+  }
+  times = (int)(data / io);
+  frac  = data % io;
+  k = (int)(io / nes);
+
+ dentry_loop:
+  for (i = 0; i < times; i++) {
+
+    if ((fread((char *)buffer, ((size_t)(io)), 1, fp)) != 1) {
+
+        if (errno) {
+	    lol_errno = errno;
+        }
+        else {
+            lol_errno = EIO;
+        }
+        goto closefree;
+    }
+    // Now check the entries
+    for (j = 0; j < k; j++) { // foreach entry...
+       nentry = &buffer[j];
+       if (!(nentry->name[0])) {
+	   continue;
+       }
+       files++;
+       if (files > nf) {
+	 lol_errno = ENFILE;
+	 goto closefree;
+       }
+
+        if ((strcmp((char *)nentry->name, (char *)fname))) {
+	     continue;
+        }
+	else {
 
           // Gotcha !
 	  // Just check that the file is consistent first..
-          if ((entry.i_idx < 0) || (entry.i_idx >= nb)) {
+          if ((nentry->i_idx < 0) || (nentry->i_idx >= nb)) {
              // Corrupted file!
 	     lol_errno = ENFILE;
-	     goto error;
+	     goto closefree;
 	  }
 	  // Check file size also
-	  if (entry.file_size > max_fs) {
-	     lol_errno = EFBIG;
-	     goto error;
+	  if (((nentry->fs) > (nb * bs))) {
+	      lol_errno = EFBIG;
+	      goto closefree;
 	  }
 
           // The st_dev field must be ignored by apps if st_mode has S_IFREG set
           st->st_dev  = makedev(LOL_DEV_MAJOR, LOL_DEV_MINOR); // a 'fake' lol device
-          st->st_ino  = (ino_t)(i);
-          st->st_mode = (S_IFREG | S_IRUSR | S_IWUSR |
-                         S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-
+          st->st_mode = LOL_FILE_DEFAULT_MODE;
           st->st_nlink   = 1;
           st->st_uid     = 0;
           st->st_gid     = 0;
-          st->st_rdev    = LOL_FILE_RDEV;
-          st->st_size    = (off_t)entry.file_size;
+          st->st_rdev    = (dev_t)(st->st_ino); // Hijack the container inode
+                                                // out in this field.
+          st->st_ino = (ino_t)(i * k + j); // lolfile inode is just the number
+	                                   // of the directory entry.
+          st->st_size    = (off_t)nentry->fs;
           st->st_blksize = (blksize_t)bs;
-          if (entry.file_size) {
+          if (nentry->fs) {
             st->st_blocks  = (blkcnt_t)(st->st_size >> LOL_DIV_512);
             if (st->st_size % 512)
 	        st->st_blocks++;
@@ -1141,18 +1194,36 @@ int lol_stat(const char *path, struct stat *st) {
 	     st->st_blocks = 1;
 	  }
           st->st_atime = time(NULL);
-          st->st_mtime = st->st_ctime = entry.created;
+          st->st_mtime = st->st_ctime = nentry->created;
+
 	  ret = 0;
+          goto closefree;
 
-          break;
-        } // end else
+	} // end else GOT IT !
 
+    } // end for j
   } // end for i
 
-error:
-    lol_try_fclose(fp);
-    return ret;
+  // Now the fractional data
+  if (frac) {
+      times = 1;
+      io = frac;
+      k = (int)(io / nes);
+      frac = 0;
+      goto dentry_loop;
+  } // end if frac
+
+  lol_errno = ENOENT;
+
+closefree:
+ if (alloc) {
+    lol_free(mem);
+ }
+closeret:
+ fclose(fp);
+ return ret;
 } // end lol_stat
+#undef LOL_STAT_TMP
 /* **********************************************************
  * lol_mkfs: Create a lolfs container.
  * There are two distinct ways to call this function:
@@ -1172,7 +1243,7 @@ int lol_mkfs (const char *opt, const char *amount,
   struct stat st;
   FILE *fp;
   struct lol_super sb; // This is the first a couple
-                       // of bytes in the container file
+                       // of bytes of the container file
   size_t v     =  0;
   DWORD blocks =  1;
   DWORD bsize  =  1;
@@ -1252,7 +1323,7 @@ int lol_mkfs (const char *opt, const char *amount,
   }
   ret = 0;
 error:
-  lol_try_fclose(fp);
+  fclose(fp);
   if (!(ret))
      return 0;
 

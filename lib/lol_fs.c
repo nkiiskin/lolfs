@@ -15,7 +15,7 @@
  */
 
 /*
- $Id: lol_fs.c, v0.20 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol_fs.c, v0.30 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 #ifdef HAVE_CONFIG_H
 #include "../config.h"
@@ -79,11 +79,10 @@ void lol_fs_help(const char* name) {
 static int prompt_mkfs() {
   char answer[128];
 
-       answer[0] = (char)getchar();
-       (void)getchar();
-       if (answer[0] != 'y')
-	 return -1;
-
+  answer[0] = (char)getchar();
+  (void)getchar();
+  if (answer[0] != 'y')
+     return -1;
    return 0;
 } // end prompt_mkfs
 /* ************************************************************************ */

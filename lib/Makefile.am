@@ -2,7 +2,7 @@
 # All Rights Reserved.
 # This file is distributed under the GPLv2 License.
 #
-## $Id: Makefile.am library 0.20 2016-11-07 01:28:49Z niko $
+## $Id: Makefile.am library 0.30 2016-11-07 01:28:49Z niko $
 #
 # Author: Niko Kiiskinen 2016-11-07
 #

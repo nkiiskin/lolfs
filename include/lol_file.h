@@ -14,10 +14,13 @@
  *
  */
 /* 
-  $Id: lol_file.h, v0.20 2016/12/23 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $
+  $Id: lol_file.h, v0.30 2016/12/23 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $
  */
 #ifndef _LOL_FILE_H
 #define _LOL_FILE_H    1
+#endif
+#ifdef HAVE_CONFIG_H
+#include "../config.h"
 #endif
 #ifdef HAVE_SYS_STAT_H
 #ifndef _SYS_STAT_H
@@ -27,7 +30,7 @@
 #ifndef _LOL_CONFIG_H
 #include <lol_config.h>
 #endif
-#include "../config.h"
+//#include "../config.h"
 // Some common types
 typedef unsigned short WORD;
 typedef unsigned int   DWORD;
@@ -71,7 +74,7 @@ typedef struct lol_super {
 // struct in the container file.
 typedef struct lol_name_entry {
 
-  UCHAR  filename[LOL_FILENAME_MAX];
+  UCHAR  name[LOL_FILENAME_MAX];
   time_t created;
 
 // My SPARC box has sizeof(time_t) = 4, if your system
@@ -80,28 +83,10 @@ typedef struct lol_name_entry {
   // Double time :)
   time_t unused;
 #endif
-  alloc_entry i_idx;
-  ULONG  file_size;
+  alloc_entry i_idx; // 1st index location
+  ULONG  fs; // file size TODO: Make this type off_t
 
 } lol_nentry, *lol_name_entry_ptr;
-
-typedef struct lol_nentryinfo_t
-{
-  long off; // Where the name entry begins
-            // counted from the beginning of
-            // the container. This is for
-            // fast fseek() to the entry.
-
-  long idx;        // The index of the entry
-                   // in the name entry storage.
-                   // (Some functions prefer this info).
-
-  lol_nentry *ne;  // Pointer to a name entry struct
-                   // (may be NULL if not needed)
-
-  short int res;   // Boolean value. Is the entry
-                   // Reserved (res != 0) or free (res = 0)
-} lol_ninfo, *lol_ninfo_ptr;
 
 struct lol_open_mode
 {
@@ -114,42 +99,27 @@ struct lol_open_mode
 
 // TODO: The filename is in two places:
 //     - In vdisk_file
-//     - In nentry.filename
+//     - In nentry.name
 // Maybe the other should be removed
-struct _lol_FILE
+typedef struct _lol_FILE
 {
   // Everything is
   // private:
 
-  char vdisk_file[LOL_FILENAME_MAX];
-  char vdisk_name[LOL_DEVICE_MAX];
+  char file[LOL_FILENAME_MAX];
+  char cont[LOL_DEVICE_MAX];
   struct lol_super sb;
   struct lol_name_entry nentry;
-  ULONG vdisk_size;
-  FILE  *vdisk;
+  ULONG csiz;
+  FILE  *dp;
   struct lol_open_mode open_mode;
   struct stat cinfo;
-  alloc_entry nentry_index;
+  alloc_entry n_idx;
   // TODO Make curr_pos ULONG
   // Because file_size is ULONG too !!
   DWORD curr_pos;
   BOOL  opened;
   WORD  eof;
   int   err;
-};
 
-typedef struct _lol_FILE lol_FILE;
-
-typedef struct lol_indref_t
-{
-  int         num;
-  alloc_entry   i;
-  alloc_entry   j;
-  alloc_entry val;
-
-} lol_indref;
-
- typedef struct lol_size_t {
-    float s;
-    char  n[6];
- } lol_size;
+} lol_FILE;

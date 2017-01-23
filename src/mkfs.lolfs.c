@@ -14,7 +14,7 @@
  *
  */
 /*
- $Id: mkfs.lolfs.c, v0.20 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: mkfs.lolfs.c, v0.30 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************ */
 #ifndef _LOLFS_H

@@ -15,8 +15,7 @@
  */
 
 /*
- $Id: lol_rm.c, v0.20 2016/04/14 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
-
+ $Id: lol_rm.c, v0.30 2016/04/14 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ****************************************************************** */
 #ifdef HAVE_CONFIG_H
@@ -35,7 +34,6 @@
 #endif
 /* ****************************************************************** */
 static const char params[] = "<container:/file1> <container:/file2> ...";
-static const char    hlp[] = "       Type: 'lol %s -h' for help.\n";
 static const char*   lst[] =
 {
   "  Example:\n",
@@ -51,66 +49,38 @@ static const char*   lst[] =
  ****************************************************************** */
 int lol_rm (int argc, char* argv[])
 {
-
-  struct stat st;
-
-  int    i = 1;
-  int   rm = 0;
   char *me = argv[0];
+  int    i = 1;
 
   // Process standard --help & --version options.
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
-        printf (LOL_USAGE_FMT, me, lol_version,
-                lol_copyright, me, params);
+        lol_show_usage(me);
         lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
-	printf (LOL_VERSION_FMT, me,
-                lol_version, lol_copyright);
+        lol_show_version(me);
 	return 0;
     }
-    if (argv[1][0] == '-') {
-      if ((lol_stat(argv[1], &st))) {
-           lol_error(LOL_WRONG_OPTION, me, argv[1]);
-           lol_error (hlp, me);
-           return -1;
-      }
+    if ((argv[1][0] == '-') && (argv[1][1] == '-')) {
+        lol_errfmt2(LOL_2E_OPTION, me, argv[1]);
+	lol_ehelpf(me);
+        return -1;
     }
   } // end if argc == 2
-
   if (argc < 2) {
-        printf (LOL_USAGE_FMT, me, lol_version,
-                lol_copyright, me, params);
+        lol_show_usage(me);
         puts  ("       Removes file(s) from a container.");
-        printf (hlp, me);
+        lol_helpf(me);
         return 0;
   }
-
-  while (i < argc)
-  {
-     if (lol_unlink(argv[i])) {
-         lol_error("lol %s: cannot delete '%s'\n", me, argv[i]);
-     }
-     else {
-       rm++;
-     }
-     i++;
+  // Just loop through files and unlink..
+  while (i < argc) {
+    if (lol_unlink(argv[i])) {
+        lol_error("lol %s: cannot delete '%s'\n", me, argv[i]);
+    }
+    i++;
   }
-
-  switch (rm) {
-    case 0 :
-      puts("No files deleted");
-      break;
-    case 1 :
-      puts("1 file deleted");
-      break;
-    default:
-      printf("%d files deleted\n", rm);
-      break;
-  } // end switch
-
   return 0;
-
 } // end lol_rm

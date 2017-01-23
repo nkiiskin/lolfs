@@ -15,7 +15,7 @@
  */
 
 /*
- $Id: lol_ls.c, v0.20 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol_ls.c, v0.30 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 #ifdef HAVE_CONFIG_H
 #include "../config.h"
@@ -81,7 +81,7 @@ int lol_ls(int argc, char* argv[])
   FILE           *fp = 0;
   long     data_size = 0;
   long         times = 0;
-  long          size = 0;
+  //  long          size = 0;
   long nf = 0, files = 0;
   long      i = 0, k = 0;
   long    io = 0, nb = 0;
@@ -96,46 +96,37 @@ int lol_ls(int argc, char* argv[])
   // Process standard --help & --version options.
   if (argc == 2) {
     if (LOL_CHECK_HELP) {
-        printf (LOL_USAGE_FMT, me, lol_version,
-                lol_copyright, me, params);
+        lol_show_usage(me);
         lol_help(lst);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
-	printf(LOL_VERSION_FMT, me,
-                lol_version, lol_copyright);
+        lol_show_version(me);
 	return 0;
     }
+    if (LOL_CHECK_SILENT) {
+        lol_errfmt2(LOL_2E_ARGMISS, me, params);
+        return -1;
+    }
     if (argv[1][0] == '-') {
-       if ((stat(argv[1], &st))) {
-          lol_error(LOL_WRONG_OPTION, me, argv[1]);
-          lol_error(lol_help_txt, me);
-          return -1;
-       }
+      if ((stat(argv[1], &st))) {
+         lol_errfmt2(LOL_2E_OPTION, me, argv[1]);
+	 lol_ehelpf(me);
+         return -1;
+      }
     }
   } // end if argc == 2
+
   if (argc != 2) {
-        printf (LOL_USAGE_FMT, me, lol_version,
-                lol_copyright, me, params);
+        lol_show_usage(me);
 	puts  ("       Lists files inside a container.");
-        printf (lol_help_txt, me);
+        lol_helpf(me);
         return 0;
   }
   co = argv[1];
-  if (!(lol_is_validfile(co))) {
+  if (!(lol_validcont(co, &sb, NULL))) {
        lol_error(lol_cantuse_txt, me, co);
        return -1;
-  }
-  size = lol_get_vdisksize(co, &sb, NULL, RECUIRE_SB_INFO);
-  if (size <  LOL_THEOR_MIN_DISKSIZE) {
-      lol_error(lol_cantuse_txt, me, co);
-      lol_error(lol_usefsck_txt);
-      return -1;
-  }
-  if (LOL_INVALID_MAGIC) {
-     lol_error(LOL_IMAGIC_FMT, me, LOL_MAG_0, LOL_MAG_1);
-     lol_error(lol_usefsck_txt);
-     return -1;
   }
 
   nf = (long)sb.nf;
@@ -182,7 +173,7 @@ int lol_ls(int argc, char* argv[])
     for (j = 0; j < k; j++) { // foreach entry...
 
        entry = &buf[j];
-       if (!(entry->filename[0]))
+       if (!(entry->name[0]))
 	   continue;
 
        files++;
@@ -190,9 +181,9 @@ int lol_ls(int argc, char* argv[])
        if ((entry->i_idx < 0) || (entry->i_idx >= nb)) {
 	    err = 1; corr++;
        }
-       ln = strlen((char *)entry->filename);
+       ln = strlen((char *)entry->name);
        if (ln > LOL_FILENAME_MAXLEN) {
-           entry->filename[LOL_FILENAME_MAXLEN] = '\0';
+           entry->name[LOL_FILENAME_MAXLEN] = '\0';
            err = 1; corr++;
        }
        time = ctime(&entry->created);
@@ -209,7 +200,7 @@ int lol_ls(int argc, char* argv[])
           }
           // Append file size;
           memset(tmp, 0, 128);
-          sprintf(tmp, "%lu", entry->file_size);
+          sprintf(tmp, "%lu", entry->fs);
           printf("%s", tmp);
           ln = strlen(tmp);
           sp = 16 - ln;
@@ -218,7 +209,7 @@ int lol_ls(int argc, char* argv[])
           for (n = 0; n < sp; n++) {
               LOL_SPACE();
           }
-          printf("%s", entry->filename);
+          printf("%s", entry->name);
           if (err) {
              puts ("  w");
           }
@@ -228,7 +219,7 @@ int lol_ls(int argc, char* argv[])
       } // end if time
        else {
           printf("01-Jan 00:00:00 1970          %lu     %s  w\n",
-		 entry->file_size, entry->filename);
+		 entry->fs, entry->name);
 	  corr++;
        }
        if (files >= nf)
@@ -257,8 +248,8 @@ just_free:
  if (!(ret)) {
 
     if (corr) {
-       lol_error("lol %s: container \'%s\' has errors.\n", me, co);
-       lol_error(lol_usefsck_txt);
+       lol_errfmt2(LOL_2E_CORRCONT, me, co);
+       lol_errfmt(LOL_0E_USEFSCK);
     }
     else {
       printf("total %ld\n", files);
