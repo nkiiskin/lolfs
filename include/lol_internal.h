@@ -175,7 +175,6 @@ extern const char *lol_msg_list0[];
 
 #define lol_errfmt(x)              fprintf(stderr, "%s", lol_msg_list0[(x)])
 
-
 // indexes to global error message list
 extern const char *lol_msg_list1[];
 #define LOL_1E_OOM    0
@@ -193,8 +192,8 @@ extern const char *lol_msg_list1[];
 #define LOL_IMAGIC_FMT        ("lol %s: corrupted file id [0x%x, 0x%x].\n")
 #define LOL_HELP_FMT          ("       Type: 'lol %s -h' for help.\n")
 #define LOL_INTERE_FMT        ("lol %s: internal error\n")
-#define lol_mprintf1(x, ...)  printf(lol_msg_list1[(x)], ##__VA_ARGS__)
-#define lol_errfmt1(x, ...)   fprintf(stderr, lol_msg_list1[(x)], ##__VA_ARGS__)
+#define lol_mprintf1(x,y)     printf(lol_msg_list1[(x)], (y))
+#define lol_errfmt1(x,y)      fprintf(stderr, lol_msg_list1[(x)], (y))
 #define lol_helpf(x)          printf(lol_msg_list1[LOL_1E_HELP], (x))
 #define lol_ehelpf(x)         fprintf(stderr, lol_msg_list1[LOL_1E_HELP], (x))
 #define lol_syntax(x)         fprintf(stderr, lol_msg_list1[LOL_1E_SYNTAX], (x))
@@ -217,6 +216,7 @@ extern const char *lol_msg_list2[];
 #define LOL_2E_ACDENIED 13
 #define LOL_2E_INVSRC   14
 #define LOL_2E_OWCONT   15
+#define LOL_2E_INVFS    16
 // The actual messages in that list are:
 // Messages with 2 variables
 #define LOL_CANTREAD_FMT     ("lol %s: cannot read from \'%s\'\n")
@@ -235,6 +235,7 @@ extern const char *lol_msg_list2[];
 #define LOL_ACCDENIED_FMT    ("lol %s: cannot copy to file \'%s\', access denied\n")
 #define LOL_INVSOURCE_FMT    ("lol %s: the file \'%s\' is not inside a container\n")
 #define LOL_OWCONT_FMT       ("lol %s: will not overwrite container \'%s\'\n")
+#define LOL_INVAL_FS_FMT     ("lol %s: invalid filesize \'%s\'\n")
 #define lol_errfmt2(x, ...)  fprintf(stderr, lol_msg_list2[(x)], ##__VA_ARGS__)
 #define lol_inffmt2(x, ...)  printf(lol_msg_list2[(x)], ##__VA_ARGS__)
 
@@ -326,9 +327,16 @@ k = frac */
 #define lol_show_version(x)        printf(LOL_VERSION_FMT, (x), \
                                    lol_version, lol_copyright)
 // Messages with 5 variables
-#define LOL_USAGE_FMT              ("lol %s v%s. %s\nUsage: lol %s %s\n")
-#define lol_show_usage(x)          printf (LOL_USAGE_FMT,(x),lol_version, \
-                                   lol_copyright,(x),params)
+// indexes to global error message list
+extern const char *lol_msg_list5[];
+#define LOL_5E_USAGE  0
+
+#define LOL_USAGE_FMT            ("lol %s v%s. %s\nUsage: lol %s %s\n")
+#define lol_show_usage(x)        printf(lol_msg_list5[LOL_5E_USAGE], (x), \
+                                 lol_version, lol_copyright, (x), params)
+
+#define lol_show_usage_err(x)    fprintf(stderr,lol_msg_list5[LOL_5E_USAGE], \
+                                 (x), lol_version, lol_copyright, (x), params)
 
 // funcs for lol_fio:
 #define        LOL_READ (0)
@@ -527,7 +535,7 @@ alloc_entry lol_get_index_value (FILE *f, const DWORD nb,
 int         lol_can_replace (const long, const long, const long, const long);
 int         lol_is_number(const char ch);
 int         lol_is_integer(const char *str);
-BOOL        lol_validcont(const char *name, lol_meta *sb, struct stat *st);
+size_t      lol_validcont(const char *name, lol_meta *sb, struct stat *st);
 BOOL        lol_validpath(char *path);
 int         lol_is_writable(const lol_FILE *op);
 int         lol_valid_sb(const lol_FILE *op);
@@ -542,7 +550,7 @@ int         lol_memset_indexbuffer(const alloc_entry val, const size_t x);
 int         lol_supermod (FILE *fp, const lol_meta *sb, const int func);
 long        lol_free_space (const char *cont, lol_meta *sb, const int mode);
 int         lol_extendfs(const char *container, const DWORD new_blocks,
-			 struct lol_super *sb, const struct stat *st);
+			 struct lol_super *sb);
 // Some lol_FILE helper functions
 int         lol_touch_file(lol_FILE *op);
 int         lol_truncate_file(lol_FILE *op);

@@ -52,12 +52,14 @@ static const char*   lst[] =
 /* ****************************************************************** */
 int lol_cat (int argc, char *argv[]) {
 
-  char ptr[4096];
+  char ptr[LOL_DEFBUF];
   struct stat st;
+  lol_pinfo    p;
   const char *me = argv[0];
   lol_FILE   *fp;
   FILE     *dest;
   char     *name;
+  size_t   csize;
   size_t i, r, t;
   size_t v, size;
   int    ret = 0;
@@ -90,15 +92,27 @@ int lol_cat (int argc, char *argv[]) {
       return 0;
   }
   name = argv[1];
-  if ((lol_stat(name, &st))) {
+
+  p.fullp = name;
+  p.cont  = ptr;
+  p.func  = LOL_CONTPATH;
+  if ((lol_pathinfo(&p))) {
       lol_errfmt2(LOL_2E_NOSUCHF, me, name);
       return -1;
   }
-  if (!(st.st_size))
-     return 0;
+  csize = lol_validcont(ptr, NULL, NULL);
+  if (!(csize)) {
+     lol_errfmt2(LOL_2E_CORRCONT, me, ptr);
+     lol_errfmt(LOL_0E_USEFSCK);
+     return -1;
+  }
+  if ((lol_stat(name, &st))) {
+     lol_errfmt2(LOL_2E_INVSRC, me, name);
+     return -1;
+  }
   if (!(fp = lol_fopen(name, "r"))) {
-      lol_errfmt2(LOL_2E_CANTREAD, me, name);
-      return -1;
+     lol_errfmt2(LOL_2E_CANTREAD, me, name);
+     return -1;
   }
   size = (size_t)fp->nentry.fs;
   if (size != st.st_size) {
@@ -111,9 +125,9 @@ int lol_cat (int argc, char *argv[]) {
       lol_errfmt2(LOL_2E_FIOERR, me, name);
       return -1;
   }
-  t = size / 4096;
-  r = size % 4096;
-  size = 4096;
+  t = size / LOL_DEFBUF;
+  r = size % LOL_DEFBUF;
+  size = LOL_DEFBUF;
 
 read_loop:
   for (i = 0; i < t; i ++) {

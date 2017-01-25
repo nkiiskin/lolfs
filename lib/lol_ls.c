@@ -69,10 +69,11 @@ static void strip_time(char* t) {
 #define LOL_LS_TEMP 256
 int lol_ls(int argc, char* argv[])
 {
-  char temp[LOL_LS_TEMP * NAME_ENTRY_SIZE];
-  char *co, *time, tmp[128];
   const long nes = (long)NAME_ENTRY_SIZE;
+  const long temp_mem = nes * LOL_LS_TEMP;
   const char  *me = argv[0];
+  char *co, *time, tmp[128];
+  char       temp[temp_mem];
   struct stat st;
   lol_meta    sb;
   size_t     ln, mem = 0;
@@ -81,13 +82,11 @@ int lol_ls(int argc, char* argv[])
   FILE           *fp = 0;
   long     data_size = 0;
   long         times = 0;
-  //  long          size = 0;
   long nf = 0, files = 0;
   long      i = 0, k = 0;
   long    io = 0, nb = 0;
   long  frac = 0, bs = 0;
   long          corr = 0;
-  int          loops = 1;
   int          alloc = 0;
   int     n = 0, err = 0;
   int      j = 0, sp = 0;
@@ -125,7 +124,8 @@ int lol_ls(int argc, char* argv[])
   }
   co = argv[1];
   if (!(lol_validcont(co, &sb, NULL))) {
-       lol_error(lol_cantuse_txt, me, co);
+       lol_errfmt2(LOL_2E_CORRCONT, me, co);
+       lol_errfmt(LOL_0E_USEFSCK);
        return -1;
   }
 
@@ -139,13 +139,18 @@ int lol_ls(int argc, char* argv[])
       lol_debug("lol_ls: Internal error: io <= 0");
       return -1;
   }
-  if (!(buf = (lol_nentry *)lol_malloc((size_t)(io)))) {
-        buf = (lol_nentry *)temp;
-        io  = nes * LOL_LS_TEMP;
-  }
-  else {
-     mem = (size_t)(io);
-     alloc = 1;
+
+  if (io > temp_mem) {
+    if (!(buf = (lol_nentry *)lol_malloc((size_t)(io)))) {
+          buf = (lol_nentry *)temp;
+          io  = temp_mem;
+    } else {
+       mem = (size_t)(io);
+       alloc = 1;
+    }
+  } else {
+    buf = (lol_nentry *)temp;
+    io  = temp_mem;
   }
 
   times = data_size / io;
@@ -153,12 +158,12 @@ int lol_ls(int argc, char* argv[])
   k = io / nes;
 
   if (!(fp = fopen(co, "r"))) {
-       lol_error(lol_cantread_txt, me, co);
+       lol_errfmt2(LOL_2E_CANTREAD, me, co);
        goto just_free;
   }
   i = LOL_DENTRY_OFFSET_EXT(nb, bs);
   if (fseek (fp, i, SEEK_SET)) {
-      lol_error(lol_cantread_txt, me, co);
+      lol_errfmt2(LOL_2E_CANTREAD, me, co);
       goto closefree;
   }
 
@@ -166,7 +171,7 @@ int lol_ls(int argc, char* argv[])
   for (i = 0; i < times; i++) {
 
     if ((lol_fio((char *)buf, io, fp, LOL_READ)) != io) {
-         lol_error(lol_cantread_txt, me, co);
+         lol_errfmt2(LOL_2E_CANTREAD, me, co);
          goto closefree;
     }
     // Now check the entries
@@ -227,11 +232,11 @@ int lol_ls(int argc, char* argv[])
     } // end for j
   } // end for i
   // Now the fractional data
-  if ((frac) && (loops)) {
+  if (frac) {
       times = 1;
       io = frac;
+      frac = 0;
        k = io / nes;
-      loops = 0;
       goto dentry_loop;
   } // end if frac
 
@@ -239,7 +244,7 @@ ooloop:
   ret = 0;
 
 closefree:
- lol_try_fclose(fp);
+ fclose(fp);
 just_free:
  if (alloc) {
     lol_free(mem);

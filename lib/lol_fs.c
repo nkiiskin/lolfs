@@ -90,32 +90,21 @@ int lol_fs (int argc, char* argv[])
 {
   char    name[1024];
   char size_str[128];
-
+  char   *self = argv[0];
+  char   *file = 0;
+  char *amount = 0;
   struct stat st;
   const ULONG crit_s = 100 * LOL_MEGABYTE;
+  long     ret = 0;
+  DWORD     bs = 0;
+  DWORD     nb = 0;
+  ULONG   size = 0;
+  int    small = 0;
+  int      val = 0;
+  int   file_i = 3;
 
-  DWORD     bs =  0;
-  DWORD     nb =  0;
-  char   *file =  0;
-  char  *self  =  0;
-  char *amount =  0;
-  ULONG   size =  0;
-  int    small =  0;
-  int      val =  0;
-  int   file_i =  3;
-
-  if ((!(argc)) || (!(argv))) {
-     lol_error(lol_inter_err);
-     return -1;
-  }
-  if (!(argv[0])) {
-      lol_error(lol_inter_err);
-      return -1;
-  }
-
-  self = argv[0];
   if (!(self[0])) {
-     lol_error(lol_inter_err);
+     lol_errfmt(LOL_0E_INTERERR);
      return -1;
   }
 
@@ -162,11 +151,31 @@ int lol_fs (int argc, char* argv[])
      }
 
     // We need 2 numbers, block size and the number of blocks
-    bs   = (DWORD)strtol(argv[2], NULL, 10);
-    nb   = (DWORD)strtol(argv[3], NULL, 10);
-    file_i = 4;
-    if ((bs < 1) || (nb < 1))
+    ret = strtol(argv[2], NULL, 10);
+    if (ret < 1) {
+      goto error;
+    }
+#ifdef HAVE_LIMITS_H
+#if defined LONG_MIN && defined LONG_MAX
+    if ((ret == LONG_MIN) || (ret == LONG_MAX))
         goto error;
+#endif
+#endif
+    bs = (DWORD)ret;
+
+    ret = (DWORD)strtol(argv[3], NULL, 10);
+    if (ret < 1) {
+      goto error;
+    }
+#ifdef HAVE_LIMITS_H
+#if defined LONG_MIN && defined LONG_MAX
+    if ((ret == LONG_MIN) || (ret == LONG_MAX))
+        goto error;
+#endif
+#endif
+    nb = (DWORD)ret;
+
+    file_i = 4;
 
   } // end if add blocks
   else {
@@ -189,7 +198,7 @@ int lol_fs (int argc, char* argv[])
  	   lol_error("%s: sorry, the size is too small.\n", name);
 	   lol_error("        you may create tiny container\n");
 	   lol_error("        using option \'-b\' and specifying\n");
-	   lol_error("        the block size and number of them.\n");
+	   lol_error("        the block size and number of blocks.\n");
 	   return -1;
        } // end if too small
 
@@ -197,7 +206,7 @@ int lol_fs (int argc, char* argv[])
 	   goto error;
        }
        else {
-	 // Got the amount of blocks!
+	 // Got the number of blocks!
 	  bs = LOL_DEFAULT_BLOCKSIZE;
 	  file_i = 3;
        } // end else got it

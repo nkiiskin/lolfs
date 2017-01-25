@@ -168,6 +168,12 @@ const char *lol_msg_list2[] = {
   LOL_ACCDENIED_FMT,
   LOL_INVSOURCE_FMT,
   LOL_OWCONT_FMT,
+  LOL_INVAL_FS_FMT,
+  NULL,
+};
+
+const char *lol_msg_list5[] = {
+  LOL_USAGE_FMT,
   NULL,
 };
 /** **********************************************************
@@ -686,27 +692,31 @@ int lol_index_malloc(const size_t num) {
 
   const size_t es = (size_t)(ENTRY_SIZE);
   const size_t  p = num + 1;
+  // size_t i;
   alloc_entry *lsb;
   size_t bytes;
 
   if (lol_buffer_lock)
      LOL_ERRET(EBUSY, LOL_ERR_BUSY);
 
-  // Ok, we can aloocate
+  // Ok, we can allocate
   if (!(num))
      LOL_ERRET(EINVAL, LOL_ERR_PARAM);
 
   if (num <= (LOL_STORAGE_SIZE)) {
       // Clear first (Fake clear)
+
       lsb = lol_storage_buffer;
       lsb[LOL_STORAGE_SIZE] = LAST_LOL_INDEX;
       lsb[num-1] = lsb[num] = LAST_LOL_INDEX;
+
       /*
-      for (i = 0; i < y; i++) {
+      for (i = 0; i < p; i++) {
         lol_storage_buffer[i] = LAST_LOL_INDEX;
       }
       */
-      lol_index_buffer = lsb;
+
+      lol_index_buffer = lol_storage_buffer;
       lol_buffer_lock = 1;
       return LOL_OK;
   } // end if small enough
@@ -725,14 +735,14 @@ int lol_index_malloc(const size_t num) {
    }
 
    // Clear memory (fake)
-   lol_index_buffer[p-1] = LAST_LOL_INDEX;
-   lol_index_buffer[p-2] = LAST_LOL_INDEX;
+    lol_index_buffer[p-1] = LAST_LOL_INDEX;
+    lol_index_buffer[p-2] = LAST_LOL_INDEX;
 
-      /*
+    /*
    for (i = 0; i < p; i++) {
      lol_index_buffer[i] = LAST_LOL_INDEX;
    }
-      */
+    */
 
    lol_buffer_lock = 2;
    return LOL_OK;
@@ -916,7 +926,7 @@ size_t lol_fio(char *ptr, const size_t bytes,
   return n;
 } // end lol_fio
 /* ********************************************************** */
-BOOL lol_validcont(const char *name, lol_meta *usb, struct stat *st) {
+size_t lol_validcont(const char *name, lol_meta *usb, struct stat *st) {
   lol_meta sb;
   lol_meta *x;
   long s;
@@ -939,7 +949,7 @@ BOOL lol_validcont(const char *name, lol_meta *usb, struct stat *st) {
   if (s < LOL_THEOR_MIN_DISKSIZE)
       return 0;
   //if (sb.nf > sb.nb) { lol_getsize does not check this
-   return 1;
+  return (size_t)(s);
 } // end lol_validcont
 /* **********************************************************
  * lol_help:
@@ -2489,9 +2499,9 @@ int lol_read_ichain(lol_FILE *op, const size_t rbs)
     lol_errno = EINVAL;
     return LOL_ERR_PTR;
   }
-  if ((lol_buffer_lock))
-    LOL_ERR_RETURN(EBUSY, LOL_ERR_BUSY);
-
+  if (!(lol_index_buffer)) {
+     LOL_ERR_RETURN(EBUSY, LOL_ERR_BUSY);
+  }
   // Let's make some aliases
      bs = op->sb.bs;
      nb = op->sb.nb;
@@ -3330,9 +3340,13 @@ int lol_size_to_blocks(const char *size, const char *container,
 	   return -1;
     }
   } // end if func == LOL_EXISTING_FILE
- len = strlen(size);
- if ((len < 1) || (len > 12)) // 12 <--> 1 Tb? Really??
+  len = strlen(size);
+  if ((len < 1) || (len > 12)) { // 12 <--> 1 Tb? Really??
+     return -1;
+  }
+  if (size[0] == '-') {
     return -1;
+  }
   mult = size[len - 1];
   n_letters = lol_is_integer(size);
   if ((n_letters < 0) || (n_letters > 1)) {
@@ -3377,15 +3391,15 @@ int lol_size_to_blocks(const char *size, const char *container,
       return -1;
   if ((!(plain)) && (len < 2))
      return -1;
-  memset((char *)siz, 0, 256);
-  strcat((char *)siz, size);
+
+  LOL_MEMCPY(siz, size, len);
+  siz[len] = '\0';
   if (!(plain))
     siz[len - 1] = '\0';
 
     ret = strtol(siz, NULL, 10);
     if (errno)
       return -1;
-
 #ifdef HAVE_LIMITS_H
 #if defined LONG_MIN && defined LONG_MAX
     if ((ret == LONG_MIN) || (ret == LONG_MAX))
@@ -3427,11 +3441,11 @@ long lol_get_io_size(const long size, const long blk) {
 
   const long sizes[] = {
     (LOL_GIGABYTE),
-    (100 * LOL_MEGABYTE),
-    (40 * LOL_MEGABYTE),
-    (10 * LOL_MEGABYTE),
+    (128 * LOL_MEGABYTE),
+    (64 * LOL_MEGABYTE),
+    (16 * LOL_MEGABYTE),
     (LOL_MEGABYTE),
-    (LOL_MEGABYTE / 2),
+    (512 *LOL_KILOBYTE),
     (64 * LOL_KILOBYTE),
     1,
     0
@@ -3440,15 +3454,16 @@ long lol_get_io_size(const long size, const long blk) {
     ( 32 * LOL_MEGABYTE),
     ( 16 * LOL_MEGABYTE),
     (  8 * LOL_MEGABYTE),
-    (  2 * LOL_MEGABYTE),
-    (256 * LOL_KILOBYTE),
-    (128 * LOL_KILOBYTE),
-    ( 16 * LOL_KILOBYTE),
+    (  4 * LOL_MEGABYTE),
+    (512 * LOL_KILOBYTE),
+    (512 * LOL_KILOBYTE),
+    (64  * LOL_KILOBYTE),
        (LOL_04KILOBYTES),
     1
   };
 
-  long frac;
+  long defret = blk << 4;
+  long rv, frac;
   int  i = 0;
 
   if ((size <= 0) || (blk <= 0))
@@ -3458,20 +3473,28 @@ long lol_get_io_size(const long size, const long blk) {
   if (size % blk)
     return -1;
 
+  if (defret > size) {
+      defret = size;
+  }
+
   for (i = 0;  sizes[i]; i++) {
    if (size >= sizes[i]) {
        frac  =  refs[i] % blk;
-       return  (refs[i] - frac);
+       rv = refs[i] - frac;
+       if (rv >= defret) {
+	  return rv;
+       }
+       break;
    }
   }
-  return (16 * blk);
+  return defret;
 } // end lol_get_io_size
 /* **********************************************************
  * lol_extendfs: Extends container space by given amount
  *               of data blocks.
  * NOTE: This function does not check much. User should
- *       first use another function to evaluate if the
- *       given container is valid and consistent.
+ *       first use another function (lol_validcont) to
+ *       evaluate if the given container is consistent.
  *
  * Input value sb should already have correct values of the
  * current super block.
@@ -3483,8 +3506,7 @@ long lol_get_io_size(const long size, const long blk) {
  *   0 : success
  ************************************************************ */
 #define LOL_EXTENDFS_TMP 512
-int lol_extendfs(const char *container, const DWORD new_blocks,
-                struct lol_super *sb, const struct stat *st)
+int lol_extendfs(const char *cont, const DWORD new_blocks, lol_meta *sb)
 {
   const size_t  news = (size_t)(new_blocks);
   const long     nes = (long)(NAME_ENTRY_SIZE);
@@ -3505,7 +3527,7 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
   int        alloc = 0;
   FILE         *fp = 0;
 
-  if ((!(container)) || (!(sb)) || (!(st)))
+  if ((!(cont)) || (!(sb)))
     return -1;
   if (new_blocks < 1)
     return -1;
@@ -3552,7 +3574,7 @@ int lol_extendfs(const char *container, const DWORD new_blocks,
   times = ds / io;
   frac  = (size_t)(ds % io);
 
-  fp = fopen(container, "r+");
+  fp = fopen(cont, "r+");
   if (!(fp))
     goto ret;
 

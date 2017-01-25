@@ -691,9 +691,7 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
   long   num_res = 0;
   long files_res = 0;
   ULONG  f_alloc = 0;
-  //long     count = 0;
   long         i = 0;
-  //  long         j = 0;
   size_t    frac = 0;
   long  corr_ind = 0;
   int        ret = 0;
@@ -713,7 +711,6 @@ static int lol_fsck_index(FILE *fp, const struct lol_super *sb,
   real_size -= DISK_HEADER_SIZE;
   real_size -= (nb * bs);
   real_size -= (nb * ((long)(NAME_ENTRY_SIZE)));
-
   data_size  = (long)ENTRY_SIZE;
   data_size *= nb;
 
@@ -944,7 +941,7 @@ int lol_cc (int argc, char *argv[]) {
   struct lol_super sb;
 
   FILE       *fp = 0;
-  char       *me = 0;
+  char       *me = argv[0];
   char     *cont = 0;
   char     *desc = 0;
   char     *curr = 0;
@@ -954,16 +951,10 @@ int lol_cc (int argc, char *argv[]) {
   int    verbose = 0;
   char       a, b;
 
-  if (!(argv[0])) {
-      puts(lol_inter_err);
-      return -1;
-  }
-
-  me = argv[0];
   a = me[0]; b = me[1];
   // We must have a proper name
   if ((!(a)) || (!(b))) {
-      lol_error(lol_inter_err);
+      lol_errfmt(LOL_0E_INTERERR);
       return -1;
   }
   // Let's see who called us
@@ -1027,7 +1018,7 @@ action:
       return lol_status_msg(me, msg, LOL_FSCK_FATAL);
   }
   if (st.st_size < LOL_THEOR_MIN_DISKSIZE) {
-      sprintf(msg, "\'%s\' is too small to be a container.", cont);
+      sprintf(msg, "\'%s\' is too small to be a container", cont);
       return lol_status_msg(me, msg, LOL_FSCK_FATAL);
   }
   if (!(fp = fopen(cont, "r"))) {

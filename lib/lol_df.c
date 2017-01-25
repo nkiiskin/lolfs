@@ -57,7 +57,7 @@ static const char*     lst[] =
   NULL
 };
 /* ****************************************************************** */
-#define LOL_DF_MESSAGE 1024
+#define LOL_DF_MESSAGE 512
 #define LOL_DF_ALIGN 25
 static void lol_fd_clear(char *a, char *b) {
   memset((char *)a, 0, LOL_DF_MESSAGE);
@@ -67,19 +67,22 @@ static void lol_fd_clear(char *a, char *b) {
 #define LOL_DF_TEMP 256
 int lol_df (int argc, char* argv[])
 {
-  char   temp[LOL_DF_TEMP * NAME_ENTRY_SIZE];
+
+  const long nes = (long)(NAME_ENTRY_SIZE);
+  const long es  = (long)(ENTRY_SIZE);
+  const int temp_mem = nes * LOL_DF_TEMP;
+  char temp[temp_mem];
   char number[LOL_DF_MESSAGE];
   char before[LOL_DF_MESSAGE];
   char  after[LOL_DF_MESSAGE];
-  const long nes = (long)(NAME_ENTRY_SIZE);
-  const long  es = (long)(ENTRY_SIZE);
+
   lol_meta    sb;
   struct stat st;
+  char *cont =0, *me = argv[0];
   size_t         mem = 0;
   lol_nentry *buffer = 0;
   lol_nentry *nentry = 0;
   FILE           *fp = 0;
-  char *cont =0, *me = 0;
   alloc_entry   *buf = 0;
   alloc_entry  entry = 0;
   float        avail = 0;
@@ -94,15 +97,12 @@ int lol_df (int argc, char* argv[])
   long         terms = 0;
   long         files = 0;
   long         times = 0;
-
   int   j=0, k=0, nf = 0;
   int           susp = 0;
   int         silent = 0;
   int            err = 0;
-  int          loops = 1;
   int          alloc = 0;
 
-  me = argv[0];
 
   // Process standard --help & --version options.
   if (argc == 2) {
@@ -147,14 +147,16 @@ action:
   free_space = lol_getsize(cont, &sb,
                NULL, RECUIRE_SB_INFO);
   if (free_space < LOL_THEOR_MIN_DISKSIZE) {
-      lol_errfmt2(LOL_2E_CANTUSE, me, cont);
+      lol_errfmt2(LOL_2E_CORRCONT, me, cont);
+      lol_errfmt(LOL_0E_USEFSCK);
       return -1;
   }
 
   nb = (long)sb.nb;
   bs = (long)sb.bs;
   if ((!(nb)) || (!(bs))) {
-      lol_errfmt2(LOL_2E_CANTUSE, me, cont);
+      lol_errfmt2(LOL_2E_CORRCONT, me, cont);
+      lol_errfmt(LOL_0E_USEFSCK);
       return -1;
   }
 
@@ -173,13 +175,18 @@ action:
       lol_debug("lol_df: Internal error: io <= 0");
       return -1;
   }
-  if (!(buffer = (lol_nentry *)lol_malloc((size_t)(io)))) {
-        buffer = (lol_nentry *)temp;
-        io     = nes * LOL_DF_TEMP;
-  }
-  else {
-     mem = (size_t)(io);
-     alloc = 1;
+
+  if (io > temp_mem) {
+    if (!(buffer = (lol_nentry *)lol_malloc((size_t)(io)))) {
+          buffer = (lol_nentry *)temp;
+          io  = temp_mem;
+    } else {
+       mem = (size_t)(io);
+       alloc = 1;
+    }
+  } else {
+    buffer = (lol_nentry *)temp;
+    io  = temp_mem;
   }
 
   times = data_size / io;
@@ -233,11 +240,11 @@ action:
     } // end for j
   } // end for i
   // Now the fractional data
-  if ((frac) && (loops)) {
-      times = 1;
-      io = frac;
+   if (frac) {
+       times = 1;
+       io = frac;
        k = io / nes;
-      loops = 0;
+       frac = 0;
       goto dentry_loop;
   } // end if frac
 
@@ -248,7 +255,6 @@ action:
   frac  = data_size % io;
   k = io / es;
   buf = (alloc_entry *)buffer;
-  loops = 1;
 
  index_loop:
   for (i = 0; i < times; i++) {
@@ -275,11 +281,11 @@ action:
     } // end for j
   } // end for i
   // Now the fractional data
-  if ((frac) && (loops)) {
+  if (frac) {
       times = 1;
       io = frac;
        k = io / es;
-      loops = 0;
+       frac = 0;
       goto index_loop;
   } // end if frac
 

@@ -63,11 +63,6 @@ int lol_rm (int argc, char* argv[])
         lol_show_version(me);
 	return 0;
     }
-    if ((argv[1][0] == '-') && (argv[1][1] == '-')) {
-        lol_errfmt2(LOL_2E_OPTION, me, argv[1]);
-	lol_ehelpf(me);
-        return -1;
-    }
   } // end if argc == 2
   if (argc < 2) {
         lol_show_usage(me);

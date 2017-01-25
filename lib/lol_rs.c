@@ -74,6 +74,18 @@ static const char*   lst[] =
   NULL
 };
 /* ********************************************************************** */
+#define LOL_RS_BLK 0
+#define LOL_RS_SP  1
+#define LOL_RS_B   2
+static const char* quants[] =
+{
+  "blocks",
+  "space",
+  "Bytes",
+};
+/* ********************************************************************** */
+static const char lol_this_will_add[] =
+  "lol %s: this will add %s %s to container \'%s\'\n";
 static const char
        lol_overwrite_prompt[] = "                       Overwrite [y/n]? ";
 static const char
@@ -96,8 +108,7 @@ int lol_rs (int argc, char* argv[])
   char nsize[64];
   struct stat         st;
   lol_meta            sb;
-
-  char           *me = 0;
+  char           *me = argv[0];
   char         *cont = 0;
   char       *option = 0;
   char       *amount = 0;
@@ -109,9 +120,9 @@ int lol_rs (int argc, char* argv[])
   int            ret = 0;
   int            val = 0;
   int            opt = 0;
+  int            fmt = 0;
   char            ch = 0;
 
-  me = argv[0];
 
   // Process standard --help & --version options.
   if (argc == 2) {
@@ -140,16 +151,14 @@ int lol_rs (int argc, char* argv[])
          return -1;
       }
 syntax_err:
-        lol_show_usage(me);
+        lol_show_usage_err(me);
 	lol_ehelpf(me);
         return -1;
     }
   } // end if argc == 2
+
   if (argc != 4) {
-      lol_error (LOL_USAGE_FMT, me,
-                lol_version, lol_copyright, me, params);
-      lol_error (lol_help_txt, me);
-      return -1;
+     goto syntax_err;
   }
 
   option = argv[1];
@@ -181,35 +190,27 @@ syntax_err:
     else{
       // Maybe wrong option?
       if (option[0] == '-') {
-          lol_error(LOL_WRONG_OPTION, me, option);
-          lol_error (lol_help_txt, me);
+	  lol_errfmt2(LOL_2E_OPTION, me, option);
+          lol_ehelpf (me);
           return -1;
       }
       // Syntax error...
       goto syntax_err;
-
     } // end else not blocks or size
 
   } // end else
   // Does the container exist?
-  space = lol_getsize(cont, &sb, &st, RECUIRE_SB_INFO);
-  if (space < LOL_THEOR_MIN_DISKSIZE) {
+
+
+  space =  (long)lol_validcont(cont, &sb, &st);
+  //  space = lol_getsize(cont, &sb, &st, RECUIRE_SB_INFO);
+  if (!(space)) {
      lol_errfmt2(LOL_2E_CANTUSE, me, cont);
      return -1;
-  }
-  if (LOL_INVALID_MAGIC) {
-      lol_error(LOL_IMAGIC_FMT, me, LOL_MAG_0, LOL_MAG_1);
-      lol_errfmt(LOL_0E_USEFSCK);
-      return -1;
   }
 
   nb = sb.nb;
   bs = sb.bs;
-
-  if ((!(nb)) || (!(bs))) {
-      lol_errfmt2(LOL_2E_CANTUSE, me, cont);
-      return -1;
-  }
 
   // Seems like a valid container, let's see what we'll do.
   // We only add blocks, so if user wants to add size,
@@ -249,17 +250,16 @@ syntax_err:
 
   } // end switch opt
   if (val) {
-
-     lol_error("lol %s: invalid filesize \'%s\'\n", me, amount);
-     if (opt == LOL_RS_SIZE)
+     lol_errfmt2(LOL_2E_INVFS, me, amount);
+     if (opt == LOL_RS_SIZE) {
 	lol_error("The minimum size must be at least 1 block (%ld bytes)\n",
                  (long)bs);
+     }
      return -1;
   } // end if val
   // Ok, news has the additional blocks now
   if (opt == LOL_RS_BLOCKS) {
-      printf("lol %s: this will add %s blocks to container \'%s\'\n",
-	   me, amount, cont);
+       fmt = LOL_RS_BLK;
   }
   else {
       len = strlen(amount);
@@ -269,14 +269,14 @@ syntax_err:
 #ifdef HAVE_CTYPE_H
 	 amount[len - 1] = (char)toupper((int)(ch));
 #endif
-         printf("lol %s: this will add %s space to container \'%s\'\n",
-	         me, amount, cont);
+         fmt = LOL_RS_SP;
       }
       else {
-         printf("lol %s: this will add %s Bytes to container \'%s\'\n",
-	         me, amount, cont);
+	 fmt = LOL_RS_B;
       }
   }
+
+  printf(lol_this_will_add, me, amount, quants[fmt], cont);
 
   if ((prompt_lol_rs(lol_proceed_prompt))) {
        puts("Aborted.");
@@ -289,8 +289,8 @@ syntax_err:
 #endif
 
    // We have green light, let's begin expanding
-  if ((lol_extendfs(cont, news, &sb, &st))) {
-       lol_error("lol %s: error extending container.\n", me);
+  if ((lol_extendfs(cont, news, &sb))) {
+       lol_error("lol %s: error extending container\n", me);
        return -1;
   } // end if error
 
@@ -304,3 +304,6 @@ syntax_err:
   return 0;
 
 } // end lol_rs
+#undef LOL_RS_BLK
+#undef LOL_RS_SP
+#undef LOL_RS_B
