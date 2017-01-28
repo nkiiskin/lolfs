@@ -28,3 +28,9 @@
 	
 0.20	+ Many changes and bug fixes.
 	
+0.30	+ Performance fixes
+	+ More use of shared resources
+	+ 'lol cp' can now copy between containers - instead of just
+	  between host and container. (Also intra-container copies
+	  are supported, eg. 'lol cp foo:/file foo:/file.bak'
+	

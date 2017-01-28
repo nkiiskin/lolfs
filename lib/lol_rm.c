@@ -49,8 +49,10 @@ static const char*   lst[] =
  ****************************************************************** */
 int lol_rm (int argc, char* argv[])
 {
+  const int nf = argc - 1;
   char *me = argv[0];
   int    i = 1;
+  int errs = 0;
 
   // Process standard --help & --version options.
   if (argc == 2) {
@@ -73,9 +75,18 @@ int lol_rm (int argc, char* argv[])
   // Just loop through files and unlink..
   while (i < argc) {
     if (lol_unlink(argv[i])) {
-        lol_error("lol %s: cannot delete '%s'\n", me, argv[i]);
+        lol_errfmt2(LOL_2E_NOSUCHF, me, argv[i]);
+	errs++;
     }
     i++;
+  }
+
+  // How many files failed?
+  // If over 50% --> return error
+  if (errs) {
+    if ((nf / errs) < 2) {
+      return -1;
+    }
   }
   return 0;
 } // end lol_rm

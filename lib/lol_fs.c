@@ -43,21 +43,21 @@
 #endif
 /* ************************************************************************ */
 static const char params[] =
-          "Usage: %s -b <block size> <# of blocks> <name>\n       %s -s <size> <name>\n";
+"Usage: %s -b <block size> <# of blocks> <name>\n       %s -s <size> <name>\n";
 static const char    hlp[] = "       Type: \'%s -h\' for help.\n";
 static const char*   lst[] =
 {
   "  Usage: %s -b|-s <parameters> <container name>\n\n",
-  "  Example 1:\n",
-  "           %s -s 150M lol.db\n",
-  "           This creates a container file \'lol.db\' which has\n",
-  "           150 Megabytes of storage capacity.\n\n",
-  "  Example 2:\n",
-  "           %s -b 1000  4000 lol.db\n",
-  "           This creates a container file \'lol.db\' which has 4000\n",
-  "           blocks, each 1000 bytes. So the storage capacity is\n",
-  "           1000 * 4000 = 4000000 bytes, which is roughly 4Mb.\n\n",
-  "           Type: \'man lol\' to read the manual.\n\n",
+  "  Example 1:",
+  "           \'%s -s 150M lol.db\'\n",
+  "           This creates a container file \'lol.db\' which has",
+  "           150 Megabytes of storage capacity.\n",
+  "  Example 2:",
+  "           \'%s -b 500  4000 my.db\'\n",
+  "           This creates a container file \'my.db\' which has 4000",
+  "           blocks, each 500 bytes. So the storage capacity is",
+  "           500 * 4000 = 2000000 bytes, which is roughly 2Mb.\n",
+  "           Type: \'man %s\' to read the manual.\n",
   NULL
 };
 /* ************************************************************************ */
@@ -69,10 +69,24 @@ static const char lol_ask_wp[] =
    "        Please check if the directory is write protected";
 /* ************************************************************************ */
 void lol_fs_help(const char* name) {
-  int i = 0;
-  while (lst[i]) {
-    printf(lst[i], name);
-    i++;
+  const char lol[] = "lol";
+  int i;
+
+  printf(lst[0], name);
+  puts(lst[1]);
+  printf(lst[2], name);
+  for (i = 3; i < 6; i++) {
+    puts(lst[i]);
+  }
+  printf(lst[6], name);
+  for (i = 7; i < 10; i++) {
+    puts(lst[i]);
+  }
+  if (name[0] == 'l') {
+     printf(lst[10], lol);
+  }
+  else {
+     printf(lst[10], name);
   }
 } // end lol_fs_help
 /* ************************************************************************ */
@@ -88,7 +102,8 @@ static int prompt_mkfs() {
 /* ************************************************************************ */
 int lol_fs (int argc, char* argv[])
 {
-  char    name[1024];
+  const char def_name[] = "lol fs";
+  char     name[128];
   char size_str[128];
   char   *self = argv[0];
   char   *file = 0;
@@ -108,16 +123,27 @@ int lol_fs (int argc, char* argv[])
      return -1;
   }
 
-  memset((char *)name, 0, 1024);
+  size = strlen(self);
+  if (size > 127) {
+    lol_error("lol: program name too long!\n");
+    return -1;
+  }
+
   // Who is calling?
   // This is a pretty ugly hack but i want
   // mkfs.lolfs to use this function also..
   if ((self[0] == 'f') && (self[1] == 's')) {
-    strcat(name, "lol fs");
+    for (; def_name[val]; val++) {
+       name[val] = def_name[val];
+    }
   }
   else {
-    strcat(name, self);
+    for (; val < size; val++) {
+       name[val] = self[val];
+    }
   }
+  name[val] = '\0';
+
 
   // Process standard --help & --version options.
   if (argc == 2) {
@@ -135,9 +161,9 @@ int lol_fs (int argc, char* argv[])
 	return 0;
     }
 
-     lol_error("%s: syntax error\n", name);
-     lol_error(hlp, name);
-     return -1;
+    lol_error("%s: syntax error\n", name);
+    lol_error(hlp, name);
+    return -1;
 
   } // end if argc == 2
 
@@ -280,10 +306,16 @@ int lol_fs (int argc, char* argv[])
   return 0;
 
 error:
-  lol_error("%s v%s. %s\n", name,
-            lol_version, lol_copyright);
-  lol_error(params, name, name);
-  lol_error(hlp, name);
-  return -1;
 
+  if (argc == 1) {
+     lol_error("%s v%s. %s\n", name,
+            lol_version, lol_copyright);
+     lol_error(params, name, name);
+     lol_error(hlp, name);
+  }
+  else {
+    lol_error("%s: syntax error\n", name);
+    lol_error(hlp, name);
+  }
+  return -1;
 } // end lol_fs

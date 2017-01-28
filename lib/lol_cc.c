@@ -897,22 +897,22 @@ static const lol_check_func lol_check_funcs[] =
     {NULL, NULL, NULL},
 };
 /* ****************************************************************** */
-static const char params[] = "[-d] <container>";
+static const char params[] = "<container>";
 static const char*   lst[] =
 {
   /* If you EDIT this, you MUST edit lol_fsck_help too! */
 
   "\n  Example:",
-  "          %s lol.db\n",
+  "          \'%s lol.db\'\n",
   "          This checks the container",
   "          \'lol.db\' for errors.\n",
   "  Use option \'-d\' to show more details",
   "  about container inspection like:",
-  "          %s -d lol.db\n",
+  "          \'%s -d lol.db\'\n\n",
   "  There are 5 levels of information output:\n",
   "         - OK    (one check has has been passed).",
   "         - INFO  (some information, not error).",
-  "         - WARN  (warning, something is wrong).",
+  "         - WARN  (warning, something is may be wrong).",
   "         - ERROR (something that needs repair).",
   "         - FATAL (needs immediate repair).\n",
   "          Type: 'man %s' to read the manual.\n",
@@ -920,16 +920,25 @@ static const char*   lst[] =
 };
 /* ****************************************************************** */
 void lol_fsck_help(char *me) {
-  int i = 0;
-  char alias[] = "lol cc";
-  char *prog = alias;
+  const char lol[] = "lol";
+  int i;
 
-  if (me)
-    prog = me;
-  while (lst[i]) {
-    printf(lst[i], prog);
-    i++;
-  } // end while
+  puts(lst[0]);
+  printf(lst[1], me);
+  for (i = 2; i < 6; i++) {
+    puts(lst[i]);
+  }
+  printf(lst[6], me);
+  for (i = 7; i < 13; i++) {
+    puts(lst[i]);
+  }
+
+  if (me[0] == 'l') {
+     printf(lst[13], lol);
+  }
+  else {
+     printf(lst[13], me);
+  }
 } // end lol_fsck_help
 /* ******************************************************************
  * lol_cc: checks if a container has errors.
@@ -968,42 +977,39 @@ int lol_cc (int argc, char *argv[]) {
   if (argc == 2) {
 
     if (LOL_CHECK_HELP) {
-        printf ("%s v%s. %s\nUsage: %s %s\n", me,
-        lol_version, lol_copyright, me, params);
+        lol_show_usage2(me);
         lol_fsck_help(me);
         return 0;
     }
     if (LOL_CHECK_VERSION) {
-	printf ("%s v%s %s\n", me,
-        lol_version, lol_copyright);
+        lol_show_version2(me);
 	return 0;
     }
     if (LOL_CHECK_DETAILS) {
-        lol_error(LOL_MISSING_ARG_FMT,
-                  me, "<container>");
-        return -1;
+       lol_errfmt2(LOL_2E_ARGMISS2, me, params);
+       return -1;
     }
     if (argv[1][0] == '-') {
       if ((stat(argv[1], &st))) {
-          lol_error(LOL_WRONG_OPTION, me, argv[1]);
-	  lol_error(lol_help_txt, me);
-          return -1;
+	 lol_errfmt2(LOL_2E_OPTION2, me, argv[1]);
+         lol_ehelpf2(me);
+         return -1;
       }
     }
   } // end if argc == 2
 
   if (argc == 3) {
     if (LOL_CHECK_DETAILS) {
-        verbose = 1;
-        cont    = argv[2];
-	goto action;
+       verbose = 1;
+       cont = argv[2];
+       goto action;
     }
   } // end if argc == 3
 
   if (argc != 2) {
-      printf ("%s v%s. %s\nUsage: %s %s\n", me,
-      lol_version, lol_copyright, me, params);
-      printf (lol_help_txt, me);
+      lol_show_usage2(me);
+      puts("       Checks container for errors");
+      lol_helpf2(me);
       return 0;
   }
 

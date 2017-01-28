@@ -57,7 +57,7 @@ static const char*     lst[] =
   NULL
 };
 /* ****************************************************************** */
-#define LOL_DF_MESSAGE 512
+#define LOL_DF_MESSAGE 256
 #define LOL_DF_ALIGN 25
 static void lol_fd_clear(char *a, char *b) {
   memset((char *)a, 0, LOL_DF_MESSAGE);
@@ -194,12 +194,12 @@ action:
   k = io / nes;
 
   if (!(fp = fopen(cont, "r"))) {
-       lol_error(lol_cantread_txt, me, cont);
+       lol_errfmt2(LOL_2E_CANTREAD, me, cont);
        goto just_free;
   }
   i = LOL_DENTRY_OFFSET_EXT(nb, bs);
   if (fseek (fp, i, SEEK_SET)) {
-      lol_error(lol_cantread_txt, me, cont);
+      lol_errfmt2(LOL_2E_CANTREAD, me, cont);
       goto closefree;
   }
 
@@ -207,7 +207,7 @@ action:
   for (i = 0; i < times; i++) {
 
     if ((lol_fio((char *)buffer, io, fp, LOL_READ)) != io) {
-         lol_error(lol_cantread_txt, me, cont);
+         lol_errfmt2(LOL_2E_CANTREAD, me, cont);
          goto closefree;
     }
     // Now check the entries
@@ -259,7 +259,7 @@ action:
  index_loop:
   for (i = 0; i < times; i++) {
     if ((lol_fio((char *)buf, io, fp, LOL_READ)) != io) {
-         lol_error(lol_cantread_txt, me, cont);
+         lol_errfmt2(LOL_2E_CANTREAD, me, cont);
          goto closefree;
     }
     // Now check the entries
@@ -292,7 +292,7 @@ action:
   if (alloc) {
      lol_free(mem);
   }
-  lol_try_fclose(fp);
+  fclose(fp);
 
   if ((terms != nf) || (terms != files)) {
        err = 1;
@@ -324,6 +324,7 @@ action:
      sprintf(after, "[%ld bytes in %ld blocks, %2.1f%% used]\n",
              used_space, nb_used, avail);
      lol_align(before, after, LOL_DF_ALIGN, LOL_STDOUT);
+
   }
   else {
     puts("No files");
@@ -355,7 +356,7 @@ action:
   return 0;
 
 closefree:
- lol_try_fclose(fp);
+ fclose(fp);
 just_free:
  if (alloc) {
     lol_free(mem);

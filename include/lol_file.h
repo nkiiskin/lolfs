@@ -90,12 +90,10 @@ typedef struct lol_name_entry {
 
 struct lol_open_mode
 {
-  // private:
-  mode_t device;
-  int    mode_num;
-  char   mode_str[6];
-  char    vd_mode[4];
+  int n;
+  char m[4];
 };
+
 
 // TODO: The filename is in two places:
 //     - In vdisk_file
@@ -110,14 +108,19 @@ typedef struct _lol_FILE
   char cont[LOL_DEVICE_MAX];
   struct lol_super sb;
   struct lol_name_entry nentry;
-  ULONG csiz;
+  ULONG cs; // 'outer' size of the container
   FILE  *dp;
-  struct lol_open_mode open_mode;
+  //struct lol_open_mode open_mode;
   struct stat cinfo;
+  long n_off; // abs position of the name entry
+              // from the beginning of container
   alloc_entry n_idx;
   // TODO Make curr_pos ULONG
   // Because file_size is ULONG too !!
   DWORD curr_pos;
+  int p_len; // length of the lol_fopen path
+  int f_len; // Length of the filename
+  int   opm; // Open mode (how the file was opened)
   BOOL  opened;
   WORD  eof;
   int   err;

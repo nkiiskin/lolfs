@@ -59,7 +59,6 @@ int lol_cat (int argc, char *argv[]) {
   lol_FILE   *fp;
   FILE     *dest;
   char     *name;
-  size_t   csize;
   size_t i, r, t;
   size_t v, size;
   int    ret = 0;
@@ -92,7 +91,6 @@ int lol_cat (int argc, char *argv[]) {
       return 0;
   }
   name = argv[1];
-
   p.fullp = name;
   p.cont  = ptr;
   p.func  = LOL_CONTPATH;
@@ -100,13 +98,15 @@ int lol_cat (int argc, char *argv[]) {
       lol_errfmt2(LOL_2E_NOSUCHF, me, name);
       return -1;
   }
-  csize = lol_validcont(ptr, NULL, NULL);
-  if (!(csize)) {
+  if (!(lol_validcont(ptr, NULL, NULL))) {
      lol_errfmt2(LOL_2E_CORRCONT, me, ptr);
      lol_errfmt(LOL_0E_USEFSCK);
      return -1;
   }
   if ((lol_stat(name, &st))) {
+#if LOL_TESTING
+    lol_error("lol cat: lol_stat failed, lol_errno = %d\n", lol_errno);
+#endif
      lol_errfmt2(LOL_2E_INVSRC, me, name);
      return -1;
   }
@@ -125,6 +125,7 @@ int lol_cat (int argc, char *argv[]) {
       lol_errfmt2(LOL_2E_FIOERR, me, name);
       return -1;
   }
+
   t = size / LOL_DEFBUF;
   r = size % LOL_DEFBUF;
   size = LOL_DEFBUF;

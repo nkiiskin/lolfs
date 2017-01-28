@@ -91,9 +91,9 @@
 #include <lol_internal.h>
 #endif
 
-
-
-// TODO: lolfs.c:    buffer lol_free_nentry !!! (SLOWS DOWN lol_fopen... !)
+// TODO: Make use of new lol_FILE members: n_off, p_len and f_len
+// TODO: add global lol_FILE[] buffer instead of mallocing mem for files.
+// TODO: lolfs.c:    buffer lol_read_nentry !!! (SLOWS DOWN lol_fopen... !)
 // TODO: lol_getsize should return some information when error, not just -1
 // TODO: inner loop counters to int
 // TODO: Fix lol_cc.c --> buffer the i/o
@@ -104,6 +104,8 @@
 /* ********************************************************** */
 int lol_errno = 0;
 int lol_buffer_lock = 0;
+const char lol_mode_ro[] = "r";
+const char lol_mode_rw[] = "r+";
 const char* lol_prefix_list[] = {
   ": ",
   ": info, ",
@@ -130,11 +132,6 @@ const lol_size lol_sizes[] = {
     {LOL_TERABYTE, "Tb"},
 };
 
-const char  lol_usefsck_txt[] = LOL_FSCK_FMT;
-const char  lol_cantuse_txt[] = LOL_CANTUSE_FMT;
-const char lol_cantread_txt[] = LOL_CANTREAD_FMT;
-const char     lol_help_txt[] = LOL_HELP_FMT;
-
 const char *lol_msg_list0[] = {
   LOL_FSCK_FMT,
   LOL_INTERERR_FMT,
@@ -147,35 +144,51 @@ const char *lol_msg_list1[] = {
   LOL_SYNTAX_FMT,
   LOL_IMAGIC_FMT,
   LOL_HELP_FMT,
+  LOL_HELP2_FMT,
   LOL_INTERE_FMT,
   NULL,
 };
 const char *lol_msg_list2[] = {
 
-  LOL_CANTREAD_FMT,
-  LOL_CANTWRITE_FMT,
-  LOL_CANTUSE_FMT,
-  LOL_CANTCOPY_FMT,
-  LOL_CANTFINDDIR_FMT,
-  LOL_NOTSUCHFILE_FMT,
-  LOL_WRONG_OPTION,
-  LOL_MISSING_ARG_FMT,
-  LOL_CORRCONT_FMT,
-  LOL_NOTROOM_FMT,
-  LOL_OW_PROMPT_FMT,
-  LOL_FULLCONT_FMT,
-  LOL_FIO_ERR_FMT,
-  LOL_ACCDENIED_FMT,
-  LOL_INVSOURCE_FMT,
+  LOL_EREAD_FMT,
+  LOL_EWRITE_FMT,
+  LOL_EUSE_FMT,
+  LOL_ECP_FMT,
+  LOL_ENODIR_FMT,
+  LOL_ENOENT_FMT,
+  LOL_EOPT_FMT,
+  LOL_EARG_FMT,
+  LOL_ECONT_FMT,
+  LOL_NOSPC_FMT,
+  LOL_OWPMT_FMT,
+  LOL_EFULL_FMT,
+  LOL_EIO_FMT,
+  LOL_EACCES_FMT,
+  LOL_INVSRC_FMT,
   LOL_OWCONT_FMT,
-  LOL_INVAL_FS_FMT,
+  LOL_EFBIG_FMT,
+  LOL_EFUNC_FMT,
+  LOL_EARG2_FMT,
+  LOL_EOPT2_FMT,
   NULL,
 };
 
+const char *lol_msg_list3[] = {
+
+  LOL_VERS_FMT,
+  LOL_VERS2_FMT,
+  NULL,
+
+};
 const char *lol_msg_list5[] = {
   LOL_USAGE_FMT,
+  LOL_USAGE2_FMT,
   NULL,
 };
+
+
+const char lol_version[] = LOLFS_VERSION;
+const char lol_copyright[] = LOLFS_COPYRIGHT;
 /** **********************************************************
  *   TODO: Should make a better check for all these possible
  *        combinations... Not even sure if these are correct
@@ -196,17 +209,18 @@ char lol_mode_combinations[MAX_LOL_OPEN_MODES][14][5] = {
 /* ********************************************************** */
 const struct lol_open_mode lol_open_modes[] =
 {
-    { .device = 0, .mode_num = 0, .mode_str = "r",  .vd_mode = "r"   },
-    { .device = 0, .mode_num = 1, .mode_str = "r+", .vd_mode = "r+"  },
-    { .device = 0, .mode_num = 2, .mode_str = "w",  .vd_mode = "r+"  },
-    { .device = 0, .mode_num = 3, .mode_str = "w+", .vd_mode = "r+"  },
-    { .device = 0, .mode_num = 4, .mode_str = "a",  .vd_mode = "r+"  },
-    { .device = 0, .mode_num = 5, .mode_str = "a+", .vd_mode = "r+"  },
+    { .n = 0, .m = "r"  },
+    { .n = 1, .m = "r+" },
+    { .n = 2, .m = "r+" },
+    { .n = 3, .m = "r+" },
+    { .n = 4, .m = "r+" },
+    { .n = 5, .m = "r+" },
 };
 /* ********************************************************** */
 alloc_entry *lol_index_buffer = 0;
 alloc_entry  lol_storage_buffer[LOL_STORAGE_SIZE+1];
-const char lol_valid_filechars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.- _~:!+#%[]{}?,;&()=@";
+const char lol_valid_filechars[] =
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.- _~:!+#%[]{}?,;&()=@";
 struct sigaction lol_sighand_store[LOL_NUM_SIGHANDLERS+1];
 static const int       lol_signals[LOL_NUM_SIGHANDLERS + 1] = {
                        SIGHUP, SIGINT, SIGTERM, SIGSEGV, 0
@@ -296,7 +310,6 @@ int lol_setup_sighandlers() {
 #if LOL_TESTING
 	  printf("Set signal %d\n", i);
 #endif
-
     }
   return 0;
 } // end lol_setup_sighandlers
@@ -479,10 +492,10 @@ int lol_valid_sb(const lol_FILE *op) {
     return -1;
   if ((!(op->sb.nb)) || (!(op->sb.bs)))
     return -2;
-  if (op->csiz < LOL_THEOR_MIN_DISKSIZE)
+  if (op->cs < LOL_THEOR_MIN_DISKSIZE)
     return -3;
   size = (ULONG)LOL_DEVSIZE(op->sb.nb, op->sb.bs);
-  if (op->csiz != size)
+  if (op->cs != size)
      return -4;
   if (size != op->cinfo.st_size)
     return -5;
@@ -696,6 +709,11 @@ int lol_index_malloc(const size_t num) {
   alloc_entry *lsb;
   size_t bytes;
 
+#if LOL_TESTING
+   printf("lol_index_malloc: lol_buffer_lock = %d\n", lol_buffer_lock);
+#endif
+
+
   if (lol_buffer_lock)
      LOL_ERRET(EBUSY, LOL_ERR_BUSY);
 
@@ -723,9 +741,15 @@ int lol_index_malloc(const size_t num) {
 
   // So, we must allocate dynamic mem
    bytes  = p * es;
-
+#if LOL_TESTING
+   printf("lol_index_malloc: trying to allocate %ld bytes\n", (long)(bytes));
+#endif
    if (!(lol_index_buffer = (alloc_entry *)malloc(bytes)))
-       LOL_ERRET(ENOMEM, LOL_ERR_MEM)
+      LOL_ERRET(ENOMEM, LOL_ERR_MEM);
+
+#if LOL_TESTING
+   puts("lol_index_malloc: Succes!");
+#endif
 
    // Set handlers
    if ((lol_setup_sighandlers())) {
@@ -1295,83 +1319,179 @@ else
    LOL_ERR_RETURN(EIO , LOL_ERR_CORR)
 } // end lol_delete_chain_from
 /* **********************************************************
- * lol_read_nentry: // PRIVATE helper function for lol_fopen
+ * lol_read_nentry: PRIVATE helper function exclusively
+ * for lol_fopen's use.
  * Checks if name given in op->file exists.
  * ret <  0 : error
  * ret =  0 : does not exist
  * ret =  1 : exists
  *
- * The file (op->dp) must be already opened for reading (and
- * optionally writing). The op->sb must be set.
- * op->nentry and op->n_idx will be overwritten.
+ * The op->sb must be set before calling.
+ * op->nentry and op->n_idx will be overwritten
  * ********************************************************** */
+#define LOL_READNENTRY_TMP 256
 int lol_read_nentry(lol_FILE *op) {
 
-  long  doff;
-  alloc_entry i;
-  fpos_t pos;
-  FILE   *fp;
-  char   *name;
-  size_t len, nlen;
-  DWORD  nb;
-  int ret = -1;
+  const long  nes =  ((long)(NAME_ENTRY_SIZE));
+  const long  ms  =  ((long)(DISK_HEADER_SIZE));
+  const long temp_mem = nes * LOL_READNENTRY_TMP;
+  char temp[temp_mem];
+  char  *name = (char *)op->file;
+  char  *ename;
+  size_t mem = 0;
+  FILE   *fp = op->dp;
+  long    nb = (long)op->sb.nb;
+  long    bs = (long)op->sb.bs;
+  long  base = nb * bs + ms;
+  long    ds = nb * nes;
+  fpos_t      pos;
+  lol_nentry *buf;
+  lol_nentry *entry;
+  long      times;
+  long       frac;
+  long       full;
+  long         io;
 
-  struct lol_name_entry *entry;
-  if (!(op))
-    return -1;
+  int  flen = op->f_len;
+  int alloc = 0;
+  int loops = 1;
+  int  ret = -1;
+  int     i = 0;
+  int   j, k, z;
 
-  fp    = op->dp;
-  name  = op->file;
-  nb    = op->sb.nb;
-  entry = &op->nentry;
 
-  if ((!(fp)) || (!(name)))
-    return -1;
-  if ((!(name[0])) || (!(nb)))
-    return -1;
-  if (fgetpos (fp, &pos))
-     return -1;
-  doff = (long)LOL_DENTRY_OFFSET(op);
-  if (fseek (fp, doff, SEEK_SET)) {
-      lol_errno = errno;
-      goto error;
+
+  io = lol_get_io_size(ds, nes);
+  if (io <= 0) {
+      lol_debug("lol_read_nentry: Internal error: io <= 0\n");
+      lol_errno = EIO; return -1;
   }
-  nlen = strlen(name);
-  if (nlen >= LOL_FILENAME_MAX) {
-      lol_errno = ENAMETOOLONG;
-      goto error;
+  if (io > temp_mem) {
+    if (!(buf = (lol_nentry *)lol_malloc((size_t)(io)))) {
+          buf = (lol_nentry *)temp;
+          io  = temp_mem;
+    } else {
+       mem = (size_t)(io);
+       alloc = 1;
+    }
+  } else {
+    buf = (lol_nentry *)temp;
+    io  = temp_mem;
   }
-  for (i = 0; i < nb; i++) {
-    if ((fread ((char *)entry, (size_t)(NAME_ENTRY_SIZE),
-                1, fp)) != 1)  {
-         lol_errno = errno;
-	 goto error;
+
+  times = ds / io;
+  frac  = ds % io;
+  k     = (int)(io / nes);
+  full  = ds - frac;
+
+  if ((fgetpos(fp, &pos))) {
+      LOL_ERRNO(EIO);
+      goto freemem;
+  }
+  if (fseek (fp, base, SEEK_SET)) {
+      lol_errno = EIO;
+      goto position;
+  }
+
+dentry_loop:
+
+  for (; i < times; i++) {
+
+    if ((lol_fio((char *)buf, io, fp, LOL_READ)) != io) {
+         lol_errno = EIO;
+         goto position;
     }
-    if (!(entry->name[0]))
-	continue;
-    len = strlen((char *)entry->name);
-    if ((len >= LOL_FILENAME_MAX) || (len != nlen))
-	continue;
-    if (!(strcmp((const char *)name,
-         (const char*)entry->name)))
-    {
-         fsetpos (fp, &pos);
-	 op->n_idx = i;
-         return 1;
-    }
+    // Now check the entries
+    for (j = 0; j < k; j++) { // foreach entry...
+
+        if (!(buf[j].name[0])) {
+	   continue;
+        }
+	else {
+
+           entry = &buf[j];
+	   ename = (char *)entry->name;
+
+	   // Now compare 'name' with 'entry->name'
+#if LOL_TESTING
+	   printf("lol_read_nentry: comparing: \'%s\' and \'%s\'\n",
+                  (char *)name, (char *)ename);
+#endif
+
+
+#ifdef LOL_INLINE_MEMCPY
+	   // inline strcmp
+           for (z = 0; z < flen; z++) {
+
+	      if (ename[z] != name[z]) {
+	          break;
+	      }
+
+	   }
+	   if (z != flen) {
+	      continue;
+	   }
+	   if (ename[flen]) {
+	      continue;
+	   }
+
+#else
+           if ((strcmp((char *)name, (char *)ename))) {
+	       continue;
+           }
+
+#endif
+	   // Gotcha! -> Save the entry
+           LOL_MEMCPY(&op->nentry, entry, nes);
+
+	   if (loops) {
+	       ds = io;
+	       ds *= i;
+	   }
+	   else {
+	       ds = full;
+	   }
+
+	   j *= nes;
+           ds += j;
+	   op->n_idx = ds / nes;
+           op->n_off = base;
+	   op->n_off += ds;
+           ret = 1;
+
+	   goto position;
+
+        } // end else found it
+
+    } // end for j
   } // end for i
+  // Now the fractional data
+  if ((frac) && (loops)) {
+       times++;
+       io = frac;
+       k = (int)(io / nes);
+       loops = 0;
+      goto dentry_loop;
+  } // end if frac
+
   ret = 0;
-error:
-  fsetpos (fp, &pos);
+
+position:
+  fsetpos(fp, &pos);
+freemem:
+  if (alloc) {
+    lol_index_free(mem);
+  }
   return ret;
 } // end lol_read_nentry
+#undef LOL_READNENTRY_TMP
 /* ********************************************************** */
 lol_FILE *new_lol_FILE() {
   lol_FILE *fp = LOL_ALLOC(struct _lol_FILE);
   if (!(fp))
     return NULL;
   memset((char *)fp, 0, LOL_FILE_SIZE);
-  fp->open_mode.mode_num = -1;
+  fp->opm = -1;
   return fp;
 } // end new_lol_FILE
 /* ********************************************************** */
@@ -1423,26 +1543,29 @@ int lol_pathinfo(lol_pinfo *p) {
   char *src;
   int x;
 #endif
-  int i, k, len;
+  int i, k, len = 0;
   int y, f;
 
   if (!(p))
     return -1;
   if (!(p->fullp))
-    return -1;
-  if (!(p->fullp[0]))
-    return -1;
+    return -2;
+  path = p->fullp;
   f = p->func;
   if ((f <= 0) || (f > 23)) {
-     return -1;
+     return -3;
   }
-  path = p->fullp;
+#ifdef LOL_INLINE_MEMCPY
+  for (; path[len]; len++);
+#else
   len = (int)strlen(path);
+#endif
   if ((len < 4) || (len > LOL_PATH_MAX)) {
-    return -1;
+    return -4;  // <-- Don't touch this value, lol_fopen
+                // depends on it!
   }
   if (path[len-1] == '/') {
-    return -1;
+    return -5;
   }
   if (f & LOL_PATHLEN) {
      p->plen = len;
@@ -1455,7 +1578,7 @@ int lol_pathinfo(lol_pinfo *p) {
     if (path[i] == '/') {
       if (path[i-1] == ':') {
         if (path[i-2] == '/') {
-	   return -1;
+	   return -6;
         }
 	if ((f == LOL_FILELEN) &&
             (p->flen == LOL_PATHMAGIC)) {
@@ -1465,7 +1588,8 @@ int lol_pathinfo(lol_pinfo *p) {
 	k = i + 1;
         y = len - k;
 	if (y >= LOL_FILENAME_MAX) {
-	    y  = LOL_FILENAME_MAXLEN;
+          // y  = LOL_FILENAME_MAXLEN;
+           return -7;
         }
 	if (f & LOL_FILELEN) {
 	    p->flen = y;
@@ -1541,11 +1665,11 @@ int lol_pathinfo(lol_pinfo *p) {
 	} // end if cont name only
       } // end if ':'
       else {
-	return -1;
+	return -8;
       }
     } // end if '/'
   } // end for i
-  return -1;
+  return -9;
 } // end lol_pathinfo
 /* **********************************************************
  * lol_validpath:
@@ -1640,7 +1764,6 @@ int lol_fnametolol(const char *src, const char *cont,
 /* ********************************************************** */
 int lol_is_writable(const lol_FILE *op) {
 
-  int    m;
   DWORD nb;
   DWORD bs;
   ULONG ds;
@@ -1651,13 +1774,13 @@ int lol_is_writable(const lol_FILE *op) {
   nb   = op->sb.nb;
   bs   = op->sb.bs;
   fe   = op->file[0];
-  m    = op->open_mode.mode_num;
+
   if ((!(nb)) || (!(bs)) || (!(fe)))
     return -2;
-  if (m < 1) // Opened "r"?
+  if (op->opm < 1) // Opened "r"?
      return -3;
   ds = (ULONG)LOL_DEVSIZE(nb, bs);
-  if (op->csiz != ds)
+  if (op->cs != ds)
      return -4;
   return 0;
 } // end lol_is_writable
@@ -1681,63 +1804,6 @@ void lol_exit(int status) {
   }
   exit (status);
 } // end lol_exit
-/* ********************************************************** *
- * lol_try_fclose:
- * Try fclose 30 times max
- *
- * Return value:
- * < 0 : error
- *   0 : success
- * ********************************************************** */
-int lol_try_fclose(FILE *fp) {
-  int i;
-  if (!(fp)) {
-    lol_errno = EBADF;
-    return -1;
-  }
-  for (i = 0; i < 30; i++) {
-    if (!(fclose(fp)))
-       return 0;
-  } // end for i
-  lol_errno = errno;
-  return -1;
-} // end lol_try_fclose
-/* ********************************************************** *
- * lol_try_fgetpos:
- * Try fgetpos 30 times max
- *
- * Return value:
- * < 0 : error
- *   0 : success
- * ********************************************************** */
-int lol_try_fgetpos(FILE *fp, fpos_t *pos) {
-  int i;
-  if ((!(fp)) || (!(pos)))
-    return -1;
-  for (i = 0; i < 30; i++) {
-    if (!(fgetpos(fp, pos)))
-       return 0;
-  } // end for i
-  return -1;
-} // end lol_try_fgetpos
-/* ********************************************************** *
- * lol_try_fsetpos:
- * Try fsetpos 30 times max
- *
- * Return value:
- * < 0 : error
- *   0 : success
- * ********************************************************** */
-int lol_try_fsetpos(FILE *fp, const fpos_t *pos) {
-  int i;
-  if ((!(fp)) || (!(pos)))
-    return -1;
-  for (i = 0; i < 30; i++) {
-    if (!(fsetpos(fp, pos)))
-       return 0;
-  } // end for i
-  return -1;
-} // end lol_try_fsetpos
 /* ********************************************************** *
  * lol_getsb:  PRIVATE function!!
  * Read container metadata to the argument 'sb'.
@@ -1956,11 +2022,12 @@ long lol_get_free_nentry(FILE *fp, const lol_meta *sb, lol_ninfo *info) {
   k     = io / nes;
   full  = ds - frac;
 
-  if ((fgetpos(fp, &pos)))
+  if ((fgetpos(fp, &pos))) {
       goto freemem;
-  j = (long)LOL_DENTRY_OFFSET_EXT(nb, bs);
-  if (fseek (fp, j, SEEK_SET))
+  }
+  if (fseek (fp, base, SEEK_SET)) {
       goto position;
+  }
 
  dentry_loop:
   for (; i < times; i++) {
@@ -2010,7 +2077,6 @@ long lol_get_free_nentry(FILE *fp, const lol_meta *sb, lol_ninfo *info) {
 
     } // end for j
   } // end for i
-
   // Now the fractional data
   if ((frac) && (loops)) {
        times++;
@@ -2043,12 +2109,14 @@ int lol_touch_file(lol_FILE *op) {
   lol_ninfo info;
   FILE *fp;
   char *name;
+#ifdef LOL_INLINE_MEMCPY
+  char *tmp;
+  int x;
+#endif
   fpos_t pos;
-  size_t len;
   DWORD nb, bs, nf;
   alloc_entry idx = LAST_LOL_INDEX;
-  //int mode;
-  int ret = -1;
+  int  len, ret = -1;
   long off;
 
   if (!(op))
@@ -2067,11 +2135,10 @@ int lol_touch_file(lol_FILE *op) {
      LOL_ERR_RETURN(ENOSPC, -4);
  // if(!(name[0]))
 //     LOL_ERR_RETURN(EIO, -5);
-  len = strlen(name);
+  len = (int)strlen(name);
   if (len >= LOL_FILENAME_MAX) {
       len = LOL_FILENAME_MAX - 1;
       name[len] = '\0';
-      lol_errno = ENAMETOOLONG;
   }
   fp = op->dp;
   if (fgetpos(fp, &pos))
@@ -2083,8 +2150,15 @@ int lol_touch_file(lol_FILE *op) {
      LOL_TOUCH_ERROR(ENOSPC, -10);
 
   // create a zero sized file
-  memset(op->nentry.name, 0, LOL_FILENAME_MAX);
-  memcpy((char *)op->nentry.name, name, len);
+#ifdef LOL_INLINE_MEMCPY
+  tmp = (char *)op->nentry.name;
+  for (x = 0; x < len; x++) {
+       tmp[x] = name[x];
+  }
+#else
+  LOL_MEMCPY(op->nentry.name, name, len);
+#endif
+  op->nentry.name[len] = '\0';
   op->nentry.created   = time(NULL);
   op->nentry.i_idx     = idx;
   op->nentry.fs = 0;
@@ -2231,7 +2305,7 @@ int lol_update_nentry(lol_FILE *op) {
   if ((lol_is_writable(op))) {
     return -2;
   }
-  mode = op->open_mode.mode_num;
+  mode = op->opm;
   name = op->file;
   if (mode < 1) // Opened "r"?
     return -3;
@@ -2288,7 +2362,7 @@ int lol_update_ichain(lol_FILE *op, const long olds,
     return -4;
   }
 
-  mode = op->open_mode.mode_num;
+  mode = op->opm;
   name = op->file;
   if (mode < 1) // Opened "r"?
     return -5;
@@ -3228,9 +3302,8 @@ int lol_status_msg(const char *me, const char* txt, const int type) {
   if ((i < LOL_FSCK_OK) ||
       (i > LOL_FSCK_FATAL))
        i = LOL_FSCK_INTRN;
-
-  if (i > LOL_FSCK_WARN) {
-    out = LOL_STDERR;
+  if  (i > LOL_FSCK_WARN) {
+     out = LOL_STDERR;
   }
   len = strlen(txt);
   if (len > 52) {
@@ -3284,13 +3357,17 @@ int lol_is_number(const char ch) {
 } // end lol_is_number
 /* ***************************************************************** */
 int lol_is_integer(const char *str) {
-  int i, len;
+  int i, len = 0;
   int ret = 0;
   if (!(str))
     return -1;
+#ifdef LOL_INLINE_MEMCPY
+  for (; str[len]; len++);
+#else
   if(!(str[0]))
     return -1;
   len = (int)strlen(str);
+#endif
   // Don't accept integers like 0123
   if ((str[0] == '0') && (len > 1))
     return -1;
@@ -3456,7 +3533,7 @@ long lol_get_io_size(const long size, const long blk) {
     (  8 * LOL_MEGABYTE),
     (  4 * LOL_MEGABYTE),
     (512 * LOL_KILOBYTE),
-    (512 * LOL_KILOBYTE),
+    (256 * LOL_KILOBYTE),
     (64  * LOL_KILOBYTE),
        (LOL_04KILOBYTES),
     1
@@ -3610,16 +3687,16 @@ do_relocate:
   if (pass == 1) {
      if ((fseek(fp, table_end, SEEK_SET)))
          goto err;
-     if ((lol_ifcopy(FREE_LOL_INDEX, news, fp)) != news) { // frac --> news
-          goto err;
-      }
+     if ((lol_ifcopy(FREE_LOL_INDEX, news, fp)) != news) {
+         goto err;
+     }
   }// end if pass == 1
   else {
      frac = (size_t)(news * (size_t)(NAME_ENTRY_SIZE));
      if ((fseek(fp, dir_end, SEEK_SET)))
          goto err;
      if ((lol_fclear (frac, fp)) != frac) {
-        goto err;
+         goto err;
      }
   } // end else
   if (pass > 1) {

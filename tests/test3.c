@@ -20,8 +20,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lolfs.h>
-#include <lol_internal.h>
+#include "../include/lolfs.h"
+#include "../include/lol_internal.h"
 /* ************************************************************************ */
 /* LoL testsuite: test #3 (Modify a file inside a container)                */
 /* ************************************************************************ */
@@ -32,6 +32,7 @@ int main (int argc, char* argv[])
 {
   lol_FILE *fp;
   const char *me = argv[0];
+  int ret = -1;
 
   // Process standard --help & --version options.
   if (argc > 1) {
@@ -54,11 +55,13 @@ int main (int argc, char* argv[])
        lol_error("lol_fwrite: cannot write to file \'%s\'\n", lolfile);
        goto error;
   }
-  printf("Success, modified file \'%s\'\n", lolfile);
-  lol_fclose(fp);
-  return 0;
+  else {
+    printf("Success, modified file \'%s\'\n", lolfile);
+    ret = 0;
+  }
+
  error:
   lol_fclose(fp);
-  return -1;
+  return ret;
 }
 /* ************************************************************************ */

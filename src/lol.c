@@ -40,13 +40,13 @@
 #endif
 /* ****************************************************************** */
 typedef int (*lol_func)(int, char**);
-struct lfuncs
+struct lol_function
 {
-  char*    name;
-  lol_func func;
+  char*    n;
+  lol_func f;
 };
 /* ****************************************************************** */
-static const struct lfuncs funcs[] =
+static const struct lol_function funcs[] =
 {
   // Sorted by assumed popularity..
   {"ls",   lol_ls},
@@ -61,7 +61,6 @@ static const struct lfuncs funcs[] =
 };
 /* ****************************************************************** */
 static const char params[] = "<function> <parameter(s)>";
-static const char    hlp[] = "           Type: \'%s -h\' for help.\n";
 static const char*   lst[] =
 {
   "Possible functions are:\n",
@@ -79,63 +78,50 @@ static const char*   lst[] =
 /* ****************************************************************** */
 int main (int argc, char* argv[])
 {
+  char  *me = argv[0];
   char **av = NULL;
-  char  *me = NULL;
   char   *p = NULL;
   int     a = argc - 1;
   int     i = 0;
 
-
-  me = argv[0];
   // Process standard --help & --version options.
   if (argc == 2) {
-    if (LOL_CHECK_HELP) {
 
-        printf ("%s v%s. %s\nUsage: %s %s\n",
-                me, lol_version, lol_copyright,
-                me, params);
-
-        lol_help(lst);
-        return 0;
-    }
-    if (LOL_CHECK_VERSION) {
-
-	printf ("%s v%s %s\n", me,
-                lol_version, lol_copyright);
-	return 0;
-    }
-    if (argv[1][0] == '-') {
-
-        printf("%s: unrecognized option \'%s\'\n",
-               me, argv[1]);
-        printf (hlp, me);
-        return -1;
-    }
+     if (LOL_CHECK_HELP) {
+         lol_show_usage2(me);
+         lol_help(lst);
+         return 0;
+     }
+     if (LOL_CHECK_VERSION) {
+         lol_show_version2(me);
+	 return 0;
+     }
+     if (argv[1][0] == '-') {
+         lol_errfmt2(LOL_2E_OPTION2, me, argv[1]);
+	 lol_ehelpf2(me);
+         return -1;
+     }
   } // end if argc == 2
-
   if (argc == 1) {
 
-        printf ("%s v%s. %s\nUsage: %s %s\n",
-                me, lol_version, lol_copyright,
-                me, params);
-
-        printf (hlp, me);
-        return 0;
+     lol_show_usage2(me);
+     lol_helpf2(me);
+     return 0;
   }
 
   av = (char **)(&argv[1]);
   p  = argv[1];
 
   // Which function shall we use?
-  while (funcs[i].name) {
-     if (!(strcmp(p, funcs[i].name))) {
-         return funcs[i].func(a, av);
+  while (funcs[i].n) {
+     if (!(strcmp(p, funcs[i].n))) {
+         return funcs[i].f(a, av);
      }
      i++;
   } // end while funcs
 
-  printf("%s: unrecognized function \'%s\'\n", me, p);
-  printf (hlp, me);
+  lol_errfmt2(LOL_2E_INVFUNC, me, p);
+  lol_ehelpf2(me);
 
   return -1;
 } // end main

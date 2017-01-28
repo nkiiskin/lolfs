@@ -23,7 +23,7 @@
 .\"
 .\"     @(#)lol.3 0.30 16/12/16
 .\"
-.\" Modified, niko, 2016-12-28
+.\" Modified, niko, 2017-01-28
 .\"
 .de URL
 \\$2 \(laURL: \\$1 \(ra\\$3
@@ -134,6 +134,16 @@ List files in 'my.db' container.
 lol cp *.txt my.db
 .IP
 Copies all text files into 'my.db'.
+.TP
+lol cp my.db:/memo.txt files
+.IP
+Copies the file 'memo.txt' from the container 'my.db' to
+directory 'files'.
+.TP
+lol cp my.db:/face.jpg backup.db
+.IP
+Copies the file 'face.jpg' from the container 'my.db' to
+container 'backup.db'.
 .TP
 lol cat my.db:/memo.txt
 .IP
