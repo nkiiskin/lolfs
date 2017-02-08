@@ -14,7 +14,7 @@
 
 */
 /*
- $Id: test1.c, v0.30 2016/12/27 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: test1.c, v0.20 2016/12/27 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************ */
 #include <stdio.h>
@@ -41,11 +41,16 @@ int main (int argc, char* argv[])
        }
     }
   }
-  if ((lol_mkfs ("-s", "5M", 0, 0, "../../test.db"))) {
+  if ((lol_mkfs ("-s", "2M", 0, 0, "../../1.db"))) {
       lol_error("lol_mkfs: Error, cannot create container\n");
       return -1;
   }
-  puts("Success, created container");
+  if ((lol_mkfs ("-s", "2M", 0, 0, "../../2.db"))) {
+      lol_error("lol_mkfs: Error, cannot create container\n");
+      return -1;
+  }
+
+  puts("Success, created 2 containers");
   return 0;
 }
 /* ************************************************************************ */

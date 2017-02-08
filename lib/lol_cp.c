@@ -385,7 +385,9 @@ int lol_copy_to_container(const int argc, const int ftof,
 #endif
      name[len] = '\0';
   } // endif ftof
-
+#if LOL_TESTING
+  puts("DEBUG: lol_copy_to_container: going to LOOP");
+#endif
 
   for (i = 1; i < nf; i++) {
 
@@ -394,13 +396,26 @@ int lol_copy_to_container(const int argc, const int ftof,
     src_type = LOL_TYPE_UNDEF;
 
     if ((stat(curr, &st))) { // What kind of file is this one?
+#if LOL_TESTING
+      printf("DEBUG: lol_copy_to_container: stat failed, trying lol_stat on \'%s\'\n", curr);
+#endif
 
        if ((lol_stat(curr, &st))) {
-           lol_errfmt2(LOL_2E_CANTREAD, me, curr);
-	   ret = -1; continue;
+
+#if LOL_TESTING
+      printf("DEBUG: lol_copy_to_container: lol_stat failed on \'%s\'\n", curr);
+#endif
+
+          lol_errfmt2(LOL_2E_CANTREAD, me, curr);
+
+	  ret = -1; continue;
        }
 
        else {
+#if LOL_TESTING
+      printf("DEBUG: lol_copy_to_container: lol_stat succes, on \'%s\'\n", curr);
+#endif
+
 
            fop = (lol_open_func)&lol_fopen;
            fcl = (lol_close_func)&lol_fclose;
@@ -477,6 +492,10 @@ int lol_copy_to_container(const int argc, const int ftof,
          }
          // Create dest name
          if ((lol_fnametolol(curr, cont, name, len))) {
+#if LOL_TESTING
+	   puts("lol_cp: lol_fnametolol FAILED");
+#endif
+
 	      // What the heck is the problem with this one?
               lol_errfmt2(LOL_2E_INVSRC, me, curr);
               ret = -1; continue;
@@ -564,6 +583,10 @@ int lol_copy_to_container(const int argc, const int ftof,
     // If open succeed and we are overwriting a file,
     // then it has alrady been truncated to zero,
     // thus giving us back it's blocks
+#if LOL_TESTING
+    puts("DEBUG: lol_cp: lol_fopen succes, opened file for writing");
+#endif
+
     if (replacing) {
 	blocks_left += src_blocks;
     }
@@ -589,9 +612,16 @@ int lol_copy_to_container(const int argc, const int ftof,
     loops = src_size / LOL_DEFBUF;
     frac  = src_size % LOL_DEFBUF;
     bytes = LOL_DEFBUF;
+#if LOL_TESTING
+    puts("DEBUG: lol_cp: going to COPY LOOP");
+#endif
 
   action:
     for (j = 0; j < loops; j++) {
+#if LOL_TESTING
+      printf("DEBUG: lol_cp: in loop, j = %d\n", (int)j);
+#endif
+
        if ((io((char *)temp, bytes, 1, src)) != 1) {
    	    lol_errfmt2(LOL_2E_CANTREAD, me, curr);
 	    frac = 0; ret = -1; break;
@@ -620,6 +650,10 @@ int lol_copy_to_container(const int argc, const int ftof,
 
     blocks_left -= src_blocks;
   } // end for files
+
+#if LOL_TESTING
+      printf("DEBUG: lol_cp: copy_to_container returning %d\n", (int)ret);
+#endif
   return ret;
 } // end lol_copy_to_container
 #undef LOL_TYPE_UNDEF
@@ -693,6 +727,9 @@ int lol_cp (int argc, char* argv[]) {
       return 0;
   }
   if ((copying_to_container(argc, dest, &sb, &st, &ftof))) {
+#if LOL_TESTING
+    puts("DEBUG: lol_cp: about to copy TO container");
+#endif
        return lol_copy_to_container(argc, ftof, &sb, st.st_ino, argv);
   }
   if ((copying_from_container(argc, &st, dest, &is))) {

@@ -312,12 +312,26 @@ k = frac */
                                    ((x)->sb.bs))
 #define LOL_DENTRY_OFFSET_EXT(x,y) ((long)(DISK_HEADER_SIZE) + \
                                    (long)(x) * (long)(y))
+
+/*
 #define LOL_GOTO_NENTRY(x,y,z,w)   (fseek((x), DISK_HEADER_SIZE + (y) * (z) + \
                                    (w) * NAME_ENTRY_SIZE, SEEK_SET))
+
+
+
+  op->p_len = p.plen; // length of the lol_fopen path
+  op->f_len = p.flen; // Length of the filename
+  op->n_off; // abs offset of the name entry from beginning of cont
+
+*/
+
 #define LOL_GOTO_DENTRY(x)         (fseek((x)->dp, DISK_HEADER_SIZE + \
                                    (x)->n_idx * NAME_ENTRY_SIZE + \
                                    (x)->sb.bs * \
                                    (x)->sb.nb, SEEK_SET))
+
+
+// #define LOL_GOTO_DENTRY(x)         (fseek((x)->dp, (x)->n_off, SEEK_SET))
 #define LOL_TABLE_START_EXT(x,y)   (DISK_HEADER_SIZE + (x) * \
                                    (NAME_ENTRY_SIZE + (y)))
 #define LOL_TABLE_START(x)         (DISK_HEADER_SIZE + ((x)->sb.nb) * \
@@ -368,7 +382,6 @@ k = frac */
 #define lol_debug(x)               fprintf(stderr, "%s: ", (x))
 #endif
 
-
 // funcs for lol_fio:
 #define        LOL_READ (0)
 #define       LOL_WRITE (1)
@@ -394,6 +407,7 @@ k = frac */
 #define LOL_OK           (0)
 #define LOL_ERR_EOF      (0)
 #define LOL_ERR_GENERR  (-1)
+#define LOL_ERR LOL_ERR_GENERR
 #define LOL_ERR_SEGMENT (-2)
 #define LOL_ERR_IO      (-3)
 #define LOL_ERR_USER    (-4)
@@ -425,11 +439,6 @@ k = frac */
 // Flags to lol_delete_chain_from:
 #define LOL_UNLINK            (0)
 #define LOL_SAVE_FIRST_BLOCK  (1)
-
-// Flags for lol_split_fname
-//#define LOL_SAVE_FULLPATH     (1)
-//#define LOL_SAVE_NAMEONLY     (2)
-//#define LOL_SAVE_FILEONLY     (3)
 
 // Flags for lol_get_free_index
 #define LOL_MARK_USED         (1)
@@ -486,9 +495,6 @@ extern const char lol_mode_rw[];
 // We want to fit in terminal,
 // align should be max 72
 #define LOL_STATUS_ALIGN 70
-
-//#define lol_version   LOLFS_VERSION
-//#define lol_copyright LOLFS_COPYRIGHT
 
 // lol_divs
 enum
@@ -547,9 +553,8 @@ long        lol_get_io_size(const long size, const long blk);
 int         lol_pathinfo(lol_pinfo *);
 int         lol_fnametolol(const char *src, const char *cont,
                            char *out, const size_t contlen);
-int         lol_get_free_index(FILE *,const lol_meta *,
-                               alloc_entry *idx, int mark);
-long        lol_get_free_nentry(FILE *, const lol_meta *, lol_ninfo *);
+int         lol_get_free_index(lol_FILE *op, alloc_entry *idx, int mark);
+long        lol_get_free_nentry(lol_FILE *, lol_ninfo *);
 long        lol_rgetsize (const char *device, lol_meta *sb, struct stat *st);
 long        lol_getsize (const char *name, lol_meta *sb,
                          struct stat *st, int func);
@@ -589,9 +594,8 @@ long        lol_io_dblock(lol_FILE *op, const size_t block_number,
 size_t      lol_num_blocks(lol_FILE *op, const size_t amount,
                            struct lol_loop *loop);
 int         lol_garbage_filename(const char *name);
-int         lol_remove_nentry (FILE *fp, const DWORD nb, const DWORD bs,
-                               const DWORD nentry, int rm_idx);
-int         lol_count_file_blocks (FILE *vdisk, const struct lol_super *sb,
+int         lol_remove_nentry (lol_FILE *op, const DWORD nentry, int rm_idx);
+int         lol_count_file_blocks (FILE *fp, const struct lol_super *sb,
                                    const alloc_entry first_index,
                                    const long dsize, long *count,
                                    const int terminate);
@@ -616,9 +620,7 @@ int         lol_new_ichain(lol_FILE *op, const long olds, const long news,
                            alloc_entry *last_old);
 int         lol_update_ichain(lol_FILE *op, const long olds,
                               const long news, const alloc_entry last_old);
-int         lol_set_index_value (FILE *f, const DWORD nb,
-                                 const DWORD bs, const alloc_entry idx,
-                                 const alloc_entry new_val);
+int         lol_set_index_value (lol_FILE *op, const alloc_entry new_val);
 // Message output
 void        lol_align(const char *before, const char *after,
                       const size_t len, int out);
@@ -635,6 +637,9 @@ int         lol_fs   (int, char**);
 int         lol_ls   (int, char**);
 int         lol_rm   (int, char**);
 int         lol_rs   (int, char**);
+
+// DON'T add lol_cmd to N_LOLFUNCS
+int         lol_cmd  (int, char**);
 
 //
 // These constants are here just for reference

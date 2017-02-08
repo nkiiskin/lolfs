@@ -31,7 +31,8 @@ funcs = lol_ls.c  \
 	lol_cat.c \
 	lol_fs.c  \
 	lol_cc.c  \
-	lol_rs.c
+	lol_rs.c \
+	lol_cmd.c
 
 interface = lol_lib.c
 

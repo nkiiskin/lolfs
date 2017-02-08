@@ -14,25 +14,24 @@
 
 */
 /*
- $Id: test3.c, v0.30 2016/12/27 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: test3.c, v0.20 2016/12/27 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/lolfs.h"
-#include "../include/lol_internal.h"
+#include <lolfs.h>
+#include <lol_internal.h>
 /* ************************************************************************ */
 /* LoL testsuite: test #3 (Modify a file inside a container)                */
 /* ************************************************************************ */
-char lolfile[] = "../../test.db:/ChangeLog";
+char lolfile[] = "../../1.db:/ChangeLog";
 char newline[] = "\nNew line in ChangeLog... testing\n";
 
 int main (int argc, char* argv[])
 {
   lol_FILE *fp;
   const char *me = argv[0];
-  int ret = -1;
 
   // Process standard --help & --version options.
   if (argc > 1) {
@@ -55,13 +54,11 @@ int main (int argc, char* argv[])
        lol_error("lol_fwrite: cannot write to file \'%s\'\n", lolfile);
        goto error;
   }
-  else {
-    printf("Success, modified file \'%s\'\n", lolfile);
-    ret = 0;
-  }
-
+  printf("Success, modified file \'%s\'\n", lolfile);
+  lol_fclose(fp);
+  return 0;
  error:
   lol_fclose(fp);
-  return ret;
+  return -1;
 }
 /* ************************************************************************ */

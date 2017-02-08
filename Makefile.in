@@ -808,9 +808,15 @@ uninstall-am:
 	uninstall-am
 
 
-#CHANGELOG_START = 633f37efc5743504fa094fc91f18de0f2df7f3b9
-#CHANGELOG_GIT_FLAGS = --pretty=format:"%h %ad | %s%d (nk)" --graph --date=short
-#CHANGELOG_GIT_DIR = $(top_srcdir)/.git
+# CHANGELOG_START = 0.30^
+# CHANGELOG_START = 633f37efc5743504fa094fc91f18de0f2df7f3b9
+# CHANGELOG_GIT_FLAGS = --pretty=format:"%h %ad | %s%d (nk)" --graph --date=short
+# CHANGELOG_GIT_DIR = $(top_srcdir)/.git
+# AX_GNU_AUTOTEST_DEFAULT: @AX_GNU_AUTOTEST_DEFAULT@
+# @GENERATE_CHANGELOG_RULES@
+
+# clean:
+#	rm -f tests/1.db tests/2.db tests/ChangeLog tests/TODO
 
 all-local:
 	@echo '******************************'

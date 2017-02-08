@@ -94,7 +94,6 @@ struct lol_open_mode
   char m[4];
 };
 
-
 // TODO: The filename is in two places:
 //     - In vdisk_file
 //     - In nentry.name
@@ -112,14 +111,23 @@ typedef struct _lol_FILE
   FILE  *dp;
   //struct lol_open_mode open_mode;
   struct stat cinfo;
+
+  long data_s; // data area size;
+
+  long idxs; // offset where index storage begins
+  long idxs_s; // index storage size;
+
+  long dir; // offset where the directory begins
+  long dir_s; // directory size;
+
   long n_off; // abs position of the name entry
               // from the beginning of container
-  alloc_entry n_idx;
   // TODO Make curr_pos ULONG
   // Because file_size is ULONG too !!
   DWORD curr_pos;
   int p_len; // length of the lol_fopen path
   int f_len; // Length of the filename
+  alloc_entry n_idx; // name entry index
   int   opm; // Open mode (how the file was opened)
   BOOL  opened;
   WORD  eof;

@@ -4,7 +4,7 @@
 # All Rights Reserved.
 # This file is distributed under the GPLv2 License.
 #
-## $Id: Makefile.am tests 0.30 2017-01-08 23:17:15Z niko $
+## $Id: Makefile.am tests 0.20 2017-01-08 23:17:15Z niko $
 #
 # Author: Niko Kiiskinen 2016-11-07
 #
@@ -15,7 +15,7 @@ AUTOMAKE_OPTIONS = foreign
 DEFAULT_INCLUDES = -I$(top_builddir)/include
 AM_CFLAGS = -O2 -Wall -I$(top_builddir)/include @AM_CFLAGS@
 AM_LDFLAGS = -L$(top_builddir)/lib
-check_PROGRAMS = test1 test2 test3
+check_PROGRAMS = test1 test2 test3 test4
 
 proj_heads = \
 	$(top_builddir)/include/lol_config.h \
@@ -42,8 +42,14 @@ test3_SOURCES      = $(top_builddir)/tests/test3.c $(proj_heads)
 test3_LDADD        = $(proj_lib)
 test3_LDFLAGS      = -L$(top_builddir)/lib
 
+test4_DEPENDENCIES = $(proj_lib)
+test4_SOURCES      = $(top_builddir)/tests/test4.c $(proj_heads)
+test4_LDADD        = $(proj_lib)
+test4_LDFLAGS      = -L$(top_builddir)/lib
+
 EXTRA_DIST = $(TESTSUITE_AT) testsuite.at testsuite package.m4 \
-	atlocal.in fail.sh success.sh m4 m4/1.at m4/2.at m4/3.at
+	atlocal.in fail.sh success.sh m4 m4/1.at m4/2.at m4/3.at m4/4.at
+
 DISTCLEANFILES       = atconfig $(check_SCRIPTS)
 MAINTAINERCLEANFILES = Makefile.in $(TESTSUITE) package.m4
 

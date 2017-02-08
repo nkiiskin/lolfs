@@ -14,7 +14,7 @@
 
 */
 /*
- $Id: test2.c, v0.30 2016/12/27 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: test2.c, v0.20 2016/12/27 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************ */
 #include <stdio.h>
@@ -31,7 +31,11 @@ char *args[] = {
   "../../../INSTALL",
   "../../../TODO",
   "../../../ChangeLog",
-  "../../test.db",
+  "../../../AUTHORS",
+  "../../../aclocal.m4",
+  "../../../COPYING",
+  "../../test1.c",
+  "../../1.db",
   NULL
 };
 int main (int argc, char* argv[])
@@ -49,11 +53,11 @@ int main (int argc, char* argv[])
        }
     }
   }
-  if ((lol_cp (6, args))) {
+  if ((lol_cp (10, args))) {
       lol_error("Error, cannot copy files\n");
       return -1;
   }
-  puts("Success, copied files to \'test.db\'");
+  puts("Success, copied files to test container \'1.db\'");
   return 0;
 }
 /* ************************************************************************ */

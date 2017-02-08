@@ -31,7 +31,7 @@ bin_PROGRAMS =  \
 	mkfs.lolfs \
 	fsck.lolfs
 
-lol_SOURCES      = $(top_builddir)/src/lol.c $(proj_heads)
+lol_SOURCES = $(top_builddir)/src/lol.c $(proj_heads)
 lol_LDADD        = $(proj_lib)
 lol_DEPENDENCIES = $(proj_lib)
 lol_LDFLAGS      = -rpath $(libdir)

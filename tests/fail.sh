@@ -1,3 +1,3 @@
 #!/bin/sh
-echo "Dang: FAILED"
+echo "Test failed"
 exit -1

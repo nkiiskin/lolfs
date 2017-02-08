@@ -1,7 +1,8 @@
 AT_INIT
-AT_BANNER([LOLFS Testsuite 1])
+AT_BANNER([Testing lolFS package])
 m4_define([AT_PACKAGE_STRING], [LOLFS Testsuite 1])
 AT_COPYRIGHT([Copyright (C) 2016 Niko Kiiskinen])
 m4_include([m4/1.at])
 m4_include([m4/2.at])
 m4_include([m4/3.at])
+m4_include([m4/4.at])

@@ -126,7 +126,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 liblolfs_la_LIBADD =
 am__objects_1 = lol_lib.lo
 am__objects_2 = lol_ls.lo lol_cp.lo lol_rm.lo lol_df.lo lol_cat.lo \
-	lol_fs.lo lol_cc.lo lol_rs.lo
+	lol_fs.lo lol_cc.lo lol_rs.lo lol_cmd.lo
 am__objects_3 =
 am_liblolfs_la_OBJECTS = lolfs.lo $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_3)
@@ -345,7 +345,8 @@ funcs = lol_ls.c  \
 	lol_cat.c \
 	lol_fs.c  \
 	lol_cc.c  \
-	lol_rs.c
+	lol_rs.c \
+	lol_cmd.c
 
 interface = lol_lib.c
 lib_LTLIBRARIES = liblolfs.la
@@ -440,6 +441,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_cat.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_cc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_cmd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_cp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_df.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lol_fs.Plo@am__quote@

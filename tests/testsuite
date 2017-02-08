@@ -595,6 +595,7 @@ at_format='?'
 at_help_all="1;1.at:6;Creating a test container;;
 2;2.at:5;Copying files to container;;
 3;3.at:6;Modifying file test.db:/Changelog;;
+4;4.at:7;Using lol command to copy files;;
 "
 # List of the all the test groups.
 at_groups_all=`$as_echo "$at_help_all" | sed 's/;.*//'`
@@ -608,7 +609,7 @@ at_fn_validate_ranges ()
   for at_grp
   do
     eval at_value=\$$at_grp
-    if test $at_value -lt 1 || test $at_value -gt 3; then
+    if test $at_value -lt 1 || test $at_value -gt 4; then
       $as_echo "invalid test group: $at_value" >&2
       exit 1
     fi
@@ -968,7 +969,7 @@ esac
 # Text for banner N, set to a single space once printed.
 # Banner 1. testsuite.at:2
 # Category starts at test group 1.
-at_banner_text_1="LOLFS Testsuite 1"
+at_banner_text_1="Testing lolFS package"
 
 # Take any -C into account.
 if $at_change_dir ; then
@@ -2084,3 +2085,34 @@ $at_traceon; }
 ) 5>&1 2>&1 7>&- | eval $at_tee_pipe
 read at_status <"$at_status_file"
 #AT_STOP_3
+#AT_START_4
+at_fn_group_banner 4 '4.at:7' \
+  "Using lol command to copy files" "                " 1
+at_xfail=no
+(
+  $as_echo "4. $at_setup_line: testing $at_desc ..."
+  $at_traceon
+
+{ set +x
+$as_echo "$at_srcdir/4.at:7: \$abs_top_builddir/tests/test4"
+at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test4" "4.at:7"
+( $at_check_trace; $abs_top_builddir/tests/test4
+) >>"$at_stdout" 2>>"$at_stderr" 5>&-
+at_status=$? at_failed=false
+$at_check_filter
+echo stderr:; tee stderr <"$at_stderr"
+echo stdout:; tee stdout <"$at_stdout"
+at_fn_check_status 0 $at_status "$at_srcdir/4.at:7"
+if $at_failed; then :
+  $abs_top_builddir/tests/fail.sh
+else
+  $abs_top_builddir/tests/success.sh
+fi
+$at_failed && at_fn_log_failure
+$at_traceon; }
+
+  set +x
+  $at_times_p && times >"$at_times_file"
+) 5>&1 2>&1 7>&- | eval $at_tee_pipe
+read at_status <"$at_status_file"
+#AT_STOP_4

@@ -29,7 +29,6 @@
 // Set LOL_TESTING to non-zero if you want to
 // compile a debug version of lolfs
 #define LOL_TESTING 0
-
 // Define LOL_INLINE_MEMCPY if you want to use inline
 // routines instead of C library calls in some routines
 // (Uncomment the line if you want to use function calls)
