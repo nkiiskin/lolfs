@@ -34,3 +34,5 @@
 	  between host and container. (Also intra-container copies
 	  are supported, eg. 'lol cp foo:/file foo:/file.bak'
 	
+0.40	+ Lots of performance and bug fixes.
+	

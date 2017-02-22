@@ -15,7 +15,7 @@
  */
 
 /*
- $Id: lol.c, v0.30 2017/01/28 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol.c, v0.40 2017/01/28 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************ */
 #ifndef _LOLFS_H

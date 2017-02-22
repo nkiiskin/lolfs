@@ -1,0 +1,9 @@
+m4_define([CHECK_LOL_CMD3], [
+  AT_BANNER([Verifying file consistency])
+  AT_SETUP([Comparing file inside a container with another outside])
+  AT_CHECK([$abs_top_builddir/tests/test6], [0], [stdout], [stderr],
+           [$abs_top_builddir/tests/fail.sh], [$abs_top_builddir/tests/success.sh])
+  AT_CLEANUP
+])
+
+CHECK_LOL_CMD3

@@ -1,5 +1,9 @@
-m4_define([CHECK_LOL_CP], [AT_SETUP([Copying files to container])
-AT_CHECK([$abs_top_builddir/tests/test2 $abs_top_builddir/INSTALL $abs_top_builddir/ChangeLog $abs_top_builddir/TODO $abs_top_builddir/tests/test.db], [0], [stdout], [stderr],
-[$abs_top_builddir/tests/fail.sh], [$abs_top_builddir/tests/success.sh])
-AT_CLEANUP])
+m4_define([CHECK_LOL_CP], [
+ AT_BANNER([Testing lol_cp function])
+ AT_SETUP([Copying files to first container using lol_cp])
+ AT_CHECK([$abs_top_builddir/tests/test2], [0], [stdout], [stderr],
+          [$abs_top_builddir/tests/fail.sh], [$abs_top_builddir/tests/success.sh])
+ AT_CLEANUP
+])
+
 CHECK_LOL_CP

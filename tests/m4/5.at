@@ -1,0 +1,9 @@
+m4_define([CHECK_LOL_CMD2], [
+  AT_BANNER([More tests using lol command])
+  AT_SETUP([Using lol command to execute various tests])
+  AT_CHECK([$abs_top_builddir/tests/test5], [0], [stdout], [stderr],
+           [$abs_top_builddir/tests/fail.sh], [$abs_top_builddir/tests/success.sh])
+  AT_CLEANUP
+])
+
+CHECK_LOL_CMD2

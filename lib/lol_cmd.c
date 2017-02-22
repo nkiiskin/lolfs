@@ -15,7 +15,7 @@
  */
 
 /*
- $Id: lol_cmd.c, v0.30 2016/11/11 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol_cmd.c, v0.40 2016/11/11 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 
 */
 /* ****************************************************************** */
@@ -39,7 +39,6 @@
 #include <lol_internal.h>
 #endif
 /* ****************************************************************** */
-typedef int (*lol_func)(int, char**);
 struct lol_function
 {
   char*    n;

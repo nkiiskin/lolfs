@@ -1,1 +1,0 @@
-PATH=@abs_builddir@:@abs_top_builddir@/tests:@top_srcdir@:@srcdir@:$PATH

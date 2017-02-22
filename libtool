@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # libtool - Provide generalized library-building support services.
-# Generated automatically by config.status (lolfs) 0.30
+# Generated automatically by config.status (lolfs) 0.40
 # Libtool was configured on host pluto:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #

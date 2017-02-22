@@ -592,10 +592,12 @@ at_tested=''
 # numerical order.
 at_format='?'
 # Description of all the test groups.
-at_help_all="1;1.at:6;Creating a test container;;
-2;2.at:5;Copying files to container;;
-3;3.at:6;Modifying file test.db:/Changelog;;
-4;4.at:7;Using lol command to copy files;;
+at_help_all="1;1.at:9;Creating two test containers 1.db and 2.db;;
+2;2.at:9;Copying files to first container using lol_cp;;
+3;3.at:9;Modifying file 1.db:/ChangeLog;;
+4;4.at:9;Using lol command to copy and delete files;;
+5;5.at:9;Using lol command to execute various tests;;
+6;6.at:9;Comparing file inside a container with another outside;;
 "
 # List of the all the test groups.
 at_groups_all=`$as_echo "$at_help_all" | sed 's/;.*//'`
@@ -609,7 +611,7 @@ at_fn_validate_ranges ()
   for at_grp
   do
     eval at_value=\$$at_grp
-    if test $at_value -lt 1 || test $at_value -gt 4; then
+    if test $at_value -lt 1 || test $at_value -gt 6; then
       $as_echo "invalid test group: $at_value" >&2
       exit 1
     fi
@@ -900,6 +902,7 @@ _ATEOF
 cat <<_ATEOF || at_write_fail=1
 
 Report bugs to <lolfs.bugs@gmail.com>.
+lolFS Container home page: <https://nkiiskin.github.io/lolfs>.
 _ATEOF
   exit $at_write_fail
 fi
@@ -907,7 +910,7 @@ fi
 # List of tests.
 if $at_list_p; then
   cat <<_ATEOF || at_write_fail=1
-lolfs 0.30 test suite test groups:
+lolFS Container 0.40 test suite test groups:
 
  NUM: FILE-NAME:LINE     TEST-GROUP-NAME
       KEYWORDS
@@ -948,7 +951,7 @@ _ATEOF
   exit $at_write_fail
 fi
 if $at_version_p; then
-  $as_echo "$as_me (lolfs 0.30)" &&
+  $as_echo "$as_me (lolFS Container 0.40)" &&
   cat <<\_ATEOF || at_write_fail=1
 
 Copyright (C) 2012 Free Software Foundation, Inc.
@@ -970,6 +973,24 @@ esac
 # Banner 1. testsuite.at:2
 # Category starts at test group 1.
 at_banner_text_1="Testing lolFS package"
+# Banner 2. 1.at:9
+# Category starts at test group 1.
+at_banner_text_2="Creating test containers"
+# Banner 3. 2.at:9
+# Category starts at test group 2.
+at_banner_text_3="Testing lol_cp function"
+# Banner 4. 3.at:9
+# Category starts at test group 3.
+at_banner_text_4="Testing C-API functions"
+# Banner 5. 4.at:9
+# Category starts at test group 4.
+at_banner_text_5="Testing lol cp and lol rm"
+# Banner 6. 5.at:9
+# Category starts at test group 5.
+at_banner_text_6="More tests using lol command"
+# Banner 7. 6.at:9
+# Category starts at test group 6.
+at_banner_text_7="Verifying file consistency"
 
 # Take any -C into account.
 if $at_change_dir ; then
@@ -1129,13 +1150,13 @@ fi
 exec 5>>"$at_suite_log"
 
 # Banners and logs.
-$as_echo "## ---------------------- ##
-## lolfs 0.30 test suite. ##
-## ---------------------- ##"
+$as_echo "## -------------------------------- ##
+## lolFS Container 0.40 test suite. ##
+## -------------------------------- ##"
 {
-  $as_echo "## ---------------------- ##
-## lolfs 0.30 test suite. ##
-## ---------------------- ##"
+  $as_echo "## -------------------------------- ##
+## lolFS Container 0.40 test suite. ##
+## -------------------------------- ##"
   echo
 
   $as_echo "$as_me: command line was:"
@@ -1978,7 +1999,7 @@ _ASBOX
   $as_echo "Please send $at_msg and all information you think might help:
 
    To: <lolfs.bugs@gmail.com>
-   Subject: [lolfs 0.30] $as_me: $at_fail_list${at_fail_list:+ failed${at_xpass_list:+, }}$at_xpass_list${at_xpass_list:+ passed unexpectedly}
+   Subject: [lolFS Container 0.40] $as_me: $at_fail_list${at_fail_list:+ failed${at_xpass_list:+, }}$at_xpass_list${at_xpass_list:+ passed unexpectedly}
 
 You may investigate any problem if you feel able to do so, in which
 case the test suite provides a good starting point.  Its output may
@@ -1993,23 +2014,23 @@ exit 0
 ## Actual tests. ##
 ## ------------- ##
 #AT_START_1
-at_fn_group_banner 1 '1.at:6' \
-  "Creating a test container" "                      " 1
+at_fn_group_banner 1 '1.at:9' \
+  "Creating two test containers 1.db and 2.db" "     " 2
 at_xfail=no
 (
   $as_echo "1. $at_setup_line: testing $at_desc ..."
   $at_traceon
 
-{ set +x
-$as_echo "$at_srcdir/1.at:6: rm -f \$abs_top_builddir/tests/test.db; \$abs_top_builddir/tests/test1"
-at_fn_check_prepare_dynamic "rm -f $abs_top_builddir/tests/test.db; $abs_top_builddir/tests/test1" "1.at:6"
-( $at_check_trace; rm -f $abs_top_builddir/tests/test.db; $abs_top_builddir/tests/test1
+  { set +x
+$as_echo "$at_srcdir/1.at:9: rm -f \$abs_top_builddir/tests/1.db; rm -f \$abs_top_builddir/tests/2.db; \$abs_top_builddir/tests/test1"
+at_fn_check_prepare_dynamic "rm -f $abs_top_builddir/tests/1.db; rm -f $abs_top_builddir/tests/2.db; $abs_top_builddir/tests/test1" "1.at:9"
+( $at_check_trace; rm -f $abs_top_builddir/tests/1.db; rm -f $abs_top_builddir/tests/2.db; $abs_top_builddir/tests/test1
 ) >>"$at_stdout" 2>>"$at_stderr" 5>&-
 at_status=$? at_failed=false
 $at_check_filter
 echo stderr:; tee stderr <"$at_stderr"
 echo stdout:; tee stdout <"$at_stdout"
-at_fn_check_status 0 $at_status "$at_srcdir/1.at:6"
+at_fn_check_status 0 $at_status "$at_srcdir/1.at:9"
 if $at_failed; then :
   $abs_top_builddir/tests/fail.sh
 else
@@ -2024,23 +2045,23 @@ $at_traceon; }
 read at_status <"$at_status_file"
 #AT_STOP_1
 #AT_START_2
-at_fn_group_banner 2 '2.at:5' \
-  "Copying files to container" "                     " 1
+at_fn_group_banner 2 '2.at:9' \
+  "Copying files to first container using lol_cp" "  " 3
 at_xfail=no
 (
   $as_echo "2. $at_setup_line: testing $at_desc ..."
   $at_traceon
 
-{ set +x
-$as_echo "$at_srcdir/2.at:5: \$abs_top_builddir/tests/test2 \$abs_top_builddir/INSTALL \$abs_top_builddir/ChangeLog \$abs_top_builddir/TODO \$abs_top_builddir/tests/test.db"
-at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test2 $abs_top_builddir/INSTALL $abs_top_builddir/ChangeLog $abs_top_builddir/TODO $abs_top_builddir/tests/test.db" "2.at:5"
-( $at_check_trace; $abs_top_builddir/tests/test2 $abs_top_builddir/INSTALL $abs_top_builddir/ChangeLog $abs_top_builddir/TODO $abs_top_builddir/tests/test.db
+ { set +x
+$as_echo "$at_srcdir/2.at:9: \$abs_top_builddir/tests/test2"
+at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test2" "2.at:9"
+( $at_check_trace; $abs_top_builddir/tests/test2
 ) >>"$at_stdout" 2>>"$at_stderr" 5>&-
 at_status=$? at_failed=false
 $at_check_filter
 echo stderr:; tee stderr <"$at_stderr"
 echo stdout:; tee stdout <"$at_stdout"
-at_fn_check_status 0 $at_status "$at_srcdir/2.at:5"
+at_fn_check_status 0 $at_status "$at_srcdir/2.at:9"
 if $at_failed; then :
   $abs_top_builddir/tests/fail.sh
 else
@@ -2049,29 +2070,29 @@ fi
 $at_failed && at_fn_log_failure
 $at_traceon; }
 
-  set +x
+   set +x
   $at_times_p && times >"$at_times_file"
 ) 5>&1 2>&1 7>&- | eval $at_tee_pipe
 read at_status <"$at_status_file"
 #AT_STOP_2
 #AT_START_3
-at_fn_group_banner 3 '3.at:6' \
-  "Modifying file test.db:/Changelog" "              " 1
+at_fn_group_banner 3 '3.at:9' \
+  "Modifying file 1.db:/ChangeLog" "                 " 4
 at_xfail=no
 (
   $as_echo "3. $at_setup_line: testing $at_desc ..."
   $at_traceon
 
-{ set +x
-$as_echo "$at_srcdir/3.at:6: \$abs_top_builddir/tests/test3"
-at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test3" "3.at:6"
+  { set +x
+$as_echo "$at_srcdir/3.at:9: \$abs_top_builddir/tests/test3"
+at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test3" "3.at:9"
 ( $at_check_trace; $abs_top_builddir/tests/test3
 ) >>"$at_stdout" 2>>"$at_stderr" 5>&-
 at_status=$? at_failed=false
 $at_check_filter
 echo stderr:; tee stderr <"$at_stderr"
 echo stdout:; tee stdout <"$at_stdout"
-at_fn_check_status 0 $at_status "$at_srcdir/3.at:6"
+at_fn_check_status 0 $at_status "$at_srcdir/3.at:9"
 if $at_failed; then :
   $abs_top_builddir/tests/fail.sh
 else
@@ -2080,29 +2101,29 @@ fi
 $at_failed && at_fn_log_failure
 $at_traceon; }
 
-  set +x
+    set +x
   $at_times_p && times >"$at_times_file"
 ) 5>&1 2>&1 7>&- | eval $at_tee_pipe
 read at_status <"$at_status_file"
 #AT_STOP_3
 #AT_START_4
-at_fn_group_banner 4 '4.at:7' \
-  "Using lol command to copy files" "                " 1
+at_fn_group_banner 4 '4.at:9' \
+  "Using lol command to copy and delete files" "     " 5
 at_xfail=no
 (
   $as_echo "4. $at_setup_line: testing $at_desc ..."
   $at_traceon
 
-{ set +x
-$as_echo "$at_srcdir/4.at:7: \$abs_top_builddir/tests/test4"
-at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test4" "4.at:7"
+  { set +x
+$as_echo "$at_srcdir/4.at:9: \$abs_top_builddir/tests/test4"
+at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test4" "4.at:9"
 ( $at_check_trace; $abs_top_builddir/tests/test4
 ) >>"$at_stdout" 2>>"$at_stderr" 5>&-
 at_status=$? at_failed=false
 $at_check_filter
 echo stderr:; tee stderr <"$at_stderr"
 echo stdout:; tee stdout <"$at_stdout"
-at_fn_check_status 0 $at_status "$at_srcdir/4.at:7"
+at_fn_check_status 0 $at_status "$at_srcdir/4.at:9"
 if $at_failed; then :
   $abs_top_builddir/tests/fail.sh
 else
@@ -2111,8 +2132,70 @@ fi
 $at_failed && at_fn_log_failure
 $at_traceon; }
 
-  set +x
+    set +x
   $at_times_p && times >"$at_times_file"
 ) 5>&1 2>&1 7>&- | eval $at_tee_pipe
 read at_status <"$at_status_file"
 #AT_STOP_4
+#AT_START_5
+at_fn_group_banner 5 '5.at:9' \
+  "Using lol command to execute various tests" "     " 6
+at_xfail=no
+(
+  $as_echo "5. $at_setup_line: testing $at_desc ..."
+  $at_traceon
+
+  { set +x
+$as_echo "$at_srcdir/5.at:9: \$abs_top_builddir/tests/test5"
+at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test5" "5.at:9"
+( $at_check_trace; $abs_top_builddir/tests/test5
+) >>"$at_stdout" 2>>"$at_stderr" 5>&-
+at_status=$? at_failed=false
+$at_check_filter
+echo stderr:; tee stderr <"$at_stderr"
+echo stdout:; tee stdout <"$at_stdout"
+at_fn_check_status 0 $at_status "$at_srcdir/5.at:9"
+if $at_failed; then :
+  $abs_top_builddir/tests/fail.sh
+else
+  $abs_top_builddir/tests/success.sh
+fi
+$at_failed && at_fn_log_failure
+$at_traceon; }
+
+    set +x
+  $at_times_p && times >"$at_times_file"
+) 5>&1 2>&1 7>&- | eval $at_tee_pipe
+read at_status <"$at_status_file"
+#AT_STOP_5
+#AT_START_6
+at_fn_group_banner 6 '6.at:9' \
+  "Comparing file inside a container with another outside" "" 7
+at_xfail=no
+(
+  $as_echo "6. $at_setup_line: testing $at_desc ..."
+  $at_traceon
+
+  { set +x
+$as_echo "$at_srcdir/6.at:9: \$abs_top_builddir/tests/test6"
+at_fn_check_prepare_dynamic "$abs_top_builddir/tests/test6" "6.at:9"
+( $at_check_trace; $abs_top_builddir/tests/test6
+) >>"$at_stdout" 2>>"$at_stderr" 5>&-
+at_status=$? at_failed=false
+$at_check_filter
+echo stderr:; tee stderr <"$at_stderr"
+echo stdout:; tee stdout <"$at_stdout"
+at_fn_check_status 0 $at_status "$at_srcdir/6.at:9"
+if $at_failed; then :
+  $abs_top_builddir/tests/fail.sh
+else
+  $abs_top_builddir/tests/success.sh
+fi
+$at_failed && at_fn_log_failure
+$at_traceon; }
+
+    set +x
+  $at_times_p && times >"$at_times_file"
+) 5>&1 2>&1 7>&- | eval $at_tee_pipe
+read at_status <"$at_status_file"
+#AT_STOP_6

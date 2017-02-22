@@ -14,7 +14,7 @@
  *
 */
 /*
- $Id: lol_rs.c, v0.30 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol_rs.c, v0.40 2016/11/02 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ************************************************************************
  * lol_rs: resize a container file.

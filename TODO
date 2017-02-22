@@ -1,4 +1,4 @@
-- Version 0.30 TODO notes:
+- Version 0.40 TODO notes:
 
 - Endianess questions & portability of containers from
   BIG- to LITTLE endian. Must be fixed.
@@ -20,7 +20,7 @@
 - lol_file.h: add last free nentry index to sb
 - lol_cc.c: When invalid file found -> try to get more details
 
-- Thread safety: NOT thread safe as of v0.30.
+- Thread safety: NOT thread safe as of v0.40.
   (Should add transaction locking)
 
 - sub-directories?

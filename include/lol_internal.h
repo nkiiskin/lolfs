@@ -15,7 +15,7 @@
  *
  */
 /*
-$Id: lol_internal.h, v0.30 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp$
+$Id: lol_internal.h, v0.40 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp$
  */
 
 
@@ -53,6 +53,11 @@ $Id: lol_internal.h, v0.30 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp$
 #endif
 #ifndef _STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_SIGNAL_H
+#ifndef _SIGNAL_H
+#include <signal.h>
+#endif
 #endif
 #ifndef _LOL_CONFIG_H
 #include <lol_config.h>
@@ -150,11 +155,27 @@ typedef struct lol_size_t {
 
 struct lol_loop {
   // private:
-   size_t  num_blocks;
-   size_t start_bytes;
-   size_t  full_loops;
-   size_t   end_bytes;
+   size_t    nb;
+   size_t start;
+   size_t loops;
+   size_t   end;
 };
+
+// Signal handlers (Do NOT change these!)
+// These are not real signal numbers!
+#define LOL_SIGHUP  0
+#define LOL_SIGINT  1
+#define LOL_SIGTERM 2
+#define LOL_SIGSEGV 3
+#define LOL_SIGQUIT 4
+#define LOL_SIGTSTP 5
+// #define LOL_NUM_SIGHANDLERS 6
+
+typedef struct lol_signalstore_t {
+  struct sigaction store;
+  const int sig;
+  int set;
+} lol_signalstore;
 
 #define lol_error(x, ...) fprintf(stderr, x, ##__VA_ARGS__)
 // Indexes to global error message lists /////////////////
@@ -325,17 +346,21 @@ k = frac */
 
 */
 
+#if 0
 #define LOL_GOTO_DENTRY(x)         (fseek((x)->dp, DISK_HEADER_SIZE + \
                                    (x)->n_idx * NAME_ENTRY_SIZE + \
                                    (x)->sb.bs * \
                                    (x)->sb.nb, SEEK_SET))
-
-
-// #define LOL_GOTO_DENTRY(x)         (fseek((x)->dp, (x)->n_off, SEEK_SET))
+#endif
+#define LOL_GOTO_DENTRY(x)         (fseek((x)->dp, (x)->n_off, SEEK_SET))
 #define LOL_TABLE_START_EXT(x,y)   (DISK_HEADER_SIZE + (x) * \
                                    (NAME_ENTRY_SIZE + (y)))
+#define LOL_TABLE_START(x)         ((x)->idxs)
+#if 0
 #define LOL_TABLE_START(x)         (DISK_HEADER_SIZE + ((x)->sb.nb) * \
                                    (((x)->sb.bs) + NAME_ENTRY_SIZE))
+#endif
+
 #define LOL_CHECK_MAGIC(x)         ((x)->sb.reserved[0] != LOL_MAGIC || \
                                    (x)->sb.reserved[1]  != LOL_MAGIC)
 #define LOL_ISDIR                  (S_ISDIR(st.st_mode))
@@ -383,10 +408,10 @@ k = frac */
 #endif
 
 // funcs for lol_fio:
-#define        LOL_READ (0)
-#define       LOL_WRITE (1)
-#define   LOL_READ_CONT (2)
-#define  LOL_WRITE_CONT (3)
+#define LOL_READ ((lol_io_func)&fread)
+#define LOL_WRITE ((lol_io_func)&fwrite)
+#define LOL_READ_CONT ((lol_io_func)&lol_fread)
+#define LOL_WRITE_CONT ((lol_io_func)&lol_fwrite)
 
 // Some internal use flags
 #define LOL_NO_SUCH_FILE (0)
@@ -422,6 +447,7 @@ k = frac */
 #define LOL_ERR_SIG     (-13)
 #define LOL_ERR_BADFD   (-14)
 #define LOL_ERR_ENOENT  (-15)
+#define LOL_ERR_SEEK    (-16)
 
 #define MAX_LOL_OPEN_MODES    (6)
 // Constants for lol_getsize
@@ -456,14 +482,6 @@ k = frac */
 #define LOL_08GIGABYTES (8589934592)
 #define LOL_16GIGABYTES (17179869184)
 #define LOL_TERABYTE    (1099511627780)
-
-// Signal handlers (Do NOT change these!)
-// These are not real signal numbers!
-#define LOL_SIGHUP  0
-#define LOL_SIGINT  1
-#define LOL_SIGTERM 2
-#define LOL_SIGSEGV 3
-#define LOL_NUM_SIGHANDLERS 4
 
 // i/o for some funcs
 #define LOL_STDOUT 0
@@ -535,6 +553,7 @@ enum {
 #define LOL_COLOR_RESET    "\x1b[0m"
 
 #define LOL_STORAGE_ALL (LOL_STORAGE_SIZE + 1)
+typedef int (*lol_func)(int, char**);
 typedef size_t (*lol_io_func)(void *, size_t, size_t, void *);
 typedef void* (*lol_open_func)(const char *, const char *);
 typedef int (*lol_close_func)(void *);
@@ -545,9 +564,8 @@ typedef int (*lol_close_func)(void *);
 // File functions
 size_t      lol_fclear(const size_t bytes, FILE *);
 size_t      lol_ifcopy(const alloc_entry val, const size_t times, FILE *s);
-size_t      lol_fio(char *ptr, const size_t bytes, void *s, const int func);
+size_t      lol_fio(char *ptr, const size_t bytes, void *s, const lol_io_func);
 // Some 'get' functions
-int         lol_getsb(FILE *fp, lol_meta *sb);
 int         lol_getmode(const char *m);
 long        lol_get_io_size(const long size, const long blk);
 int         lol_pathinfo(lol_pinfo *);
@@ -570,7 +588,6 @@ int         lol_is_number(const char ch);
 int         lol_is_integer(const char *str);
 size_t      lol_validcont(const char *name, lol_meta *sb, struct stat *st);
 BOOL        lol_validpath(char *path);
-int         lol_is_writable(const lol_FILE *op);
 int         lol_valid_sb(const lol_FILE *op);
 int         lol_check_corr(const lol_FILE *op, const int mode);
 // Memory funcs
@@ -587,10 +604,11 @@ int         lol_extendfs(const char *container, const DWORD new_blocks,
 // Some lol_FILE helper functions
 int         lol_touch_file(lol_FILE *op);
 int         lol_truncate_file(lol_FILE *op);
-int         lol_update_nentry(lol_FILE *op);
 int         lol_read_nentry(lol_FILE *);
-long        lol_io_dblock(lol_FILE *op, const size_t block_number,
-			  char *ptr, const size_t bytes, const int func);
+long        lol_rblock(lol_FILE *op, const size_t block_number,
+			  char *ptr, const size_t bytes);
+long        lol_wblock(lol_FILE *op, const size_t block_number,
+			  char *ptr, const size_t bytes);
 size_t      lol_num_blocks(lol_FILE *op, const size_t amount,
                            struct lol_loop *loop);
 int         lol_garbage_filename(const char *name);
@@ -601,8 +619,9 @@ int         lol_count_file_blocks (FILE *fp, const struct lol_super *sb,
                                    const int terminate);
 
 // Signal handling
-int         lol_setup_sighandlers(void);
-void        lol_restore_sighandlers(void);
+int         lol_setup_sighandlers (void);
+void        lol_restore_sighandlers (void);
+int         lol_set_defaultsignal (const int lol_signum);
 // Conversion functions
 int         lol_ltostr(const long size, char *s);
 int         lol_size_to_blocks(const char *size, const char *container,
@@ -616,10 +635,12 @@ int         lol_delete_chain_from(lol_FILE *, int);
 long        lol_new_indexes(lol_FILE *op, const long bytes,
                             long *olds, long *mids, long *news,
                             long *new_filesize);
-int         lol_new_ichain(lol_FILE *op, const long olds, const long news,
+long        lol_new_blocks(lol_FILE *op, const long bytes, long *olds,
+                           long *mids, long *news, long *new_sz);
+int         lol_new_ichain(lol_FILE *op, const int olds, const int news,
                            alloc_entry *last_old);
 int         lol_update_ichain(lol_FILE *op, const long olds,
-                              const long news, const alloc_entry last_old);
+                              const alloc_entry last_old);
 int         lol_set_index_value (lol_FILE *op, const alloc_entry new_val);
 // Message output
 void        lol_align(const char *before, const char *after,

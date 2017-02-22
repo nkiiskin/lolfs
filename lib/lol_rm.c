@@ -15,7 +15,7 @@
  */
 
 /*
- $Id: lol_rm.c, v0.30 2016/04/14 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol_rm.c, v0.40 2016/04/14 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 /* ****************************************************************** */
 #ifdef HAVE_CONFIG_H

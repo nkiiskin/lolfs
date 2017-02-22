@@ -15,7 +15,7 @@
  */
 
 /*
- $Id: lol_cp.c, v0.30 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol_cp.c, v0.40 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 
 */
 /* ************************************************************************** */
@@ -203,7 +203,8 @@ int copy_from_container(const int argc, struct stat *st, int is, char *argv[]) {
     curr = argv[i];
     ow = 0;
     if ((lol_stat(curr, &src_st))) {
-         lol_errfmt2(LOL_2E_INVSRC, me, curr);
+         lol_syntax(me);
+      //lol_errfmt2(LOL_2E_INVSRC, me, curr);
          //lol_errfmt2(LOL_2E_CANTREAD, me, curr);
          ret = -1; continue;
     } // end if lol_stat
@@ -507,6 +508,9 @@ int lol_copy_to_container(const int argc, const int ftof,
     LOL_FILE_BLOCKS(src_size, bs, src_blocks);
     // Ok, 'name' should have our dest name now
     // Does the file exist in the container already?
+#if LOL_TESTING
+	   puts("lol_cp: copy_to_container: trying to lol_stat");
+#endif
     if (!(lol_stat(name, &sta))) {
         // It is there, prompt if replace..
         lol_inffmt2(LOL_2E_OW_PMT, me, name); // (Replace prompt)
@@ -544,18 +548,31 @@ int lol_copy_to_container(const int argc, const int ftof,
 	// Is there enough room?
         if ((lol_can_replace (src_size, (long)(sta.st_size),
 	     blocks_left, bs))) {
+#if LOL_TESTING
+	  puts("lol_copy_to_container: lol_can_replace says not enough room");
+	  printf("for file \'%s\'\n", name);
+#endif
 	    lol_errfmt2(LOL_2E_NOTROOM, me, name);
             ret = -1; continue;
         } // end if lol_can_replace
 	replacing = 1;
     } // end if it exists
+#if LOL_TESTING
+	   puts("lol_cp: copy_to_container: could not lol_stat");
+#endif
     // Additional space check before we open
     // any files. What does the free block
     // counter say about it; do we have
     // enough room for the file?
+#if LOL_TESTING
+	   puts("lol_cp: copy_to_container: testing src_blocks etc...");
+#endif
     if ((src_blocks > blocks_left) && (!(replacing))) {
        // Let's update blocks_left counter
        // I don't trust it counts correctly, yet.. :)
+#if LOL_TESTING
+	   puts("lol_cp: copy_to_container: trying to lol_free_space");
+#endif
         blocks_left = lol_free_space(cont, &sb, LOL_SPACE_BLOCKS);
         if ((blocks_left < 0) || (sb.nf > sb.nb)) {
              lol_errfmt2(LOL_2E_CORRCONT, me, cont);
@@ -576,7 +593,13 @@ int lol_copy_to_container(const int argc, const int ftof,
         }
     } // end if src_blocks
     // Ok, seems fine. Let's open the destination
+#if LOL_TESTING
+	   puts("lol_cp: copy_to_container: trying to lol_fopen");
+#endif
     if (!(dest = lol_fopen(name, "w"))) {
+#if LOL_TESTING
+  printf("lol_cp (to cont): lol_fopen failed: lol_errno = %d\n", lol_errno);
+#endif
          lol_errfmt2(LOL_2E_CANTCOPY, me, name);
 	 ret = -1; continue;
     } // end if dest open failed
@@ -614,19 +637,31 @@ int lol_copy_to_container(const int argc, const int ftof,
     bytes = LOL_DEFBUF;
 #if LOL_TESTING
     puts("DEBUG: lol_cp: going to COPY LOOP");
+  printf("DEBUG: lol_cp: loops = %d, frac = %d, bytes %d\n",
+	 (int)loops, (int)frac, (int)bytes);
 #endif
 
   action:
     for (j = 0; j < loops; j++) {
 #if LOL_TESTING
-      printf("DEBUG: lol_cp: in loop, j = %d\n", (int)j);
+      printf("DEBUG: lol_cp: in loop, j = %d, loops = %d\n", (int)j, (int)loops);
 #endif
 
        if ((io((char *)temp, bytes, 1, src)) != 1) {
    	    lol_errfmt2(LOL_2E_CANTREAD, me, curr);
 	    frac = 0; ret = -1; break;
        }
+#if LOL_TESTING
+      printf("DEBUG: lol_cp: before lol_fwrite: lol_errno = %d, ferror() = %d, pos = %d\n",
+	     lol_errno, dest->err, (int)dest->curr_pos);
+#endif
        if ((lol_fwrite((char *)temp, bytes, 1, dest)) != 1) {
+#if LOL_TESTING
+      printf("DEBUG: lol_cp: lol_fwrite failed with bytes = %d (frac = %d)\n",
+	     (int)bytes, (int)frac);
+      printf("lol_errno = %d, ferror() = %d, pos = %d\n",
+	     lol_errno, dest->err, (int)dest->curr_pos);
+#endif
 	    lol_errfmt2(LOL_2E_CANTWRITE, me, name);
 	    frac = 0; ret = -1; break;
        }
@@ -733,6 +768,9 @@ int lol_cp (int argc, char* argv[]) {
        return lol_copy_to_container(argc, ftof, &sb, st.st_ino, argv);
   }
   if ((copying_from_container(argc, &st, dest, &is))) {
+#if LOL_TESTING
+    puts("DEBUG: lol_cp: about to copy FROM container");
+#endif
       return copy_from_container(argc, &st, is, argv);
   }
 

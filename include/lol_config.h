@@ -16,7 +16,7 @@
  */
 
 /*
- $Id: lol_config.h, v0.30 2016/12/26 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $
+ $Id: lol_config.h, v0.40 2016/12/26 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $
  */
 
 #ifndef _LOL_CONFIG_H
@@ -28,7 +28,9 @@
 
 // Set LOL_TESTING to non-zero if you want to
 // compile a debug version of lolfs
+#ifndef LOL_TESTING
 #define LOL_TESTING 0
+#endif
 // Define LOL_INLINE_MEMCPY if you want to use inline
 // routines instead of C library calls in some routines
 // (Uncomment the line if you want to use function calls)
@@ -43,7 +45,7 @@
 // Set the current version of lolfs. This is actually set
 // by configure script but we hardcode it here just in case.
 #ifndef LOLFS_VERSION
-#define LOLFS_VERSION ("0.30")
+#define LOLFS_VERSION ("0.40")
 #endif
 // If we create a container by specifying the size instead of
 // number of blocks and block size, then this value will be used

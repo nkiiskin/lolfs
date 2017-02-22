@@ -15,7 +15,7 @@
  */
 
 /*
- $Id: lol_cc.c, v0.30 2016/12/06 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
+ $Id: lol_cc.c, v0.40 2016/12/06 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $"
 */
 #ifdef HAVE_CONFIG_H
 #include "../config.h"

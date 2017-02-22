@@ -2,7 +2,7 @@
 # All Rights Reserved.
 # This file is distributed under the GPLv2 License.
 #
-## $Id: configure.ac  0.30 2016-12-04 08:10:42 niko $
+## $Id: configure.ac  0.40 2016-12-04 08:10:42 niko $
 #
 # Author:   Niko Kiiskinen
 # Modified: December 27, 2016
@@ -10,7 +10,8 @@
 #
 #
 AC_PREREQ([2.69])
-AC_INIT([lolfs], [0.30], [lolfs.bugs@gmail.com], [], [https://nkiiskin.github.io/lolfs])
+AC_INIT([lolFS Container], [0.40], [lolfs.bugs@gmail.com],
+        [lolfs], [https://nkiiskin.github.io/lolfs])
 AM_INIT_AUTOMAKE([1.9 foreign])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([config.h.in])

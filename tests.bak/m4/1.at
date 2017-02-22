@@ -1,6 +1,0 @@
-m4_define([CHECK_LOL_MKFS], [AT_SETUP([Creating a test container])
-AT_CHECK([rm -f $abs_top_builddir/tests/1.db; rm -f $abs_top_builddir/tests/2.db; $abs_top_builddir/tests/test1], [0], [stdout], [stderr],
-[$abs_top_builddir/tests/fail.sh], [$abs_top_builddir/tests/success.sh])
-AT_CLEANUP])
-
-CHECK_LOL_MKFS

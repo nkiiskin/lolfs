@@ -59,7 +59,7 @@
 
                 'lol' has several built-in functions which
                 may be used to execute some common file operations.
-                These functions are currently (in v 0.30) :
+                These functions are currently (in v 0.40) :
 
                 - fs
                 - cat

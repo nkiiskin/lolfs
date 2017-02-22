@@ -14,7 +14,7 @@
  *
  */
 /* 
-  $Id: lol_file.h, v0.30 2016/12/23 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $
+  $Id: lol_file.h, v0.40 2016/12/23 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp $
  */
 #ifndef _LOL_FILE_H
 #define _LOL_FILE_H    1
@@ -30,8 +30,7 @@
 #ifndef _LOL_CONFIG_H
 #include <lol_config.h>
 #endif
-//#include "../config.h"
-// Some common types
+
 typedef unsigned short WORD;
 typedef unsigned int   DWORD;
 typedef unsigned char  UCHAR;
@@ -106,10 +105,9 @@ typedef struct _lol_FILE
   char file[LOL_FILENAME_MAX];
   char cont[LOL_DEVICE_MAX];
   struct lol_super sb;
-  struct lol_name_entry nentry;
+  lol_nentry nentry;
   ULONG cs; // 'outer' size of the container
   FILE  *dp;
-  //struct lol_open_mode open_mode;
   struct stat cinfo;
 
   long data_s; // data area size;
