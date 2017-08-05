@@ -67,15 +67,13 @@ static void lol_fd_clear(char *a, char *b) {
 #define LOL_DF_TEMP 256
 int lol_df (int argc, char* argv[])
 {
-
+  char temp[(NAME_ENTRY_SIZE * LOL_DF_TEMP)];
   const long nes = (long)(NAME_ENTRY_SIZE);
   const long es  = (long)(ENTRY_SIZE);
   const int temp_mem = nes * LOL_DF_TEMP;
-  char temp[temp_mem];
   char number[LOL_DF_MESSAGE];
   char before[LOL_DF_MESSAGE];
   char  after[LOL_DF_MESSAGE];
-
   lol_meta    sb;
   struct stat st;
   char *cont =0, *me = argv[0];
@@ -248,6 +246,10 @@ action:
       goto dentry_loop;
   } // end if frac
 
+#if LOL_TESTING
+   puts("Now going to read indices");
+#endif
+
   // Read also the reserved blocks.
   data_size  = nb * es;
   io = lol_get_io_size(data_size, es);
@@ -258,6 +260,10 @@ action:
 
  index_loop:
   for (i = 0; i < times; i++) {
+#if LOL_TESTING
+    printf("lol_df: reading, data chunck %d\n", (int)(i));
+#endif
+
     if ((lol_fio((char *)buf, io, fp, LOL_READ)) != io) {
          lol_errfmt2(LOL_2E_CANTREAD, me, cont);
          goto closefree;
@@ -288,7 +294,9 @@ action:
        frac = 0;
       goto index_loop;
   } // end if frac
-
+#if LOL_TESTING
+  puts("read finished");
+#endif
   if (alloc) {
      lol_free(mem);
   }

@@ -61,7 +61,6 @@
  * ********************************************************** */
 lol_FILE* lol_fopen(const char *path, const char *mode)
 {
-
   const long nes = ((long)(NAME_ENTRY_SIZE));
   const long ms  = ((long)(DISK_HEADER_SIZE));
   lol_pinfo p;
@@ -98,7 +97,7 @@ lol_FILE* lol_fopen(const char *path, const char *mode)
   mod = op->opm = lol_getmode(mode);
 
   if ((mod < 0) || (mod >= MAX_LOL_OPEN_MODES))
-      delete_return_NULL(EINVAL, op);
+      delete_return_NULL(EBADF, op);
   if (!(mod)) {
       m = (char *)lol_mode_ro;
   }
@@ -106,7 +105,8 @@ lol_FILE* lol_fopen(const char *path, const char *mode)
   p.fullp = (char *)path;
   p.file  = op->file;
   p.cont  = op->cont;
-  p.func  = LOL_FILENAME | LOL_CONTPATH | LOL_PATHLEN | LOL_FILELEN;
+  p.func  = LOL_FILENAME | LOL_CONTPATH |
+            LOL_PATHLEN  | LOL_FILELEN;
 
   mlen = lol_pathinfo(&p);
 
@@ -161,8 +161,8 @@ lol_FILE* lol_fopen(const char *path, const char *mode)
   op->cs     = (ULONG)size;
   op->data_s = nb * op->sb.bs;
   op->dir_s  = nb * nes;
-  op->dir    = ms + op->data_s;
-  op->idxs   = op->dir + op->dir_s;
+  op->dir    = (off_t)(ms + op->data_s);
+  op->idxs   = (off_t)(op->dir + op->dir_s);
   op->idxs_s = nb * ENTRY_SIZE;
   op->p_len  = p.plen;
   op->f_len  = p.flen;
@@ -173,13 +173,17 @@ lol_FILE* lol_fopen(const char *path, const char *mode)
 
   if (!(op->dp = fopen(op->cont, m)))
       delete_return_NULL(EIO, op);
-
+  if ((op->fd = fileno(op->dp)) < 0) {
+     LOL_ERRNO(EBADF);
+     lol_fclose(op);
+     return NULL;
+  } // end if
   // If the file exists, lol_read_nentry
   // sets: op->nentry, op->n_off & op->n_idx
   is = lol_read_nentry(op);
   if (is < 0) {
      if (!(lol_errno)) {
-       lol_errno = EIO;
+        lol_errno = EIO;
      }
      lol_fclose(op);
      return NULL;
@@ -189,7 +193,6 @@ lol_FILE* lol_fopen(const char *path, const char *mode)
    printf("DEBUG: lol_fopen going to switch\n");
 #endif
   switch (is) {  // What we do here depends on open_mode
-
           case  LOL_NO_SUCH_FILE:
 #if LOL_TESTING
    printf("DEBUG: lol_fopen: case no such file...\n");
@@ -405,8 +408,14 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
     return nmemb;
   if (!(nmemb))
     return 0;
+  if ((LOL_CHECK_MAGIC(op)))
+    LOL_ERR_RETURN(ENFILE, 0);
+
+#if 0
   if (lol_valid_sb(op))
       LOL_ERR_RETURN(ENFILE, 0);
+#endif
+
   if (op->eof)
     return LOL_ERR_EOF;
 
@@ -455,9 +464,12 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
       amount = left; // This is the amount of bytes we will read
 
    mem = lol_num_blocks(op, amount, &loop);
-
    if (lol_index_malloc(mem))
        LOL_ERR_RETURN(ENOMEM, 0);
+
+#if LOL_TESTING
+   printf("lol_fread: got lol_index_malloc(%ld)\n", (long)mem);
+#endif
 
    ret = lol_read_ichain(op, mem);
 #if LOL_TESTING
@@ -563,6 +575,9 @@ size_t lol_fread(void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 error:
 
   lol_index_free(mem);
+#if LOL_TESTING
+   printf("lol_fwrite: called lol_index_free(%ld)\n", (long)mem);
+#endif
 
   if (op->curr_pos > fs) {
       op->eof = 1;
@@ -606,7 +621,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   alloc_entry idx;
   alloc_entry last_old;
   long olds, mids, news;
-  //  long max_free;
+
   size_t   off = 0;
   long  new_fs = 0;
   long  amount;
@@ -619,9 +634,9 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   size_t    nb;
   size_t    bs;
   size_t     i;
-  int   fs_flag = 0;
   int      opm;
   int      ret;
+  int fs_flag = 0;
 
   if (!(ptr))
     LOL_ERR_RETURN(EINVAL, 0);
@@ -632,9 +647,11 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   if (!(nmemb))
     return 0;
 
+#if 0
   // This may not be necessary!
   if ((lol_valid_sb(op)))
     LOL_ERR_RETURN(ENFILE, 0);
+#endif
 
   fs = (long)op->nentry.fs;
   nb = (size_t)op->sb.nb;
@@ -896,9 +913,9 @@ int lol_fseek(lol_FILE *op, long offset, int whence) {
 
       } // end switch
 
-    if (!(ret))
+    if (!(ret)) {
         op->eof = 0;
-
+    }
     return ret;
 } // end lol_fseek
 /* **********************************************************
@@ -1067,9 +1084,11 @@ void lol_clearerr(lol_FILE *op) {
     lol_errno = EBADF;
     return;
   }
-   op->eof = 0;
-   op->err = 0;
-
+  if (op->dp) {
+    clearerr(op->dp);
+  }
+  op->eof = 0;
+  op->err = 0;
 } // end lol_clearerr
 /* **********************************************************
  * lol_ferror:
@@ -1204,6 +1223,9 @@ int lol_stat(const char *path, struct stat *st) {
           io     = temp_mem;
     } else {
        mem = (size_t)(io);
+#if LOL_TESTING
+   printf("lol_stat: called lol_malloc(%ld)\n", (long)(io));
+#endif
        alloc = 1;
     }
   } else {
@@ -1319,6 +1341,9 @@ int lol_stat(const char *path, struct stat *st) {
 
 closefree:
  if (alloc) {
+#if LOL_TESTING
+   printf("lol_stat: calling lol_free(%ld)\n", (long)(mem));
+#endif
     lol_free(mem);
  }
 closeret:
@@ -1344,10 +1369,9 @@ int lol_mkfs (const char *opt, const char *amount,
 {
   struct stat st;
   FILE *fp;
-  struct lol_super sb; // This is the first a couple
+  lol_meta sb;         // This is the first a couple
                        // of bytes of the container file
   size_t v     =  0;
-  //  long  darea  =  0;
   DWORD blocks =  1;
   DWORD bsize  =  1;
   int      ret = -1;
@@ -1359,11 +1383,11 @@ int lol_mkfs (const char *opt, const char *amount,
   // Does user want to specify size or number of blocks and their size?
   if ((!(strcmp(opt, "-b"))) || (!(strcmp(opt, "--blocks")))) {
 
-     if ((bs < 1) || (nb < 1))
-	return LOL_ERR_USER;
+  if ((bs < 1) || (nb < 1))
+     return LOL_ERR_USER;
 
-      blocks = nb;
-      bsize  = bs;
+   blocks = nb;
+   bsize  = bs;
 
   } // end if add blocks
   else {

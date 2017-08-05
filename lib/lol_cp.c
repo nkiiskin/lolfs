@@ -58,7 +58,8 @@
  *
  */
 /* ****************************************************************** */
-// Test if we are trying to copy to a container
+// Test if we are trying to copy to a container (instead of copying
+// from container).
 static BOOL copying_to_container(const int argc, const char *dest,
                                  lol_meta *sb, struct stat *st, int *ftof)
 {
@@ -135,29 +136,36 @@ int copy_from_container(const int argc, struct stat *st, int is, char *argv[]) {
   lol_pinfo  p;
   lol_FILE *sf;
   FILE     *df;
-  const char  *me = argv[0];
-  const int    nf = argc - 1;
-  const char *dst = argv[nf];
-  const int   len = (int)strlen(dst);
   char      *curr;
   size_t src_size;
   size_t    loops;
   size_t     frac;
   size_t    bytes;
   ino_t       ino;
-  int    dest = 0;
+  const char  *me = argv[0];
+  const int    nf = argc - 1;
+  const char *dst = argv[nf];
+  int i, j;
 #ifdef LOL_INLINE_MEMCPY
-  int x;
+  int len = 0;
+#else
+  const int len = (int)strlen(dst);
 #endif
-  int i, j, k = 0, ow = 0;
-  int ret = 0;
+  int  k = 0, dest = 0;
+  int ow = 0,  ret = 0;
 
-  if ((argc < 3) || (len > LOL_PATH_MAX)) {
+  if (argc < 3) {
+    return -1;
+  }
+#ifdef LOL_INLINE_MEMCPY
+  for (; dst[len]; len++);
+#endif
+  if (len > LOL_PATH_MAX) {
      return -1;
   }
 #ifdef LOL_INLINE_MEMCPY
-  for (x = 0; x < len; x++) {
-    name[x] = dst[x];
+  for (i = 0; i < len; i++) {
+    name[i] = dst[i];
   }
 #else
   LOL_MEMCPY(name, dst, len);
@@ -325,8 +333,14 @@ int lol_copy_to_container(const int argc, const int ftof,
   const int       nf = argc - 1;
   const char     *me = argv[0];
   char         *cont = argv[nf];
-  const int      len = (int)strlen(cont);
   const long      bs = db->bs;
+  long   blocks_left = 0;
+#ifdef LOL_INLINE_MEMCPY
+  int x, len = 0;
+  char *t;
+#else
+  const int len = (int)strlen(cont);
+#endif
   void         *src;
   char        *curr;
   size_t       flen;
@@ -335,17 +349,19 @@ int lol_copy_to_container(const int argc, const int ftof,
   size_t      bytes;
   long     src_size;
   long   src_blocks;
-  long  blocks_left = 0;
   int     replacing;
-#ifdef LOL_INLINE_MEMCPY
-  char *t;
-  int x;
-#endif
-  int  i, j, ret = 0;
+  int  i, j;
   int src_type;
+  int ret = 0;
 
-  if ((argc < 3) || (len > LOL_PATH_MAX)) {
-     return -1;
+  if (argc < 3) {
+    return -1;
+  }
+#ifdef LOL_INLINE_MEMCPY
+  for (; cont[len]; len++);
+#endif
+  if (len > LOL_PATH_MAX) {
+    return -1;
   }
 
   // We know the last arg IS a container,
@@ -369,7 +385,7 @@ int lol_copy_to_container(const int argc, const int ftof,
 
   } // end if ftof
 
-  blocks_left = lol_free_space(cont, &sb, LOL_SPACE_BLOCKS);
+  blocks_left = lol_free_blocks(cont, &sb);
   if (blocks_left < 0) {
       lol_errfmt2(LOL_2E_CORRCONT, me, cont);
       return -1;
@@ -535,7 +551,7 @@ int lol_copy_to_container(const int argc, const int ftof,
 	    // Ok, we are ABSOLUTELY sure that this is
 	    // intra container copy!
 	    if (sta.st_ino == st.st_ino) {
-	      // target same as source -> skip
+	      // target same as source -> silently skip it
 	       continue;
 	    } // end if same lol file
 	  } // end if src_type
@@ -573,7 +589,7 @@ int lol_copy_to_container(const int argc, const int ftof,
 #if LOL_TESTING
 	   puts("lol_cp: copy_to_container: trying to lol_free_space");
 #endif
-        blocks_left = lol_free_space(cont, &sb, LOL_SPACE_BLOCKS);
+        blocks_left = lol_free_blocks(cont, &sb);
         if ((blocks_left < 0) || (sb.nf > sb.nb)) {
              lol_errfmt2(LOL_2E_CORRCONT, me, cont);
              return -1;
@@ -636,15 +652,17 @@ int lol_copy_to_container(const int argc, const int ftof,
     frac  = src_size % LOL_DEFBUF;
     bytes = LOL_DEFBUF;
 #if LOL_TESTING
-    puts("DEBUG: lol_cp: going to COPY LOOP");
+    // puts("DEBUG: lol_cp: going to COPY LOOP");
+    /*
   printf("DEBUG: lol_cp: loops = %d, frac = %d, bytes %d\n",
 	 (int)loops, (int)frac, (int)bytes);
+    */
 #endif
 
   action:
     for (j = 0; j < loops; j++) {
 #if LOL_TESTING
-      printf("DEBUG: lol_cp: in loop, j = %d, loops = %d\n", (int)j, (int)loops);
+      //printf("DEBUG: lol_cp: in loop, j = %d, loops = %d\n", (int)j, (int)loops);
 #endif
 
        if ((io((char *)temp, bytes, 1, src)) != 1) {
@@ -723,7 +741,7 @@ int lol_cp (int argc, char* argv[]) {
 
   /* We may want to copy one of the following ways:
 
-  1. File(s) from disk to container like:              lol cp ../#.txt foo
+  1. File(s) from disk to container like:              lol cp ../#.txt mycont
   2. File(s) from another container to container like: lol cp cont:/f1 cont:/f2 foo
   3. File(s) from container to disk like:              lol cp cont:/f1 cont:/f2 directory
   4. One file from container to disk like:             lol cp cont:/file name (name is a filename, not dir)

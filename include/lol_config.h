@@ -22,9 +22,7 @@
 #ifndef _LOL_CONFIG_H
 #define _LOL_CONFIG_H  1
 #endif
-// Compile- and runtime time parameters that
-// affect performance.
-
+// Compile- and runtime time parameters which affect performance.
 
 // Set LOL_TESTING to non-zero if you want to
 // compile a debug version of lolfs
@@ -54,13 +52,15 @@
 #define LOL_DEFAULT_BLOCKSIZE  1024
 // Specify how much memory do we reserve from
 // stack by default when allocating various data buffers
-#define LOL_DEFBUF 4096
+#define LOL_DEFBUF 8192
 // Storage size here is the limit, after which we will
 // allocate memory dynamically.
 // Bigger LOL_STORAGE_SIZE may result in better performance.
 // This number + 1, must be dividible by LOL_DEFAULT_BLOCK_SIZE
 // Leave it as it is if you are not sure!
-#define LOL_STORAGE_SIZE 32767
+
+#define LOL_STORAGE_SIZE 262143
+// 32767
 // Define the upper limit of how much memory
 // shall we try to allocate for indexes, etc..
 #ifndef LOL_02GIGABYES
@@ -85,3 +85,6 @@
 // Define copy string as shown by programs.
 // This must not be edited!
 #define LOLFS_COPYRIGHT ("Copyright (C) 2016, Niko Kiiskinen")
+// Define <> 0 if you want to enable colors in some
+// messages (in fsck.lolfs for example)
+#define LOL_COLOR_MESSAGES 1

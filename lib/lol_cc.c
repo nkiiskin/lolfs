@@ -71,9 +71,10 @@ static int lol_fsck_sb(FILE *fp, const struct lol_super *sb,
 {
 
   char message[512];
+  long max_files;
   const DWORD bs = sb->bs;
-  const DWORD nb = sb->nb;
   const DWORD nf = sb->nf;
+  DWORD nb = sb->nb;
   int  ret = 0;
 
   if (!(nb)) {
@@ -85,9 +86,13 @@ static int lol_fsck_sb(FILE *fp, const struct lol_super *sb,
   if (LOL_INVALID_MAGIC_PTR) {
       ret = LOL_FSCK_ERROR;
       memset((char *)message, 0, 512);
-      sprintf(message, "invalid file id [0x%x, 0x%x]",
+      sprintf(message, "invalid container id [0x%x, 0x%x]",
 	      (int)sb->reserved[0], (int)sb->reserved[1]);
       lol_status_msg(me, message, ret);
+  }
+  max_files = lol_get_maxfiles(st);
+  if (max_files < 0) {
+      max_files = 0;
   }
   if (nf > nb) {
      if (ret < LOL_FSCK_WARN)
@@ -96,9 +101,13 @@ static int lol_fsck_sb(FILE *fp, const struct lol_super *sb,
       sprintf(message, "too many (%u) files found",
 	     (unsigned int)(nf));
       lol_status_msg(me, message, LOL_FSCK_WARN);
+
       if (v) {
          memset((char *)message, 0, 512);
-         sprintf(message, "          Maximum capacity is %u",
+	 if (nb >= max_files) {
+	     nb = max_files;
+	 }
+         sprintf(message, "    Maximum capacity here is %u files",
 	        (unsigned int)(nb));
          lol_status_msg(me, message, LOL_FSCK_INFO);
       }

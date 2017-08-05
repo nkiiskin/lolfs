@@ -108,18 +108,20 @@ typedef struct _lol_FILE
   lol_nentry nentry;
   ULONG cs; // 'outer' size of the container
   FILE  *dp;
+  int    fd; // The file descriptor of dp
   struct stat cinfo;
 
   long data_s; // data area size;
 
-  long idxs; // offset where index storage begins
+  off_t idxs; // offset where index storage begins
   long idxs_s; // index storage size;
 
-  long dir; // offset where the directory begins
+  off_t dir; // offset where the directory begins
   long dir_s; // directory size;
 
-  long n_off; // abs position of the name entry
+  off_t n_off; // abs position of the name entry
               // from the beginning of container
+
   // TODO Make curr_pos ULONG
   // Because file_size is ULONG too !!
   DWORD curr_pos;
