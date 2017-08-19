@@ -29,9 +29,10 @@ AH_TOP(/*LOL_COPYRIGHT*/)
 AC_PREREQ([2.69])
 AC_INIT([lolFS Container], [0.40], [lolfs.bugs@gmail.com],
         [lolfs], [https://nkiiskin.github.io/lolfs])
-AM_INIT_AUTOMAKE([1.9 foreign])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([config.h.in])
+AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE([1.9 foreign])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([tests])
 dnl Use kernel-like CC instead of the usual verbose insanity.
@@ -55,7 +56,7 @@ dnl m4_include([m4/m4_ax_gnu_autotest.m4])
 dnl m4_include([m4_ax_generate_changelog.m4])
 LT_PREREQ([2.4.2])
 LT_INIT
-dnlLT_OBJDIR
+dnl LT_OBJDIR
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_LDFLAGS])
 dnl AC_SUBST([tests/atlocal])

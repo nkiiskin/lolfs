@@ -1,0 +1,3 @@
+
+Verion 0.40: Currently the configuration option --disable-shared
+             is broken. (The package needs the shared library).

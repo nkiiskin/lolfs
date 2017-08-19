@@ -64,8 +64,8 @@ typedef struct lol_super {
 #if 0
   ULONG res_blocks;
 #endif
-
   UCHAR reserved[4];
+
 } lol_meta, *lol_super_ptr;
 
 // Directory entry
@@ -83,8 +83,8 @@ typedef struct lol_name_entry {
   time_t unused;
 #endif
   alloc_entry i_idx; // 1st index location
-  ULONG  fs; // file size TODO: Make this type off_t
-
+  // ULONG  fs; ...file size TODO: Make this type --> off_t
+  off_t fs;
 } lol_nentry, *lol_name_entry_ptr;
 
 struct lol_open_mode
@@ -122,8 +122,8 @@ typedef struct _lol_FILE
   off_t n_off; // abs position of the name entry
               // from the beginning of container
 
-  // TODO Make curr_pos ULONG
-  // Because file_size is ULONG too !!
+  // TODO Make curr_pos type off_t
+  // Because nentry.fs is off_t also
   DWORD curr_pos;
   int p_len; // length of the lol_fopen path
   int f_len; // Length of the filename

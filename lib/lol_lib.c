@@ -61,14 +61,15 @@
  * ********************************************************** */
 lol_FILE* lol_fopen(const char *path, const char *mode)
 {
+
   const long nes = ((long)(NAME_ENTRY_SIZE));
   const long ms  = ((long)(DISK_HEADER_SIZE));
   lol_pinfo p;
-  char *m = (char *)lol_mode_rw;
+  char *m = (char *)LOL_MODE_RW;
   lol_FILE *op;
   long    size;
   long      nb;
-  DWORD     fs;
+  off_t     fs;
   int   tr = 0;
   int     mlen;
   int      mod;
@@ -99,7 +100,7 @@ lol_FILE* lol_fopen(const char *path, const char *mode)
   if ((mod < 0) || (mod >= MAX_LOL_OPEN_MODES))
       delete_return_NULL(EBADF, op);
   if (!(mod)) {
-      m = (char *)lol_mode_ro;
+      m = (char *)LOL_MODE_RO;
   }
 
   p.fullp = (char *)path;
@@ -188,7 +189,7 @@ lol_FILE* lol_fopen(const char *path, const char *mode)
      lol_fclose(op);
      return NULL;
   }
-  fs = (DWORD)op->nentry.fs;
+  fs = op->nentry.fs;
 #if LOL_TESTING
    printf("DEBUG: lol_fopen going to switch\n");
 #endif
@@ -220,7 +221,7 @@ lol_FILE* lol_fopen(const char *path, const char *mode)
 
             case LOL_FILE_EXISTS:
 
-	      if (fs > op->data_s)
+	      if (fs > (off_t)op->data_s)
                  close_return_NULL(EFBIG, op);
 	      if ((op->nentry.i_idx < 0) || (op->nentry.i_idx >= nb))
                  close_return_NULL(ENFILE, op);
@@ -692,7 +693,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
   // Compute new indexes
 
   if (!(fs)) {
-    fs_flag = op->nentry.fs = 1;
+    op->nentry.fs = fs_flag = 1;
   }
   n_wbs = lol_new_indexes(op, (long)amount, &olds,
                          &mids, &news, &new_fs);
@@ -813,7 +814,7 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
 
   off /= size;
 
-  op->nentry.fs = (ULONG)new_fs;
+  op->nentry.fs = (off_t)new_fs;
 
   if ((fseek(op->dp, op->n_off, SEEK_SET))) {
      goto error;
@@ -857,7 +858,8 @@ size_t lol_fwrite(const void *ptr, size_t size, size_t nmemb, lol_FILE *op)
  * ********************************************************** */
 int lol_fseek(lol_FILE *op, long offset, int whence) {
 
- long pos, fs;
+ long fs;
+ long pos;
  int ret = 0;
 
   if (!(op)) {
@@ -1290,7 +1292,7 @@ int lol_stat(const char *path, struct stat *st) {
 	     goto closefree;
 	  }
 	  // Check file size also
-	  if (((nentry->fs) > (nb * bs))) {
+	  if (((nentry->fs) > ((off_t)(nb * bs)))) {
 	      lol_errno = EFBIG;
 	      goto closefree;
 	  }
@@ -1305,7 +1307,7 @@ int lol_stat(const char *path, struct stat *st) {
                                                 // out in this field.
           st->st_ino = (ino_t)(i * k + j); // lolfile inode is just the number
 	                                   // of the directory entry.
-          st->st_size    = (off_t)nentry->fs;
+          st->st_size    = nentry->fs;
           st->st_blksize = (blksize_t)bs;
           if (nentry->fs) {
             st->st_blocks  = (blkcnt_t)(st->st_size >> LOL_DIV_512);

@@ -81,7 +81,13 @@ subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
 	$(srcdir)/config.h.in AUTHORS COPYING ChangeLog INSTALL TODO \
-	config.guess config.sub depcomp install-sh missing ltmain.sh
+	build-aux/config.guess build-aux/config.sub build-aux/depcomp \
+	build-aux/install-sh build-aux/missing build-aux/ltmain.sh \
+	$(top_srcdir)/build-aux/config.guess \
+	$(top_srcdir)/build-aux/config.sub \
+	$(top_srcdir)/build-aux/install-sh \
+	$(top_srcdir)/build-aux/ltmain.sh \
+	$(top_srcdir)/build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -328,7 +334,7 @@ ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign
 DIST_SUBDIRS = lib bin src include man tests
 SUBDIRS = lib bin src include man tests
-EXTRA_DIST = README.md gpl3.txt
+EXTRA_DIST = README.md BUGS gpl3.txt autogen.sh
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -828,6 +834,7 @@ all-local:
 
 dist-hook:
 	chmod u+w $(distdir)/README.md
+	chmod +x $(distdir)/autogen.sh
 	sed -i "/Distribution date/c\Distribution date: `date`" README.md
 	rm -f *~ bin/*~ src/*.o src/*~ lib/*.o lib/*.so lib/*~ man/*~
 	rm -fr autom4te.cache

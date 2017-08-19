@@ -1,4 +1,4 @@
-# Test Makefile.am
+# Testsuite Makefile.am
 # GNU Autotest rules
 # Copyright (C) 2016 Niko Kiiskinen.
 # All Rights Reserved.
@@ -16,9 +16,7 @@ DEFAULT_INCLUDES = -I$(top_builddir)/include -I$(top_builddir)/tests/include
 AM_CFLAGS = -O2 -Wall -I$(top_builddir)/include \
 	-I$(top_builddir)/tests/include @AM_CFLAGS@
 AM_LDFLAGS = -L$(top_builddir)/lib
-
 testhdr = $(top_builddir)/tests/include/lol_tests.h
-
 check_PROGRAMS = test1 test2 test3 test4 test5 test6
 
 proj_heads = \
@@ -28,18 +26,18 @@ proj_heads = \
 	$(top_builddir)/include/lol_internal.h
 
 proj_lib = $(top_builddir)/lib/liblolfs.la
-tst_libd = $(top_builddir)/tests
-tst_lib = $(tst_libd)/libloltests.la
+## tst_libd = $(top_builddir)/tests
+## tst_lib = $(tst_libd)/libloltests.la
 ## -L$(top_builddir)/lib -llolfs $(top_builddir)/lib/liblolfs.la
 
 noinst_HEADERS   = $(proj_heads) $(testhdr)
+## lib_LTLIBRARIES = libloltests.la
+## libloltests_la_SOURCES = $(top_builddir)/tests/src/testfuncs.c \
+##	$(testhdr) $(proj_heads)
 
-lib_LTLIBRARIES = libloltests.la
-libloltests_la_SOURCES = $(top_builddir)/tests/src/testfuncs.c $(testhdr) $(proj_heads)
-
-libloltests_la_LIBADD = $(proj_lib)
-libloltests_la_LDFLAGS = -L$(top_builddir)/lib -lc -shared \
-	-Wl,-soname,libloltests.so $(LT_LDFLAGS)
+## libloltests_la_LIBADD = $(proj_lib)
+## libloltests_la_LDFLAGS = -L$(top_builddir)/lib -lc -shared \
+##	-Wl,-soname,libloltests.so $(LT_LDFLAGS)
 
 test1_DEPENDENCIES = $(proj_lib)
 test1_SOURCES      = $(top_builddir)/tests/src/test1.c $(proj_heads)
@@ -67,9 +65,9 @@ test5_LDADD        = $(proj_lib)
 test5_LDFLAGS      = -L$(top_builddir)/lib
 
 test6_DEPENDENCIES = $(proj_lib)
-test6_SOURCES      = $(top_builddir)/tests/src/test6.c $(proj_heads) $(testheads)
-test6_LDADD        = $(proj_lib) $(tst_lib)
-test6_LDFLAGS      = -L$(top_builddir)/lib -L$(tst_libd)
+test6_SOURCES      = $(top_builddir)/tests/src/test6.c $(proj_heads)
+test6_LDADD        = $(proj_lib)
+test6_LDFLAGS      = -L$(top_builddir)/lib
 
 EXTRA_DIST = $(TESTSUITE_AT) testsuite.at testsuite package.m4 \
 	atlocal.in fail.sh success.sh m4 m4/1.at m4/2.at m4/3.at m4/4.at \
@@ -92,7 +90,7 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	  echo 'm4_define([AT_PACKAGE_STRING],    [@PACKAGE_STRING@])'; \
 	  echo 'm4_define([AT_PACKAGE_BUGREPORT], [@PACKAGE_BUGREPORT@])'; \
 	  echo 'm4_define([AT_PACKAGE_URL],       [@PACKAGE_URL@])'; \
-	  echo 'm4_define([AT_TESTS], [$(TESTSUITE_AT)])'; \
+	  echo 'm4_define([AT_TESTS], [$(check_PROGRAMS)])'; \
 	} >$(srcdir)/package.m4
 
 TESTSUITE = $(srcdir)/testsuite

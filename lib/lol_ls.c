@@ -205,7 +205,7 @@ int lol_ls(int argc, char* argv[])
           }
           // Append file size;
           memset(tmp, 0, 128);
-          sprintf(tmp, "%lu", entry->fs);
+          sprintf(tmp, "%lu", (unsigned long)(entry->fs));
           printf("%s", tmp);
           ln = strlen(tmp);
           sp = 16 - ln;
@@ -224,7 +224,7 @@ int lol_ls(int argc, char* argv[])
       } // end if time
        else {
           printf("01-Jan 00:00:00 1970          %lu     %s  w\n",
-		 entry->fs, entry->name);
+		 (unsigned long)(entry->fs), entry->name);
 	  corr++;
        }
        if (files >= nf)

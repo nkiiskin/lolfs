@@ -15,7 +15,7 @@ ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign
 DIST_SUBDIRS = lib bin src include man tests
 SUBDIRS = lib bin src include man tests
-EXTRA_DIST = README.md gpl3.txt
+EXTRA_DIST = README.md BUGS gpl3.txt autogen.sh
 DEFS = @DEFS@
 
 # CHANGELOG_START = 0.40^
@@ -38,6 +38,7 @@ all-local:
 
 dist-hook:
 	chmod u+w $(distdir)/README.md
+	chmod +x $(distdir)/autogen.sh
 	sed -i "/Distribution date/c\Distribution date: `date`" README.md
 	rm -f *~ bin/*~ src/*.o src/*~ lib/*.o lib/*.so lib/*~ man/*~
 	rm -fr autom4te.cache

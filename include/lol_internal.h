@@ -91,8 +91,9 @@ $Id: lol_internal.h, v0.40 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp$
 #define LOL_PATH_MAX  (LOL_DEVICE_MAX + LOL_FILENAME_MAX + 2)
 #define LOL_PATH_BUF  (LOL_PATH_MAX + 1)
 #define LOL_FILENAME_MAXLEN (LOL_FILENAME_MAX - 1)
-// Some structs ////////////////////////////////////////////////
-
+// Some defs & structs ////////////////////////////////////////////////
+#define LOL_MODE_RO "r"
+#define LOL_MODE_RW "r+"
 
 // Constants (or'd together) and
 // structure for lol_pathinfo
@@ -106,6 +107,7 @@ $Id: lol_internal.h, v0.40 2016/04/19 Niko Kiiskinen <lolfs.bugs@gmail.com> Exp$
 // are used internally
 #define LOL_SIMULATE LOL_FILELEN
 #define LOL_PATHMAGIC 0x510b47d9
+
 
 // This struct is being used by
 // function lol_pathinfo
@@ -304,6 +306,8 @@ extern const char *lol_msg_list5[];
 
 
 // Some macros for common expressions/tasks
+
+#define LOL_BLOCKSPLIT(w,x,y,z)    w=(y)/(z); x=(y)%(z)
 #define LOL_MEMCPY(x,y,z)          memcpy((char *)(x), \
                                    (const char *)(y), ((size_t)(z)))
 #define LOL_MEMSET(x,y,z)          memset((char *)(x),(int)(y),((size_t)(z)))
@@ -498,8 +502,8 @@ extern int lol_buffer_lock;
 extern const lol_size lol_sizes[];
 extern const char lol_version[];
 extern const char lol_copyright[];
-extern const char lol_mode_ro[];
-extern const char lol_mode_rw[];
+// extern const char lol_mode_ro[];
+// extern const char lol_mode_rw[];
 const size_t LOL_INDEX_SIZE_T;
 const ssize_t LOL_INDEX_SSIZE_T;
 // status message alignment

@@ -1,11 +1,16 @@
+
 - Version 0.40 TODO notes:
+
+- Configuration option '--disable-shared' is broken.
+  (The package needs shared library. Will be fixed in the
+   future. This is not a big issue though).
 
 - Endianess questions & portability of containers from
   BIG- to LITTLE endian. Must be fixed.
   (LE containers are currently not readable in BE systems
    and vice versa).
 
-- Missing interface functions: opendir() etc.
+-  Missing interface functions: opendir() etc.
 
 -  When using removable storage directly to create
    lolfs "filesystem" on it, currently only Linux
@@ -16,8 +21,7 @@
 
 - Add more tests to the testsuite
 
-- Fix lol_cc.c --> buffer the i/o
-- lol_file.h: add last free nentry index to sb
+- lol_file.h: add last free name entry index to sb
 - lol_cc.c: When invalid file found -> try to get more details
 
 - Thread safety: NOT thread safe as of v0.40.
